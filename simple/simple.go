@@ -82,7 +82,7 @@ func handle(client net.Conn) {
 		// 	return
 		// }
 		var line = string(b[:bytes.IndexByte(b[:], '\n')])
-		address = line[7+1 : len(line)-9-1]
+		address = ExtractAddressFromConnectRequestLine(line)
 
 		//hostPortURL.Scheme + ":" + hostPortURL.Opaque
 	} else { //否则为 http 协议
@@ -98,14 +98,11 @@ func handle(client net.Conn) {
 		// if !strings.Contains(hostPortURL.Host, ":") { //host 不带端口， 默认 80
 		// 	address = hostPortURL.Host + ":80"
 		// }
-		domain, port, err := ExtractDomainAndPort(line)
+		address, err = ExtractAddressFromOtherRequestLine(line)
 		if err != nil {
-			fmt.Println("Error:", err)
-		} else {
-			fmt.Printf("Domain: %s, Port: %s\n", domain, port)
-			address = domain + ":" + port
+			log.Println(err)
+			return
 		}
-
 	}
 	fmt.Println("address:" + address)
 	//获得了请求的 host 和 port，向服务端发起 tcp 连接
@@ -134,6 +131,24 @@ func handle(client net.Conn) {
 	//将客户端的请求转发至服务端，将服务端的响应转发给客户端。io.Copy 为阻塞函数，文件描述符不关闭就不停止
 	go io.Copy(server, client)
 	io.Copy(client, server)
+}
+
+func ExtractAddressFromOtherRequestLine(line string) (string, error) {
+	var address string
+	domain, port, err := ExtractDomainAndPort(line)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return "", err
+	} else {
+		fmt.Printf("Domain: %s, Port: %s\n", domain, port)
+		address = domain + ":" + port
+	}
+	return address, nil
+}
+
+func ExtractAddressFromConnectRequestLine(line string) string {
+
+	return line[7+1 : len(line)-9-1]
 }
 func RemoveURLParts(requestLine string) (string, error) {
 	/* "GET http://speedtest.cn/ HTTP/1.1" */
