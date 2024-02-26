@@ -129,7 +129,7 @@ func handle(client net.Conn) {
 }
 
 func WriteRequestLineAndHeadersWithRequestURI(requestLine string, server net.Conn, n int, b [10240]byte) bool {
-
+	/*有的服务器不支持这种 "GET http://speedtest.cn/ HTTP/1.1" */
 	output, err := RemoveURLPartsLeaveMethodRequestURIVersion(requestLine)
 	if err != nil {
 		log.Println(err)
