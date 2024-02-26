@@ -25,7 +25,7 @@ func Simple(hostname string, port int) {
 			log.Panic(err)
 		}
 
-		go handle(client)
+		go Handle(client)
 	}
 }
 func Main() {
@@ -42,11 +42,11 @@ func Main() {
 			log.Panic(err)
 		}
 
-		go handle(client)
+		go Handle(client)
 	}
 }
 
-func handle(client net.Conn) {
+func Handle(client net.Conn) {
 	if client == nil {
 		return
 	}

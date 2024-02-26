@@ -31,7 +31,7 @@ func Auth(hostname string, port int, username, password string) {
 			log.Panic(err)
 		}
 
-		go handle(client, username, password)
+		go Handle(client, username, password)
 	}
 }
 func Main() {
@@ -48,11 +48,11 @@ func Main() {
 			log.Panic(err)
 		}
 
-		go handle(client, "username", "password")
+		go Handle(client, "username", "password")
 	}
 }
 
-func handle(client net.Conn, username, password string) {
+func Handle(client net.Conn, username, password string) {
 	if client == nil {
 		return
 	}
