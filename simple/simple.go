@@ -185,6 +185,15 @@ func ExtractDomainAndPort(requestLine string) (string, string, error) {
 			port = "443"
 		}
 	}
+	if isIPv6(domain) {
+		domain = "[" + domain + "]"
+	}
+
+	/* 需要识别ipv6地址 */
 	/* Domain: speedtest.cn, Port: 80 */
 	return domain, port, nil
+}
+func isIPv6(ipStr string) bool {
+	ip := net.ParseIP(ipStr)
+	return ip != nil && ip.To16() != nil && ip.To4() == nil
 }
