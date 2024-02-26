@@ -13,13 +13,13 @@ import (
 
 func Tls(server_cert string, server_key, hostname string, port int) {
 
-	cert, err := tls.LoadX509KeyPair("localhost.crt", "localhost.key")
+	cert, err := tls.LoadX509KeyPair(server_cert, server_key)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	config := &tls.Config{Certificates: []tls.Certificate{cert}}
-	ln, err := tls.Listen("tcp", ":443", config)
+	ln, err := tls.Listen("tcp", hostname+":"+fmt.Sprint(port), config)
 	// tcp 连接，监听 8080 端口
 	// l, err := net.Listen("tcp", ":8080")
 	var l = ln
