@@ -128,7 +128,7 @@ func extractDomainAndPort(requestLine string) (string, string, error) {
 	// 分割字符串以获取URL部分
 	parts := strings.SplitN(requestLine, " ", 3)
 	if len(parts) < 3 {
-		return "", "", fmt.Errorf("Invalid HTTP request line")
+		return "", "", fmt.Errorf("invalid http request line")
 	}
 
 	// 获取请求目标
@@ -137,7 +137,7 @@ func extractDomainAndPort(requestLine string) (string, string, error) {
 	// 解析URL
 	u, err := url.Parse(requestTarget)
 	if err != nil {
-		return "", "", fmt.Errorf("Failed to parse URL: %w", err)
+		return "", "", fmt.Errorf("failed to parse url: %w", err)
 	}
 
 	// 提取域名
