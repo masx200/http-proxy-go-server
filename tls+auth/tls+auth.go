@@ -1,4 +1,4 @@
-package main
+package tls_auth
 
 import (
 	"bufio"
@@ -14,7 +14,33 @@ import (
 	"strings"
 )
 
-func main() {
+func Tls_auth(server_cert string, server_key, hostname string, port int, username, password string) {
+
+	cert, err := tls.LoadX509KeyPair(server_cert, server_key)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	config := &tls.Config{Certificates: []tls.Certificate{cert}}
+	ln, err := tls.Listen("tcp", hostname+":"+fmt.Sprint(port), config)
+	// tcp 连接，监听 8080 端口
+	// l, err := net.Listen("tcp", ":8080")
+	var l = ln
+	if err != nil {
+		log.Panic(err)
+	}
+
+	// 死循环，每当遇到连接时，调用 handle
+	for {
+		client, err := l.Accept()
+		if err != nil {
+			log.Panic(err)
+		}
+
+		go handle(client, username, password)
+	}
+}
+func Main() {
 
 	cert, err := tls.LoadX509KeyPair("localhost.crt", "localhost.key")
 	if err != nil {
