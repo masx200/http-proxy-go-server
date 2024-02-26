@@ -66,7 +66,6 @@ func handle(client net.Conn) {
 	var method, URL, address string
 	// 从客户端数据读入 method，url
 	fmt.Sscanf(string(b[:bytes.IndexByte(b[:], '\n')]), "%s%s", &method, &URL)
-
 	fmt.Println(string(b[:bytes.IndexByte(b[:], '\n')]))
 	// hostPortURL, err := url.Parse(URL)
 	// if err != nil {

@@ -9,8 +9,11 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/url"
+
+	// "net/url"
 	"strings"
+
+	"github.com/masx200/http-proxy-go-server/simple"
 )
 
 func Auth(hostname string, port int, username, password string) {
@@ -68,11 +71,12 @@ func handle(client net.Conn, username, password string) {
 	var method, URL, address string
 	// 从客户端数据读入 method，url
 	fmt.Sscanf(string(b[:bytes.IndexByte(b[:], '\n')]), "%s%s", &method, &URL)
-	hostPortURL, err := url.Parse(URL)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	fmt.Println(string(b[:bytes.IndexByte(b[:], '\n')]))
+	// hostPortURL, err := url.Parse(URL)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return
+	// }
 
 	// 检查 Proxy-Authorization 头
 	proxyAuth := ""
@@ -92,12 +96,31 @@ func handle(client net.Conn, username, password string) {
 	fmt.Println("身份验证成功")
 	// 如果方法是 CONNECT，则为 https 协议
 	if method == "CONNECT" {
-		address = hostPortURL.Scheme + ":" + hostPortURL.Opaque
+		// address = hostPortURL.Scheme + ":" + hostPortURL.Opaque
+		var line = string(b[:bytes.IndexByte(b[:], '\n')])
+		address = simple.ExtractAddressFromConnectRequestLine(line)
 	} else { //否则为 http 协议
-		address = hostPortURL.Host
-		// 如果 host 不带端口，则默认为 80
-		if !strings.Contains(hostPortURL.Host, ":") { //host 不带端口， 默认 80
-			address = hostPortURL.Host + ":80"
+		// address = hostPortURL.Host
+		// // 如果 host 不带端口，则默认为 80
+		// if !strings.Contains(hostPortURL.Host, ":") { //host 不带端口， 默认 80
+		// 	address = hostPortURL.Host + ":80"
+		// }
+		var line = string(b[:bytes.IndexByte(b[:], '\n')])
+
+		// hostPortURL, err := url.Parse(line[7+1 : len(line)-9-1])
+		// if err != nil {
+		// 	log.Println(err)
+		// 	return
+		// }
+		// address = hostPortURL.Host
+		// // 如果 host 不带端口，则默认为 80
+		// if !strings.Contains(hostPortURL.Host, ":") { //host 不带端口， 默认 80
+		// 	address = hostPortURL.Host + ":80"
+		// }
+		address, err = simple.ExtractAddressFromOtherRequestLine(line)
+		if err != nil {
+			log.Println(err)
+			return
 		}
 	}
 	fmt.Println("address:" + address)
