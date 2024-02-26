@@ -4,6 +4,9 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/masx200/http-proxy-go-server/auth"
+	"github.com/masx200/http-proxy-go-server/simple"
+	"github.com/masx200/http-proxy-go-server/tls"
 	tls_auth "github.com/masx200/http-proxy-go-server/tls+auth"
 )
 
@@ -34,6 +37,18 @@ func main() {
 
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
 		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password)
+		return
+	}
+	if len(*username) > 0 && len(*password) > 0 {
+		auth.Auth(*hostname, *port, *username, *password)
+		return
+	}
+	if len(*server_cert) > 0 && len(*server_key) > 0 {
+		tls.Tls(*server_cert, *server_key, *hostname, *port)
+		return
+	}
+	if len(*username) == 0 && len(*password) == 0 && len(*server_cert) == 0 && len(*server_key) == 0 {
+		simple.Simple(*hostname, *port)
 		return
 	}
 
