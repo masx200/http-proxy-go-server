@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/url"
+	// "regexp"
 	"strings"
 )
 
@@ -97,7 +98,7 @@ func handle(client net.Conn) {
 		// if !strings.Contains(hostPortURL.Host, ":") { //host 不带端口， 默认 80
 		// 	address = hostPortURL.Host + ":80"
 		// }
-		domain, port, err := extractDomainAndPort(line)
+		domain, port, err := ExtractDomainAndPort(line)
 		if err != nil {
 			fmt.Println("Error:", err)
 		} else {
@@ -116,15 +117,46 @@ func handle(client net.Conn) {
 	//如果使用 https 协议，需先向客户端表示连接建立完毕
 	if method == "CONNECT" {
 		fmt.Fprint(client, "HTTP/1.1 200 Connection established\r\n\r\n")
-	} else { //如果使用 http 协议，需将从客户端得到的 http 请求转发给服务端
-		server.Write(b[:n])
+	} else {
+
+		//如果使用 http 协议，需将从客户端得到的 http 请求转发给服务端
+		var requestLine = string(b[:bytes.IndexByte(b[:], '\n')])
+		output, err := RemoveURLParts(requestLine)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		fmt.Println(output)
+		server.Write([]byte(output))
+		server.Write(b[len(requestLine):n])
 	}
 
 	//将客户端的请求转发至服务端，将服务端的响应转发给客户端。io.Copy 为阻塞函数，文件描述符不关闭就不停止
 	go io.Copy(server, client)
 	io.Copy(client, server)
 }
-func extractDomainAndPort(requestLine string) (string, string, error) {
+func RemoveURLParts(requestLine string) (string, error) {
+	/* "GET http://speedtest.cn/ HTTP/1.1" */
+	// 正则表达式用于匹配 http(s)://[domain(:port)] 部分
+	parts := strings.SplitN(requestLine, " ", 3)
+	if len(parts) < 3 {
+		return "", fmt.Errorf("invalid http request line")
+	}
+
+	// 获取请求目标
+	requestTarget := parts[1]
+
+	// 解析URL
+	u, err := url.Parse(requestTarget)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse url: %w", err)
+	}
+	var cleanedUrl = parts[0] + " " + u.RequestURI() + " " + parts[2]
+	/* "GET / HTTP/1.1" */
+	return cleanedUrl, nil
+}
+func ExtractDomainAndPort(requestLine string) (string, string, error) {
+	/* "GET http://speedtest.cn/ HTTP/1.1" */
 	// 分割字符串以获取URL部分
 	parts := strings.SplitN(requestLine, " ", 3)
 	if len(parts) < 3 {
@@ -153,6 +185,6 @@ func extractDomainAndPort(requestLine string) (string, string, error) {
 			port = "443"
 		}
 	}
-
+	/* Domain: speedtest.cn, Port: 80 */
 	return domain, port, nil
 }
