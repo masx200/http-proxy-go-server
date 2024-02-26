@@ -115,22 +115,30 @@ func handle(client net.Conn) {
 	if method == "CONNECT" {
 		fmt.Fprint(client, "HTTP/1.1 200 Connection established\r\n\r\n")
 	} else {
-
-		//如果使用 http 协议，需将从客户端得到的 http 请求转发给服务端
 		var requestLine = string(b[:bytes.IndexByte(b[:], '\n')])
-		output, err := RemoveURLParts(requestLine)
-		if err != nil {
-			log.Println(err)
+		//如果使用 http 协议，需将从客户端得到的 http 请求转发给服务端
+		shouldReturn := WriteRequestLineAndHeadersWithRequestURI(requestLine, server, n, b)
+		if shouldReturn {
 			return
 		}
-		fmt.Println(output)
-		server.Write([]byte(output))
-		server.Write(b[len(requestLine):n])
 	}
 
 	//将客户端的请求转发至服务端，将服务端的响应转发给客户端。io.Copy 为阻塞函数，文件描述符不关闭就不停止
 	go io.Copy(server, client)
 	io.Copy(client, server)
+}
+
+func WriteRequestLineAndHeadersWithRequestURI(requestLine string, server net.Conn, n int, b [10240]byte) bool {
+
+	output, err := RemoveURLPartsLeaveMethodRequestURIVersion(requestLine)
+	if err != nil {
+		log.Println(err)
+		return true
+	}
+	fmt.Println(output)
+	server.Write([]byte(output))
+	server.Write(b[len(requestLine):n])
+	return false
 }
 
 func ExtractAddressFromOtherRequestLine(line string) (string, error) {
@@ -150,7 +158,7 @@ func ExtractAddressFromConnectRequestLine(line string) string {
 
 	return line[7+1 : len(line)-9-1]
 }
-func RemoveURLParts(requestLine string) (string, error) {
+func RemoveURLPartsLeaveMethodRequestURIVersion(requestLine string) (string, error) {
 	/* "GET http://speedtest.cn/ HTTP/1.1" */
 	// 正则表达式用于匹配 http(s)://[domain(:port)] 部分
 	parts := strings.SplitN(requestLine, " ", 3)
@@ -200,7 +208,7 @@ func ExtractDomainAndPort(requestLine string) (string, string, error) {
 			port = "443"
 		}
 	}
-	if isIPv6(domain) {
+	if IsIPv6(domain) {
 		domain = "[" + domain + "]"
 	}
 
@@ -208,7 +216,7 @@ func ExtractDomainAndPort(requestLine string) (string, string, error) {
 	/* Domain: speedtest.cn, Port: 80 */
 	return domain, port, nil
 }
-func isIPv6(ipStr string) bool {
+func IsIPv6(ipStr string) bool {
 	ip := net.ParseIP(ipStr)
 	return ip != nil && ip.To16() != nil && ip.To4() == nil
 }
