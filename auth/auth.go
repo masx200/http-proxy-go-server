@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 
 	// "net/url"
 	"strings"
@@ -142,6 +143,16 @@ func handle(client net.Conn, username, password string) {
 		}
 		req.Header.Del("Proxy-Authorization")
 		// server.Write(b[:n])
+		fmt.Println(req.RequestURI)
+		var requestTarget = req.RequestURI
+		u, err := url.Parse(requestTarget)
+		if err != nil {
+			fmt.Println(fmt.Errorf("failed to parse url: %w", err))
+			return
+		}
+		/* 有的服务器不支持这种 "GET http://speedtest.cn/ HTTP/1.1" */
+		req.RequestURI = u.RequestURI()
+		fmt.Println(req.RequestURI)
 		err = req.Write(server)
 		if err != nil {
 			log.Println("Error writing request to server:", err)

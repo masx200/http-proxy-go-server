@@ -158,7 +158,7 @@ func ExtractAddressFromConnectRequestLine(line string) string {
 	return line[7+1 : len(line)-9-1]
 }
 func RemoveURLPartsLeaveMethodRequestURIVersion(requestLine string) (string, error) {
-	/* "GET http://speedtest.cn/ HTTP/1.1" */
+	/* 有的服务器不支持这种 "GET http://speedtest.cn/ HTTP/1.1" */
 	// 正则表达式用于匹配 http(s)://[domain(:port)] 部分
 	parts := strings.SplitN(requestLine, " ", 3)
 	if len(parts) < 3 {
