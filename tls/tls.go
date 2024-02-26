@@ -34,7 +34,8 @@ func Tls(server_cert string, server_key, hostname string, port int) {
 		go simple.Handle(client)
 	}
 }
-func Main() {
+
+/* func Main() {
 
 	cert, err := tls.LoadX509KeyPair("localhost.crt", "localhost.key")
 	if err != nil {
@@ -59,7 +60,7 @@ func Main() {
 
 		go simple.Handle(client)
 	}
-}
+} */
 
 // func handle(client net.Conn) {
 // 	if client == nil {

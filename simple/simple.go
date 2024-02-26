@@ -28,23 +28,24 @@ func Simple(hostname string, port int) {
 		go Handle(client)
 	}
 }
-func Main() {
-	// tcp 连接，监听 8080 端口
-	l, err := net.Listen("tcp", ":8080")
-	if err != nil {
-		log.Panic(err)
-	}
 
-	// 死循环，每当遇到连接时，调用 handle
-	for {
-		client, err := l.Accept()
-		if err != nil {
-			log.Panic(err)
-		}
+// func Main() {
+// 	// tcp 连接，监听 8080 端口
+// 	l, err := net.Listen("tcp", ":8080")
+// 	if err != nil {
+// 		log.Panic(err)
+// 	}
 
-		go Handle(client)
-	}
-}
+// 	// 死循环，每当遇到连接时，调用 handle
+// 	for {
+// 		client, err := l.Accept()
+// 		if err != nil {
+// 			log.Panic(err)
+// 		}
+
+// 		go Handle(client)
+// 	}
+// }
 
 func Handle(client net.Conn) {
 	if client == nil {
