@@ -2,6 +2,7 @@ package http
 
 import (
 	// "bytes"
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -31,7 +32,12 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("method:", r.Method)
 	fmt.Println("url:", r.URL)
 	fmt.Println("host:", r.Host)
-	// fmt.Println("header:", r.Header)
+	fmt.Println("header:")
+
+	for k, v := range r.Header {
+		fmt.Println("key:", k)
+		fmt.Println("value:", strings.Join(v, ""))
+	}
 	targetUrl := "http://" + r.Host + r.RequestURI
 	/*r.URL可能是http://开头,也可能只有路径  */
 	if startsWithHTTP(r.URL.String()) {
@@ -40,8 +46,18 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	// 这里假设目标服务器都是HTTP的，实际情况可能需要处理HTTPS
 	fmt.Println("targetUrl:", targetUrl)
 	// 创建一个使用了代理的客户端
+	defer r.Body.Close()
+	/* 能否解决请求body的问题 */
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Println("body:", string(bodyBytes))
 	client := &http.Client{ /* Transport: newTransport("http://your_proxy_address:port") */ } // 替换为你的代理服务器地址和端口
-	proxyReq, err := http.NewRequest(r.Method, targetUrl, r.Body)
+	proxyReq, err := http.NewRequest(r.Method, targetUrl, bytes.NewReader(bodyBytes))
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -64,13 +80,13 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(resp.StatusCode)
 
 	// Copy the response body back to the client.
-	bodyBytes, err := io.ReadAll(resp.Body)
+	bodyBytes2, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if _, err := w.Write(bodyBytes); err != nil {
+	if _, err := w.Write(bodyBytes2); err != nil {
 		log.Println("Error writing response:", err)
 	}
 }
