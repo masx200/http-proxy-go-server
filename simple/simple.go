@@ -160,7 +160,12 @@ func WriteRequestLineAndHeadersWithRequestURI(requestLine string, server net.Con
 	}
 	fmt.Println(output)
 	server.Write([]byte(output))
+	log.Println("simple Handle", "header:")
 
+	for k, v := range headers {
+		// fmt.Println("key:", k)
+		log.Println("simple Handle", k, ":", v)
+	}
 	for k, v := range headers {
 		server.Write([]byte(k + ": " + v + "\r\n"))
 	}
