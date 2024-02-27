@@ -7,8 +7,11 @@ import (
 	"log"
 	"net"
 	"net/url"
+
 	// "regexp"
 	"strings"
+
+	"github.com/masx200/http-proxy-go-server/http"
 )
 
 func Simple(hostname string, port int) {
@@ -18,6 +21,7 @@ func Simple(hostname string, port int) {
 		log.Panic(err)
 	}
 	log.Printf("Proxy server started on port %s", l.Addr())
+	var upstreamAddress string = http.GenerateRandomLoopbackIP() + ":" + string(rune(http.GenerateRandomIntPort()))
 
 	// 死循环，每当遇到连接时，调用 handle
 	for {
@@ -26,7 +30,7 @@ func Simple(hostname string, port int) {
 			log.Panic(err)
 		}
 
-		go Handle(client)
+		go Handle(client, upstreamAddress)
 	}
 }
 
@@ -48,7 +52,7 @@ func Simple(hostname string, port int) {
 // 	}
 // }
 
-func Handle(client net.Conn) {
+func Handle(client net.Conn, upstreamAddress string) {
 	if client == nil {
 		return
 	}
@@ -107,7 +111,7 @@ func Handle(client net.Conn) {
 	}
 	fmt.Println("address:" + address)
 	//获得了请求的 host 和 port，向服务端发起 tcp 连接
-	server, err := net.Dial("tcp", address)
+	server, err := net.Dial("tcp", upstreamAddress)
 	if err != nil {
 		log.Println(err)
 		return

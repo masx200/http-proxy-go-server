@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"time"
+	// "github.com/go-kit/kit/sd/etcd"
 	// "net/url"
 )
 
@@ -112,10 +113,11 @@ func generateRandomIP() net.IP {
 	return ip
 }
 
-func GenerateRandomIntPort() {
+func GenerateRandomIntPort() int {
 	rand.Seed(time.Now().UnixNano())
 	randomInt := generateRandomInt()
 	fmt.Println("Random integer:", randomInt)
+	return randomInt
 }
 
 func generateRandomInt() int {
