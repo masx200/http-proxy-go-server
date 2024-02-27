@@ -58,6 +58,9 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, jar *cookiejar.Jar) {
 
 	fmt.Println("body:", string(bodyBytes))
 	client := &http.Client{ /* Transport: newTransport("http://your_proxy_address:port") */
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse /* 不进入重定向 */
+		},
 
 		Jar: jar} // 替换为你的代理服务器地址和端口
 	proxyReq, err := http.NewRequest(r.Method, targetUrl, bytes.NewReader(bodyBytes))
