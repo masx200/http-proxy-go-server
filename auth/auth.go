@@ -5,12 +5,12 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	http_server "github.com/masx200/http-proxy-go-server/http"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
-
 	// "net/url"
 	"strings"
 
@@ -24,7 +24,10 @@ func Auth(hostname string, port int, username, password string) {
 		log.Panic(err)
 	}
 	log.Printf("Proxy server started on port %s", l.Addr())
-
+	xh := http_server.GenerateRandomLoopbackIP()
+	x1 := http_server.GenerateRandomIntPort()
+	var upstreamAddress string = xh + ":" + fmt.Sprint(rune(x1))
+	go http_server.Http(xh, x1)
 	// 死循环，每当遇到连接时，调用 handle
 	for {
 		client, err := l.Accept()
@@ -32,7 +35,7 @@ func Auth(hostname string, port int, username, password string) {
 			log.Panic(err)
 		}
 
-		go Handle(client, username, password)
+		go Handle(client, username, password, upstreamAddress)
 	}
 }
 
@@ -54,7 +57,7 @@ func Auth(hostname string, port int, username, password string) {
 // 	}
 // }
 
-func Handle(client net.Conn, username, password string) {
+func Handle(client net.Conn, username, password string, httpUpstreamAddress string) {
 	if client == nil {
 		return
 	}
@@ -127,8 +130,14 @@ func Handle(client net.Conn, username, password string) {
 		}
 	}
 	fmt.Println("address:" + address)
+	var upstreamAddress string
+	if method == "CONNECT" {
+		upstreamAddress = address
+	} else {
+		upstreamAddress = httpUpstreamAddress
+	}
 	//获得了请求的 host 和 port，向服务端发起 tcp 连接
-	server, err := net.Dial("tcp", address)
+	server, err := net.Dial("tcp", upstreamAddress)
 	if err != nil {
 		log.Println(err)
 		return

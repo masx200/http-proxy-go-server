@@ -3,6 +3,7 @@ package tls_auth
 import (
 	"crypto/tls"
 	"fmt"
+	http_server "github.com/masx200/http-proxy-go-server/http"
 	"log"
 
 	"github.com/masx200/http-proxy-go-server/auth"
@@ -24,7 +25,10 @@ func Tls_auth(server_cert string, server_key, hostname string, port int, usernam
 		log.Panic(err)
 	}
 	log.Printf("Proxy server started on port %s", l.Addr())
-
+	xh := http_server.GenerateRandomLoopbackIP()
+	x1 := http_server.GenerateRandomIntPort()
+	var upstreamAddress string = xh + ":" + fmt.Sprint(rune(x1))
+	go http_server.Http(xh, x1)
 	// 死循环，每当遇到连接时，调用 handle
 	for {
 		client, err := l.Accept()
@@ -33,7 +37,7 @@ func Tls_auth(server_cert string, server_key, hostname string, port int, usernam
 		}
 
 		// go handle(client, username, password)
-		go auth.Handle(client, username, password)
+		go auth.Handle(client, username, password, upstreamAddress)
 	}
 }
 
