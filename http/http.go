@@ -29,6 +29,61 @@ import (
 func startsWithHTTP(s string) bool {
 	return strings.HasPrefix(s, "http://")
 }
+
+// 辅助函数：将ForwardedBy列表转换为集合（set），用于快速判断重复项
+func setFromForwardedBy(forwardedByList []ForwardedBy) map[string]bool {
+	set := make(map[string]bool)
+	for _, fb := range forwardedByList {
+		set[fb.Identifier] = true
+	}
+	return set
+}
+
+type ForwardedBy struct {
+	Identifier string
+}
+
+func parseForwardedHeader(header string) ([]ForwardedBy, error) {
+	var forwardedByList []ForwardedBy
+	parts := strings.Split(header, ", ")
+
+	for _, part := range parts {
+		for _, param := range strings.Split(part, ";") {
+			param = strings.TrimSpace(param)
+			if !strings.HasPrefix(param, "by=") {
+				continue
+			}
+
+			// 分离 by 参数的值
+			value := strings.TrimPrefix(param, "by=")
+			// host, port, err := net.SplitHostPort(value)
+			// if err != nil {
+			// 如果没有端口信息，host 就是整个值
+			var host = value
+			// port = ""
+			// }
+
+			forwardedBy := ForwardedBy{
+				Identifier: host,
+				// Port:       port,
+			}
+
+			// 检查是否重复
+			// isDuplicate := false
+			// for _, existing := range forwardedByList {
+			// 	if existing.Identifier == forwardedBy.Identifier && existing.Port == forwardedBy.Port {
+			// 		isDuplicate = true
+			// 		break
+			// 	}
+			// }
+			// if !isDuplicate {
+			forwardedByList = append(forwardedByList, forwardedBy)
+			// }
+		}
+	}
+
+	return forwardedByList, nil
+}
 func proxyHandler(w http.ResponseWriter, r *http.Request, jar *cookiejar.Jar, LocalAddr string) {
 	fmt.Println("method:", r.Method)
 	fmt.Println("url:", r.URL)
@@ -54,7 +109,22 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, jar *cookiejar.Jar, Lo
 	r.Header.Add("Forwarded", forwarded)
 	for k, v := range r.Header {
 		// fmt.Println("key:", k)
-		log.Println("proxyHandler", k, ":", strings.Join(v, ""))
+		log.Println("proxyHandler", k, ":", strings.Join(v, ","))
+	}
+	forwardedHeader := strings.Join(r.Header.Values("Forwarded"), ", ")
+	log.Println("forwardedHeader:", forwardedHeader)
+	forwardedByList, err := parseForwardedHeader(forwardedHeader)
+	log.Println("forwardedByList:", forwardedByList)
+	if len(forwardedByList) != len(setFromForwardedBy(forwardedByList)) {
+		w.WriteHeader(508)
+		fmt.Fprintln(w, "Duplicate 'by' identifiers found in 'Forwarded' header.")
+		log.Println("Duplicate 'by' identifiers found in 'Forwarded' header.")
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "Error parsing 'Forwarded' header: %v", err)
+		return
 	}
 	targetUrl := "http://" + r.Host + r.RequestURI
 	/*r.URL可能是http://开头,也可能只有路径  */
