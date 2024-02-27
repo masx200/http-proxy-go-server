@@ -131,7 +131,15 @@ func Handle(client net.Conn, httpUpstreamAddress string) {
 	} else {
 		var requestLine = string(b[:bytes.IndexByte(b[:], '\n')])
 		//如果使用 http 协议，需将从客户端得到的 http 请求转发给服务端
-		shouldReturn := WriteRequestLineAndHeadersWithRequestURI(requestLine, server, n, b)
+		forwarded := fmt.Sprintf(
+			"for=%s;by=%s;host=%s;proto=%s",
+			client.RemoteAddr().String(), // 代理自己的标识或IP地址
+			client.LocalAddr().String(),  // 代理的标识
+			address,                      // 原始请求的目标主机名
+			"http",                       // 或者 "https" 根据实际协议
+		)
+		var headers map[string]string = map[string]string{"Forwarded": forwarded}
+		shouldReturn := WriteRequestLineAndHeadersWithRequestURI(requestLine, server, n, b, headers)
 		if shouldReturn {
 			return
 		}
@@ -143,7 +151,7 @@ func Handle(client net.Conn, httpUpstreamAddress string) {
 }
 
 // WriteRequestLineAndHeadersWithRequestURI 将请求行和头部信息写入服务器连接
-func WriteRequestLineAndHeadersWithRequestURI(requestLine string, server net.Conn, n int, b [10240]byte) bool {
+func WriteRequestLineAndHeadersWithRequestURI(requestLine string, server net.Conn, n int, b [10240]byte, headers map[string]string) bool {
 	/*有的服务器不支持这种 "GET http://speedtest.cn/ HTTP/1.1" */
 	output, err := RemoveURLPartsLeaveMethodRequestURIVersion(requestLine)
 	if err != nil {
@@ -151,10 +159,15 @@ func WriteRequestLineAndHeadersWithRequestURI(requestLine string, server net.Con
 		return true
 	}
 	fmt.Println(output)
-	// server.Write([]byte(output))
+	server.Write([]byte(output))
+
+	for k, v := range headers {
+		server.Write([]byte(k + ": " + v + "\r\n"))
+	}
+	// server.Write()
 	// server.Write([]byte("\r\n"))
-	// server.Write(b[len(requestLine):n])
-	server.Write(append([]byte(output), b[len(requestLine):n]...))
+	server.Write(b[len(requestLine):n])
+	// server.Write(append([]byte(output), b[len(requestLine):n]...))
 	fmt.Println(string(b[len(requestLine):n]))
 	return false
 }
