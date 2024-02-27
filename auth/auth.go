@@ -154,12 +154,19 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		}
 		/* 这里只能删除第一次请求的 Proxy-Authorization */
 		req.Header.Del("Proxy-Authorization")
+		clienthost, port, err := net.SplitHostPort(client.RemoteAddr().String())
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		log.Println("clienthost:", clienthost)
+		log.Println("clientport:", port)
 		forwarded := fmt.Sprintf(
 			"for=%s;by=%s;host=%s;proto=%s",
-			client.RemoteAddr().String(), // 代理自己的标识或IP地址
-			client.LocalAddr().String(),  // 代理的标识
-			address,                      // 原始请求的目标主机名
-			"http",                       // 或者 "https" 根据实际协议
+			clienthost,                  // 代理自己的标识或IP地址
+			client.LocalAddr().String(), // 代理的标识
+			address,                     // 原始请求的目标主机名
+			"http",                      // 或者 "https" 根据实际协议
 		)
 		req.Header.Add("Forwarded", forwarded)
 		log.Println("auth Handle", "header:")
