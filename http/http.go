@@ -23,8 +23,11 @@ import (
 
 // ServeHTTP is a handler that forwards incoming requests to the target URL specified in the request.
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
-	targetUrl := "http://" + r.URL.Host + r.URL.Path // 这里假设目标服务器都是HTTP的，实际情况可能需要处理HTTPS
-
+	fmt.Println("url:", r.URL)
+	fmt.Println("host:", r.Host)
+	// fmt.Println("header:", r.Header)
+	targetUrl := "http://" + r.Host + r.RequestURI // 这里假设目标服务器都是HTTP的，实际情况可能需要处理HTTPS
+	fmt.Println("targetUrl:", targetUrl)
 	// 创建一个使用了代理的客户端
 	client := &http.Client{ /* Transport: newTransport("http://your_proxy_address:port") */ } // 替换为你的代理服务器地址和端口
 	proxyReq, err := http.NewRequest(r.Method, targetUrl, r.Body)
