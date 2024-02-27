@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 	// "github.com/go-kit/kit/sd/etcd"
 	// "net/url"
@@ -22,11 +23,20 @@ import (
 // }
 
 // ServeHTTP is a handler that forwards incoming requests to the target URL specified in the request.
+
+func startsWithHTTP(s string) bool {
+	return strings.HasPrefix(s, "http://")
+}
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("url:", r.URL)
 	fmt.Println("host:", r.Host)
 	// fmt.Println("header:", r.Header)
-	targetUrl := "http://" + r.Host + r.RequestURI // 这里假设目标服务器都是HTTP的，实际情况可能需要处理HTTPS
+	targetUrl := "http://" + r.Host + r.RequestURI
+	/*r.URL可能是http://开头,也可能只有路径  */
+	if startsWithHTTP(r.URL.String()) {
+		targetUrl = r.URL.String()
+	}
+	// 这里假设目标服务器都是HTTP的，实际情况可能需要处理HTTPS
 	fmt.Println("targetUrl:", targetUrl)
 	// 创建一个使用了代理的客户端
 	client := &http.Client{ /* Transport: newTransport("http://your_proxy_address:port") */ } // 替换为你的代理服务器地址和端口
