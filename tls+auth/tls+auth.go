@@ -23,6 +23,7 @@ func Tls_auth(server_cert string, server_key, hostname string, port int, usernam
 	if err != nil {
 		log.Panic(err)
 	}
+	log.Printf("Proxy server started on port %s", l.Addr())
 
 	// 死循环，每当遇到连接时，调用 handle
 	for {
