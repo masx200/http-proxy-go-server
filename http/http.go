@@ -28,6 +28,7 @@ func startsWithHTTP(s string) bool {
 	return strings.HasPrefix(s, "http://")
 }
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("method:", r.Method)
 	fmt.Println("url:", r.URL)
 	fmt.Println("host:", r.Host)
 	// fmt.Println("header:", r.Header)
