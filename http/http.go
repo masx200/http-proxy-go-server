@@ -1,11 +1,14 @@
 package http
 
 import (
+	// "bytes"
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
+	"time"
 	// "net/url"
 )
 
@@ -91,4 +94,32 @@ func Http(hostname string, port int) {
 	if err != nil {
 		log.Fatal("Serve: ", err)
 	}
+}
+func GenerateRandomLoopbackIP() string {
+	rand.Seed(time.Now().UnixNano())
+	randomIP := generateRandomIP()
+	fmt.Println("Random IP:", randomIP)
+	return randomIP.String()
+}
+
+func generateRandomIP() net.IP {
+	ip := net.IPv4(
+		byte(127 /* +rand.Intn(1) */),
+		byte(rand.Intn(256)),
+		byte(rand.Intn(256)),
+		byte(rand.Intn(256)),
+	)
+	return ip
+}
+
+func GenerateRandomIntPort() {
+	rand.Seed(time.Now().UnixNano())
+	randomInt := generateRandomInt()
+	fmt.Println("Random integer:", randomInt)
+}
+
+func generateRandomInt() int {
+	min := 10000
+	max := 65535
+	return rand.Intn(max-min+1) + min
 }
