@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"net/http/cookiejar"
 	"strings"
 	"time"
 	// "github.com/go-kit/kit/sd/etcd"
@@ -28,7 +29,7 @@ import (
 func startsWithHTTP(s string) bool {
 	return strings.HasPrefix(s, "http://")
 }
-func proxyHandler(w http.ResponseWriter, r *http.Request) {
+func proxyHandler(w http.ResponseWriter, r *http.Request, jar *cookiejar.Jar) {
 	fmt.Println("method:", r.Method)
 	fmt.Println("url:", r.URL)
 	fmt.Println("host:", r.Host)
@@ -56,7 +57,9 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Println("body:", string(bodyBytes))
-	client := &http.Client{ /* Transport: newTransport("http://your_proxy_address:port") */ } // 替换为你的代理服务器地址和端口
+	client := &http.Client{ /* Transport: newTransport("http://your_proxy_address:port") */
+
+		Jar: jar} // 替换为你的代理服务器地址和端口
 	proxyReq, err := http.NewRequest(r.Method, targetUrl, bytes.NewReader(bodyBytes))
 	if err != nil {
 		log.Println(err)
@@ -109,6 +112,10 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 //		}
 //	}
 func Http(hostname string, port int) {
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		log.Fatal("ListenAndServe: ", err)
+	}
 	/* /* 有的服务器不支持这种 "GET http://speedtest.cn/ HTTP/1.1" */
 	// 监听本地8080端口
 	listener, err := net.Listen("tcp", hostname+":"+fmt.Sprint(port))
@@ -118,7 +125,10 @@ func Http(hostname string, port int) {
 	log.Printf("Proxy server started on port %s", listener.Addr())
 
 	// 设置自定义处理器
-	http.HandleFunc("/", proxyHandler)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+
+		proxyHandler(w, r, jar)
+	})
 
 	// 开始服务
 	err = http.Serve(listener, nil)
