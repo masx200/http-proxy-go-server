@@ -29,13 +29,29 @@ import (
 func startsWithHTTP(s string) bool {
 	return strings.HasPrefix(s, "http://")
 }
-func proxyHandler(w http.ResponseWriter, r *http.Request, jar *cookiejar.Jar) {
+func proxyHandler(w http.ResponseWriter, r *http.Request, jar *cookiejar.Jar, LocalAddr string) {
 	fmt.Println("method:", r.Method)
 	fmt.Println("url:", r.URL)
 	fmt.Println("host:", r.Host)
 	log.Println("proxyHandler", "header:")
 	/*/* 这里删除除了第一次请求的 Proxy-Authorization  删除代理认证信息 */
+
 	r.Header.Del("Proxy-Authorization")
+	clienthost, port, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println("clienthost:", clienthost)
+	log.Println("clientport:", port)
+	forwarded := fmt.Sprintf(
+		"for=%s;by=%s;host=%s;proto=%s",
+		clienthost, // 代理自己的标识或IP地址
+		LocalAddr,  // 代理的标识
+		r.Host,     // 原始请求的目标主机名
+		"http",     // 或者 "https" 根据实际协议
+	)
+	r.Header.Add("Forwarded", forwarded)
 	for k, v := range r.Header {
 		// fmt.Println("key:", k)
 		log.Println("proxyHandler", k, ":", strings.Join(v, ""))
@@ -127,11 +143,11 @@ func Http(hostname string, port int) {
 		log.Fatal("ListenAndServe: ", err)
 	}
 	log.Printf("Proxy server started on port %s", listener.Addr())
-
+	var LocalAddr = listener.Addr().String()
 	// 设置自定义处理器
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
-		proxyHandler(w, r, jar)
+		proxyHandler(w, r, jar, LocalAddr)
 	})
 
 	// 开始服务
