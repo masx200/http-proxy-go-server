@@ -129,7 +129,7 @@ func Handle(client net.Conn, httpUpstreamAddress string) {
 	if method == "CONNECT" {
 		fmt.Fprint(client, "HTTP/1.1 200 Connection established\r\n\r\n")
 	} else {
-		var requestLine = string(b[:bytes.IndexByte(b[:], '\n')])
+		var requestLine = string(b[:bytes.IndexByte(b[:], '\n')+1])
 		//如果使用 http 协议，需将从客户端得到的 http 请求转发给服务端
 		forwarded := fmt.Sprintf(
 			"for=%s;by=%s;host=%s;proto=%s",
@@ -158,16 +158,17 @@ func WriteRequestLineAndHeadersWithRequestURI(requestLine string, server net.Con
 		log.Println(err)
 		return true
 	}
-	fmt.Println(output)
-	server.Write([]byte(output))
 	log.Println("simple Handle", "header:")
-
 	for k, v := range headers {
 		// fmt.Println("key:", k)
 		log.Println("simple Handle", k, ":", v)
 	}
+	fmt.Println(output)
+	server.Write([]byte(output))
+
 	for k, v := range headers {
 		server.Write([]byte(k + ": " + v + "\r\n"))
+		fmt.Println(string([]byte(k + ": " + v + "\r\n")))
 	}
 	// server.Write()
 	// server.Write([]byte("\r\n"))
