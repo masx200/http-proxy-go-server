@@ -21,8 +21,10 @@ func Simple(hostname string, port int) {
 		log.Panic(err)
 	}
 	log.Printf("Proxy server started on port %s", l.Addr())
-	var upstreamAddress string = http.GenerateRandomLoopbackIP() + ":" + string(rune(http.GenerateRandomIntPort()))
-
+	xh := http.GenerateRandomLoopbackIP()
+	x1 := http.GenerateRandomIntPort()
+	var upstreamAddress string = xh + ":" + fmt.Sprint(rune(x1))
+	go http.Http(xh, x1)
 	// 死循环，每当遇到连接时，调用 handle
 	for {
 		client, err := l.Accept()
@@ -52,7 +54,7 @@ func Simple(hostname string, port int) {
 // 	}
 // }
 
-func Handle(client net.Conn, upstreamAddress string) {
+func Handle(client net.Conn, httpUpstreamAddress string) {
 	if client == nil {
 		return
 	}
@@ -111,6 +113,13 @@ func Handle(client net.Conn, upstreamAddress string) {
 	}
 	fmt.Println("address:" + address)
 	//获得了请求的 host 和 port，向服务端发起 tcp 连接
+	fmt.Println("upstreamAddress:" + httpUpstreamAddress)
+	var upstreamAddress string
+	if method == "CONNECT" {
+		upstreamAddress = address
+	} else {
+		upstreamAddress = httpUpstreamAddress
+	}
 	server, err := net.Dial("tcp", upstreamAddress)
 	if err != nil {
 		log.Println(err)
