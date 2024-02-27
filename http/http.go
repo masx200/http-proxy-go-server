@@ -36,8 +36,8 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, jar *cookiejar.Jar) {
 	fmt.Println("header:")
 
 	for k, v := range r.Header {
-		fmt.Println("key:", k)
-		fmt.Println("value:", strings.Join(v, ""))
+		// fmt.Println("key:", k)
+		fmt.Println(k, ":", strings.Join(v, ""))
 	}
 	targetUrl := "http://" + r.Host + r.RequestURI
 	/*r.URL可能是http://开头,也可能只有路径  */
@@ -48,7 +48,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, jar *cookiejar.Jar) {
 	fmt.Println("targetUrl:", targetUrl)
 	// 创建一个使用了代理的客户端
 	defer r.Body.Close()
-	/* 能否解决请求body的问题 */
+	/* 请求body的问题 */
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println(err)
@@ -56,7 +56,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, jar *cookiejar.Jar) {
 		return
 	}
 
-	fmt.Println("body:", string(bodyBytes))
+	// fmt.Println("body:", string(bodyBytes))
 	client := &http.Client{ /* Transport: newTransport("http://your_proxy_address:port") */
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse /* 不进入重定向 */
