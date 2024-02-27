@@ -33,11 +33,12 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, jar *cookiejar.Jar) {
 	fmt.Println("method:", r.Method)
 	fmt.Println("url:", r.URL)
 	fmt.Println("host:", r.Host)
-	fmt.Println("header:")
-
+	log.Println("proxyHandler", "header:")
+	/*/* 这里删除除了第一次请求的 Proxy-Authorization  删除代理认证信息 */
+	r.Header.Del("Proxy-Authorization")
 	for k, v := range r.Header {
 		// fmt.Println("key:", k)
-		fmt.Println(k, ":", strings.Join(v, ""))
+		log.Println("proxyHandler", k, ":", strings.Join(v, ""))
 	}
 	targetUrl := "http://" + r.Host + r.RequestURI
 	/*r.URL可能是http://开头,也可能只有路径  */
@@ -69,7 +70,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, jar *cookiejar.Jar) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	proxyReq.Header = r.Header
+	proxyReq.Header = r.Header.Clone()
 
 	resp, err := client.Do(proxyReq)
 	if err != nil {

@@ -152,7 +152,14 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 			log.Println("Error parsing request:", err)
 			return
 		}
+		/* 这里只能删除第一次请求的 Proxy-Authorization */
 		req.Header.Del("Proxy-Authorization")
+		log.Println("auth Handle", "header:")
+
+		for k, v := range req.Header {
+			// fmt.Println("key:", k)
+			log.Println("auth Handle", k, ":", strings.Join(v, ""))
+		}
 		// server.Write(b[:n])
 		fmt.Println(req.RequestURI)
 		var requestTarget = req.RequestURI
@@ -164,6 +171,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		/* 有的服务器不支持这种 "GET http://speedtest.cn/ HTTP/1.1" */
 		req.RequestURI = u.RequestURI()
 		fmt.Println(req.RequestURI)
+		req.Header = req.Header.Clone()
 		err = req.Write(server)
 		if err != nil {
 			log.Println("Error writing request to server:", err)
