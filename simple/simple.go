@@ -131,12 +131,19 @@ func Handle(client net.Conn, httpUpstreamAddress string) {
 	} else {
 		var requestLine = string(b[:bytes.IndexByte(b[:], '\n')+1])
 		//如果使用 http 协议，需将从客户端得到的 http 请求转发给服务端
+		clienthost, port, err := net.SplitHostPort(client.RemoteAddr().String())
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		log.Println("clienthost:", clienthost)
+		log.Println("clientport:", port)
 		forwarded := fmt.Sprintf(
 			"for=%s;by=%s;host=%s;proto=%s",
-			client.RemoteAddr().String(), // 代理自己的标识或IP地址
-			client.LocalAddr().String(),  // 代理的标识
-			address,                      // 原始请求的目标主机名
-			"http",                       // 或者 "https" 根据实际协议
+			clienthost,                  // 代理自己的标识或IP地址
+			client.LocalAddr().String(), // 代理的标识
+			address,                     // 原始请求的目标主机名
+			"http",                      // 或者 "https" 根据实际协议
 		)
 		var headers map[string]string = map[string]string{"Forwarded": forwarded}
 		shouldReturn := WriteRequestLineAndHeadersWithRequestURI(requestLine, server, n, b, headers)
