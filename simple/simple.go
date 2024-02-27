@@ -151,6 +151,7 @@ func WriteRequestLineAndHeadersWithRequestURI(requestLine string, server net.Con
 	}
 	fmt.Println(output)
 	server.Write([]byte(output))
+	// server.Write([]byte("\r\n"))
 	server.Write(b[len(requestLine):n])
 	return false
 }
