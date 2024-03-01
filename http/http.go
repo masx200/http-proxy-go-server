@@ -9,7 +9,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
-	"net/http/cookiejar"
+	// "net/http/cookiejar"
 	"strings"
 	"time"
 	// "github.com/go-kit/kit/sd/etcd"
@@ -84,7 +84,7 @@ func parseForwardedHeader(header string) ([]ForwardedBy, error) {
 
 	return forwardedByList, nil
 }
-func proxyHandler(w http.ResponseWriter, r *http.Request, jar *cookiejar.Jar, LocalAddr string) {
+func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string) {
 	fmt.Println("method:", r.Method)
 	fmt.Println("url:", r.URL)
 	fmt.Println("host:", r.Host)
@@ -149,7 +149,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, jar *cookiejar.Jar, Lo
 			return http.ErrUseLastResponse /* 不进入重定向 */
 		},
 
-		Jar: jar} // 替换为你的代理服务器地址和端口
+		/* Jar: jar */} // 替换为你的代理服务器地址和端口
 	proxyReq, err := http.NewRequest(r.Method, targetUrl, bytes.NewReader(bodyBytes))
 	if err != nil {
 		log.Println(err)
@@ -202,10 +202,10 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, jar *cookiejar.Jar, Lo
 //		}
 //	}
 func Http(hostname string, port int) {
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
+	// jar, err := cookiejar.New(nil)
+	// if err != nil {
+	// 	log.Fatal("ListenAndServe: ", err)
+	// }
 	/* /* 有的服务器不支持这种 "GET http://speedtest.cn/ HTTP/1.1" */
 	// 监听本地8080端口
 	listener, err := net.Listen("tcp", hostname+":"+fmt.Sprint(port))
@@ -217,7 +217,7 @@ func Http(hostname string, port int) {
 	// 设置自定义处理器
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
-		proxyHandler(w, r, jar, LocalAddr)
+		proxyHandler(w, r /* jar, */, LocalAddr)
 	})
 
 	// 开始服务
