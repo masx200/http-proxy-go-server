@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/gin-gonic/gin"
 	// "bytes"
 	"bytes"
 	"fmt"
@@ -206,6 +207,9 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 //		}
 //	}
 func Http(hostname string, port int) {
+
+	engine := gin.Default()
+
 	// jar, err := cookiejar.New(nil)
 	// if err != nil {
 	// 	log.Fatal("ListenAndServe: ", err)
@@ -218,10 +222,15 @@ func Http(hostname string, port int) {
 	}
 	log.Printf("Proxy server started on port %s", listener.Addr())
 	var LocalAddr = listener.Addr().String()
+	engine.Any("/*path", func(c *gin.Context) {
+		var w = c.Writer
+		var r = c.Request
+		proxyHandler(w, r /* jar, */, LocalAddr)
+
+	})
 	// 设置自定义处理器
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-
-		proxyHandler(w, r /* jar, */, LocalAddr)
+		engine.Handler().ServeHTTP(w, r)
 	})
 
 	// 开始服务
