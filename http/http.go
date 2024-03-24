@@ -47,7 +47,6 @@ type ForwardedBy struct {
 // parseForwardedHeader 解析 "Forwarded" HTTP 头部信息，返回一个 ForwardedBy 结构体切片。
 // header: 代表被转发的请求的 "Forwarded" 头部字符串。
 // 返回值: 一个包含所有转发标识的 ForwardedBy 结构体切片，以及可能发生的错误。
-
 func parseForwardedHeader(header string) ([]ForwardedBy, error) {
 	var forwardedByList []ForwardedBy
 	parts := strings.Split(header, ", ")
