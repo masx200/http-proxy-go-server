@@ -183,7 +183,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if _, err := w.Write(bodyBytes2); err != nil {
+	if _, err := io.Copy(w, bytes.NewReader(bodyBytes2)); err != nil {
 		log.Println("Error writing response:", err)
 	}
 }
