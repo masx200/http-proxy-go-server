@@ -140,12 +140,12 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	// 创建一个使用了代理的客户端
 	defer r.Body.Close()
 	/* 请求body的问题 */
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	// bodyBytes, err := io.ReadAll(r.Body)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
 
 	// fmt.Println("body:", string(bodyBytes))
 	client := &http.Client{ /* Transport: newTransport("http://your_proxy_address:port") */
@@ -154,7 +154,8 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 		},
 
 		/* Jar: jar */} // 替换为你的代理服务器地址和端口
-	proxyReq, err := http.NewRequest(r.Method, targetUrl, bytes.NewReader(bodyBytes))
+	/* 流式处理,防止内存溢出 */
+	proxyReq, err := http.NewRequest(r.Method, targetUrl, r.Body /* bytes.NewReader(bodyBytes) */)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -169,21 +170,21 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 		return
 	}
 	defer resp.Body.Close()
-
+	w.WriteHeader(resp.StatusCode)
 	// Copy headers from the response to the client's response.
 	for k, v := range resp.Header {
 		w.Header()[k] = v
 	}
-	w.WriteHeader(resp.StatusCode)
 
 	// Copy the response body back to the client.
-	bodyBytes2, err := io.ReadAll(resp.Body)
+	/* bodyBytes2, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	}
-	if _, err := io.Copy(w, bytes.NewReader(bodyBytes2)); err != nil {
+	} */
+	/* 流式处理,防止内存溢出 */
+	if _, err := io.Copy(w, resp.Body /* bytes.NewReader(bodyBytes2) */); err != nil {
 		log.Println("Error writing response:", err)
 	}
 }
