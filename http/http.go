@@ -3,7 +3,7 @@ package http
 import (
 	"github.com/gin-gonic/gin"
 	// "bytes"
-	"bytes"
+	// "bytes"
 	"fmt"
 	"io"
 	"log"
