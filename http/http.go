@@ -1,7 +1,11 @@
 package http
 
 import (
+	"context"
+	"crypto/tls"
 	"github.com/gin-gonic/gin"
+	"github.com/masx200/http-proxy-go-server/options"
+
 	// "bytes"
 	// "bytes"
 	"fmt"
@@ -88,7 +92,7 @@ func parseForwardedHeader(header string) ([]ForwardedBy, error) {
 
 	return forwardedByList, nil
 }
-func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string) {
+func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, proxyoptions options.ProxyOptions) {
 	fmt.Println("method:", r.Method)
 	fmt.Println("url:", r.URL)
 	fmt.Println("host:", r.Host)
@@ -148,12 +152,66 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	// }
 
 	// fmt.Println("body:", string(bodyBytes))
+	transport := &http.Transport{
+		ForceAttemptHTTP2: true,
+		// 自定义 DialContext 函数
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			// 解析出原地址中的端口
+			//				_, port, err := net.SplitHostPort(addr)
+			//				if err != nil {
+			//					return nil, err
+			//				}
+			//				// 用指定的 IP 地址和原端口创建新地址
+			//				newAddr := net.JoinHostPort(serverIP, port)
+			//				// 创建 net.Dialer 实例
+			//				dialer := &net.Dialer{}
+			//				// 发起连接
+			//				return dialer.DialContext(ctx, network, newAddr)
+
+			return options.Proxy_net_DialContext(ctx, network, addr, proxyoptions)
+		},
+		DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+
+			//				// 解析出原地址中的端口
+			//				address, port, err := net.SplitHostPort(addr)
+			//				if err != nil {
+			//					return nil, err
+			//				}
+			//				// 用指定的 IP 地址和原端口创建新地址
+			//				newAddr := net.JoinHostPort(serverIP, port)
+			//				// 创建 net.Dialer 实例
+			//				dialer := &net.Dialer{}
+			//				// 发起连接
+			conn, err := options.Proxy_net_DialContext(ctx, network, addr, proxyoptions) //dialer.DialContext(ctx, network, newAddr)
+			if err != nil {
+				return nil, err
+			}
+			var address = addr
+			tlsConfig := &tls.Config{
+				ServerName: address,
+			}
+			// 创建 TLS 连接
+			tlsConn := tls.Client(conn, tlsConfig)
+			// 进行 TLS 握手
+			err = tlsConn.HandshakeContext(ctx)
+			if err != nil {
+				conn.Close()
+				return nil, err
+			}
+			return tlsConn, nil
+		},
+	}
 	client := &http.Client{ /* Transport: newTransport("http://your_proxy_address:port") */
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse /* 不进入重定向 */
 		},
 
 		/* Jar: jar */} // 替换为你的代理服务器地址和端口
+
+	if len(proxyoptions.Dohurls) > 0 {
+
+		client.Transport = transport
+	}
 	/* 流式处理,防止内存溢出 */
 	proxyReq, err := http.NewRequest(r.Method, targetUrl, r.Body /* bytes.NewReader(bodyBytes) */)
 	if err != nil {
@@ -206,7 +264,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 //			log.Fatal("Serve: ", err)
 //		}
 //	}
-func Http(hostname string, port int) {
+func Http(hostname string, port int, proxyoptions options.ProxyOptions) {
 
 	engine := gin.Default()
 
@@ -225,7 +283,7 @@ func Http(hostname string, port int) {
 	engine.Any("/*path", func(c *gin.Context) {
 		var w = c.Writer
 		var r = c.Request
-		proxyHandler(w, r /* jar, */, LocalAddr)
+		proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions)
 
 	})
 	// 设置自定义处理器
