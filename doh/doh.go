@@ -2,6 +2,7 @@ package doh
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"strings"
 	"sync"
@@ -26,7 +27,7 @@ func Dohnslookup(domain string, dnstype string, dohurl string, dohip ...string) 
 				fmt.Println("domain:", d, "dnstype:", t, "dohurl:", dohurl)
 				var msg = &dns.Msg{}
 				msg.SetQuestion(d+".", dns.StringToType[t])
-				fmt.Println(msg.String())
+				// fmt.Println(msg.String())
 
 				res, err := dns_experiment.DohClient(msg, dohurl, dohip...)
 				mutex.Lock()
@@ -69,6 +70,14 @@ func ResolveDomainToIPsWithDoh(domain string, dohurl string, dohip ...string) ([
 	if len(ips) == 0 {
 		return nil, []error{fmt.Errorf("no IP addresses found for domain %s", domain)}
 	}
+	// 将 []net.IP 转换为 []string
+	ipStrings := make([]string, len(ips))
+	for i, ip := range ips {
+		ipStrings[i] = ip.String()
+	}
+
+	// 打印日志
+	log.Println("dns resolved " + domain + " ips:" + strings.Join(ipStrings, ","))
 
 	return ips, nil
 }
