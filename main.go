@@ -59,7 +59,13 @@ func main() {
 	fmt.Println(
 		"dohurl:", dohurls.String())
 	fmt.Println("dohip:", dohips.String())
-	var proxyoptions = options.ProxyOptions{Dohurls: []string(dohurls), Dohips: []string(dohips)}
+	var proxyoptions = options.ProxyOptions{}
+
+	for i, dohurl := range dohurls {
+
+		dohip := dohips[i]
+		proxyoptions = append(proxyoptions, options.ProxyOption{Dohurl: dohurl, Dohip: dohip})
+	}
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
 		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, proxyoptions)
 		return

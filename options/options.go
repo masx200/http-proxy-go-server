@@ -27,14 +27,15 @@ func init() {
 	var _ error = ErrorArray{}
 }
 
-type ProxyOptions struct {
-	Dohurls []string
-	Dohips  []string
+type ProxyOption struct {
+	Dohurl string
+	Dohip  string
 }
+type ProxyOptions = []ProxyOption
 
 func Proxy_net_Dial(network string, address string, proxyoptions ProxyOptions) (net.Conn, error) {
 
-	if len(proxyoptions.Dohurls) > 0 {
+	if len(proxyoptions) > 0 {
 		//		var addr=address
 		//		_, port, err := net.SplitHostPort(addr)
 		//		if err != nil {
@@ -55,10 +56,12 @@ func Proxy_net_Dial(network string, address string, proxyoptions ProxyOptions) (
 }
 func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions) (net.Conn, error) {
 
-	if len(proxyoptions.Dohurls) > 0 {
+	if len(proxyoptions) > 0 {
 		var errorsaray = make([]error, 0)
-		for index, dohurl := range proxyoptions.Dohurls {
-			var dohip = proxyoptions.Dohips[index]
+		Shuffle(proxyoptions)
+		for _, dohurlopt := range proxyoptions {
+
+			var dohip = dohurlopt.Dohip
 			var ips []net.IP
 			var errors []error
 			hostname, port, err := net.SplitHostPort(address)
@@ -66,9 +69,9 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 				return nil, err
 			}
 			if dohip == "" {
-				ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurl)
+				ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurlopt.Dohurl)
 			} else {
-				ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurl, dohip)
+				ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurlopt.Dohurl, dohip)
 			}
 
 			if len(ips) == 0 && len(errors) > 0 {
