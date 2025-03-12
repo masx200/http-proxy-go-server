@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-
 	// "net/url"
 	"strings"
 
@@ -39,7 +38,7 @@ func Auth(hostname string, port int, username, password string, proxyoptions opt
 			return
 		}
 
-		go Handle(client, username, password, upstreamAddress)
+		go Handle(client, username, password, upstreamAddress, proxyoptions)
 	}
 }
 
@@ -61,7 +60,7 @@ func Auth(hostname string, port int, username, password string, proxyoptions opt
 // 	}
 // }
 
-func Handle(client net.Conn, username, password string, httpUpstreamAddress string) {
+func Handle(client net.Conn, username, password string, httpUpstreamAddress string, proxyoptions options.ProxyOptions) {
 	if client == nil {
 		return
 	}
@@ -143,11 +142,18 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		upstreamAddress = httpUpstreamAddress
 	}
 	//获得了请求的 host 和 port，向服务端发起 tcp 连接
-	server, err := net.Dial("tcp", upstreamAddress)
-	if err != nil {
-		log.Println(err)
-		fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
-		return
+	server, errors := options.Proxy_net_Dial("tcp", upstreamAddress, proxyoptions) // net.Dial("tcp", upstreamAddress)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+	// 	return
+	// }
+	for _, err := range errors {
+		if err != nil {
+			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+			log.Println(err)
+			return
+		}
 	}
 	//如果使用 https 协议，需先向客户端表示连接建立完毕
 	if method == "CONNECT" {
