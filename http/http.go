@@ -96,7 +96,7 @@ func parseForwardedHeader(header string) ([]ForwardedBy, error) {
 
 	return forwardedByList, nil
 }
-func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, proxyoptions options.ProxyOptions) {
+func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, proxyoptions options.ProxyOptions, username, password string) {
 	fmt.Println("method:", r.Method)
 	fmt.Println("url:", r.URL)
 	fmt.Println("host:", r.Host)
@@ -274,7 +274,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 //			log.Fatal("Serve: ", err)
 //		}
 //	}
-func Http(hostname string, port int, proxyoptions options.ProxyOptions) {
+func Http(hostname string, port int, proxyoptions options.ProxyOptions, username, password string) {
 
 	engine := gin.Default()
 
@@ -293,16 +293,19 @@ func Http(hostname string, port int, proxyoptions options.ProxyOptions) {
 	engine.Use(func(c *gin.Context) {
 		var w = c.Writer
 		var r = c.Request
-		proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions)
+		proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, username, password)
 		c.Abort()
 	})
 	// 设置自定义处理器
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	//http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	//engine.Handler().ServeHTTP(w, r)
+	//})
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		engine.Handler().ServeHTTP(w, r)
 	})
-
 	// 开始服务
-	err = http.Serve(listener, nil)
+	err = http.Serve(listener, mux)
 	if err != nil {
 		log.Fatal("Serve: ", err)
 	}

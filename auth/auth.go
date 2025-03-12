@@ -29,7 +29,7 @@ func Auth(hostname string, port int, username, password string, proxyoptions opt
 	xh := http_server.GenerateRandomLoopbackIP()
 	x1 := http_server.GenerateRandomIntPort()
 	var upstreamAddress string = xh + ":" + fmt.Sprint(rune(x1))
-	go http_server.Http(xh, x1, proxyoptions)
+	go http_server.Http(xh, x1, proxyoptions, username, password)
 	// 死循环，每当遇到连接时，调用 handle
 	for {
 		client, err := l.Accept()
@@ -167,7 +167,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 			return
 		}
 		/* 这里只能删除第一次请求的 Proxy-Authorization */
-		req.Header.Del("Proxy-Authorization")
+		//req.Header.Del("Proxy-Authorization")
 		clienthost, port, err := net.SplitHostPort(client.RemoteAddr().String())
 		if err != nil {
 			fmt.Fprint(client, "HTTP/1.1 400 Bad Request\r\n\r\n")
