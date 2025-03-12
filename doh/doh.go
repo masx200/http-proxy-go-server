@@ -10,9 +10,10 @@ import (
 	"github.com/miekg/dns"
 )
 
-func Dohnslookup(domain string, dnstype string, dohurl string, dohip ...string) []*dns.Msg {
+func Dohnslookup(domain string, dnstype string, dohurl string, dohip ...string) ([]*dns.Msg, []error) {
 	fmt.Println("domain:", domain, "dnstype:", dnstype, "dohurl:", dohurl)
 	//results := make([]*dns.Msg, 0)
+	var errors = make([]error, 0)
 	var results = make([]*dns.Msg, 0)
 	var wg sync.WaitGroup
 	//mutex
@@ -28,27 +29,31 @@ func Dohnslookup(domain string, dnstype string, dohurl string, dohip ...string) 
 				fmt.Println(msg.String())
 
 				res, err := dns_experiment.DohClient(msg, dohurl, dohip...)
+				mutex.Lock()
+
+				defer mutex.Unlock()
 				if err != nil {
 					fmt.Println(err)
+					errors = append(errors, err)
 					return
 
 				}
 				fmt.Println(res.String())
-				mutex.Lock()
 
-				defer mutex.Unlock()
 				results = append(results, res)
 			}(d, t)
 
 		}
 	}
 	wg.Wait()
-	return results
+	return results, errors
 }
-func ResolveDomainToIPsWithDoh(domain string, dohurl string, dohip ...string) ([]net.IP, error) { // 使用 A 和 AAAA 记录类型查询域名
+func ResolveDomainToIPsWithDoh(domain string, dohurl string, dohip ...string) ([]net.IP, []error) { // 使用 A 和 AAAA 记录类型查询域名
 	dnstypes := "A,AAAA"
-	responses := Dohnslookup(domain, dnstypes, dohurl, dohip...)
-
+	responses, errors := Dohnslookup(domain, dnstypes, dohurl, dohip...)
+	if len(responses) == 0 && len(errors) > 0 {
+		return nil, errors
+	}
 	var ips []net.IP
 	for _, response := range responses {
 		for _, record := range response.Answer {
@@ -62,7 +67,7 @@ func ResolveDomainToIPsWithDoh(domain string, dohurl string, dohip ...string) ([
 	}
 
 	if len(ips) == 0 {
-		return nil, fmt.Errorf("no IP addresses found for domain %s", domain)
+		return nil, []error{fmt.Errorf("no IP addresses found for domain %s", domain)}
 	}
 
 	return ips, nil
