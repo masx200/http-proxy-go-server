@@ -38,7 +38,7 @@ func Tls_auth(server_cert string, server_key, hostname string, port int, usernam
 		}
 
 		// go handle(client, username, password)
-		go auth.Handle(client, username, password, upstreamAddress)
+		go auth.Handle(client, username, password, upstreamAddress,proxyoptions)
 	}
 }
 

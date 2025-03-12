@@ -9,6 +9,10 @@
 http-proxy-go-server
 
 ```
+-dohip value
+        DOH IP (可重复)
+-dohurl value
+        DOH URL (可重复)
 -hostname string
       an String value for hostname (default "0.0.0.0")
 -password string
