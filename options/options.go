@@ -2,8 +2,10 @@ package options
 
 import (
 	"context"
+	"math/rand"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/masx200/http-proxy-go-server/doh"
 )
@@ -69,6 +71,7 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 				continue
 			} else {
 				lengthip := len(ips)
+				Shuffle(ips)
 				for i := 0; i < lengthip; i++ {
 
 					var serverIP = ips[i].String()
@@ -96,4 +99,12 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 		connection, err1 := dialer.DialContext(ctx, network, address)
 		return connection, err1
 	}
+}
+
+// Shuffle 对切片进行随机排序
+func Shuffle[T any](slice []T) {
+	var rand1 = rand.New(rand.NewSource(time.Now().UnixNano())) // 使用当前时间作为随机种子
+	rand1.Shuffle(len(slice), func(i, j int) {
+		slice[i], slice[j] = slice[j], slice[i]
+	})
 }
