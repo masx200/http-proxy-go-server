@@ -290,11 +290,11 @@ func Http(hostname string, port int, proxyoptions options.ProxyOptions) {
 	}
 	log.Printf("Proxy server started on port %s", listener.Addr())
 	var LocalAddr = listener.Addr().String()
-	engine.Use( func(c *gin.Context) {
+	engine.Use(func(c *gin.Context) {
 		var w = c.Writer
 		var r = c.Request
 		proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions)
-c.Abort()
+		c.Abort()
 	})
 	// 设置自定义处理器
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
