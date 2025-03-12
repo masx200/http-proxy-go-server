@@ -2,6 +2,7 @@ package options
 
 import (
 	"context"
+	"log"
 	"math/rand"
 	"net"
 	"strings"
@@ -51,6 +52,12 @@ func Proxy_net_Dial(network string, address string, proxyoptions ProxyOptions) (
 		return Proxy_net_DialContext(ctx, network, address, proxyoptions)
 	} else {
 		connection, err1 := net.Dial(network, address)
+
+		if err1 != nil {
+			log.Println("failure connect to " + address + " by " + network + "" + err1.Error())
+			return nil, err1
+		}
+		log.Println("success connect to " + address + " by " + network + "")
 		return connection, err1
 	}
 }
@@ -93,6 +100,8 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 						errorsaray = append(errorsaray, err1)
 						continue
 					} else {
+
+						log.Println("success connect to " + address + " by " + network + " by " + dohurlopt.Dohurl + " by " + dohip + " by " + serverIP)
 						return connection, err1
 					}
 				}
@@ -105,6 +114,11 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 	} else {
 		dialer := &net.Dialer{}
 		connection, err1 := dialer.DialContext(ctx, network, address)
+		if err1 != nil {
+			log.Println("failure connect to " + address + " by " + network + "" + err1.Error())
+			return nil, err1
+		}
+		log.Println("success connect to " + address + " by " + network + "")
 		return connection, err1
 	}
 }
