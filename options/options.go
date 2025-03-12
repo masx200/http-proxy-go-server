@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/masx200/http-proxy-go-server/doh"
+	"github.com/masx200/http-proxy-go-server/hosts"
 )
 
 type ErrorArray []error
@@ -35,7 +36,7 @@ type ProxyOption struct {
 type ProxyOptions = []ProxyOption
 
 func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions) (net.Conn, error) {
-	hostname, _, err := net.SplitHostPort(addr)
+	hostname, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
 	}
@@ -45,6 +46,43 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions) (net
 		//				// 发起连接
 		return dialer.DialContext(ctx, network, addr)
 	}
+	var ips []net.IP
+	// var errors []error
+	// hostname, _, err := net.SplitHostPort(address)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	ips, err = hosts.ResolveDomainToIPsWithHosts(hostname)
+
+	if len(ips) > 0 {
+		Shuffle(ips)
+		lengthip := len(ips)
+		var errorsaray = make([]error, 0)
+		for i := 0; i < lengthip; i++ {
+
+			var serverIP = ips[i].String()
+			newAddr := net.JoinHostPort(serverIP, port)
+			// 创建 net.Dialer 实例
+			//				dialer := &net.Dialer{}
+			dialer := &net.Dialer{}
+			connection, err1 := dialer.DialContext(ctx, network, newAddr)
+
+			if err1 != nil {
+				errorsaray = append(errorsaray, err1)
+				continue
+			} else {
+
+				log.Println("success connect to addr=" + addr + " by network=" + network + " by serverIP=" + serverIP)
+				return connection, err1
+			}
+		}
+		return nil, ErrorArray(errorsaray)
+	}
+	if len(ips) == 0 && err != nil {
+		log.Println(err)
+	}
+
+	//调用ResolveDomainToIPsWithHosts函数解析域名
 	if len(proxyoptions) > 0 {
 		//		var addr=address
 		//		_, port, err := net.SplitHostPort(addr)
@@ -71,7 +109,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions) (net
 	}
 }
 func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions) (net.Conn, error) {
-	hostname, _, err := net.SplitHostPort(address)
+	hostname, port, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, err
 	}
@@ -81,6 +119,43 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 		//				// 发起连接
 		return dialer.DialContext(ctx, network, address)
 	}
+	var ips []net.IP
+	// var errors []error
+	// hostname, _, err := net.SplitHostPort(address)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	ips, err = hosts.ResolveDomainToIPsWithHosts(hostname)
+
+	if len(ips) > 0 {
+		Shuffle(ips)
+		lengthip := len(ips)
+		var errorsaray = make([]error, 0)
+		for i := 0; i < lengthip; i++ {
+
+			var serverIP = ips[i].String()
+			newAddr := net.JoinHostPort(serverIP, port)
+			// 创建 net.Dialer 实例
+			//				dialer := &net.Dialer{}
+			dialer := &net.Dialer{}
+			connection, err1 := dialer.DialContext(ctx, network, newAddr)
+
+			if err1 != nil {
+				errorsaray = append(errorsaray, err1)
+				continue
+			} else {
+
+				log.Println("success connect to addr=" + address + " by network=" + network + " by serverIP=" + serverIP)
+				return connection, err1
+			}
+		}
+		return nil, ErrorArray(errorsaray)
+	}
+	if len(ips) == 0 && err != nil {
+		log.Println(err)
+	}
+
+	//调用ResolveDomainToIPsWithHosts函数解析域名
 	if len(proxyoptions) > 0 {
 		var errorsaray = make([]error, 0)
 		Shuffle(proxyoptions)
