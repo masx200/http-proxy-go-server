@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	http_server "github.com/masx200/http-proxy-go-server/http"
 	"io"
 	"log"
 	"net"
@@ -14,6 +13,7 @@ import (
 	// "net/url"
 	"strings"
 
+	http_server "github.com/masx200/http-proxy-go-server/http"
 	"github.com/masx200/http-proxy-go-server/simple"
 )
 
@@ -140,6 +140,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 	server, err := net.Dial("tcp", upstreamAddress)
 	if err != nil {
 		log.Println(err)
+		fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
 		return
 	}
 	//如果使用 https 协议，需先向客户端表示连接建立完毕
