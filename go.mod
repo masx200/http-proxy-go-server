@@ -1,7 +1,8 @@
 module github.com/masx200/http-proxy-go-server
 
-go 1.21.6
-toolchain go1.22.5
+go 1.22
+
+toolchain go1.23.2
 
 require github.com/gin-gonic/gin v1.10.0
 
