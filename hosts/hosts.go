@@ -2,6 +2,7 @@ package hosts
 
 import (
 	"bufio"
+	"log"
 	"net"
 	"os"
 	"runtime"
@@ -49,6 +50,14 @@ func ResolveDomainToIPsWithHosts(domain string) ([]net.IP, error) {
 	if len(ips) == 0 {
 		return nil, os.ErrNotExist
 	}
+	// 将 []net.IP 转换为 []string
+	ipStrings := make([]string, len(ips))
+	for i, ip := range ips {
+		ipStrings[i] = ip.String()
+	}
+
+	// 打印日志
+	log.Println("hosts resolved " + domain + " ips:" + strings.Join(ipStrings, ","))
 
 	return ips, nil
 }
