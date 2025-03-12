@@ -38,7 +38,7 @@ func Dohnslookup(domain string, dnstype string, dohurl string, dohip ...string) 
 					return
 
 				}
-				fmt.Println(res.String())
+				// fmt.Println(res.String())
 
 				results = append(results, res)
 			}(d, t)

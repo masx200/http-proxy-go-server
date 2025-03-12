@@ -34,8 +34,17 @@ type ProxyOption struct {
 }
 type ProxyOptions = []ProxyOption
 
-func Proxy_net_Dial(network string, address string, proxyoptions ProxyOptions) (net.Conn, error) {
-
+func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions) (net.Conn, error) {
+	hostname, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return nil, err
+	}
+	var ctx = context.Background()
+	if IsIP(hostname) {
+		dialer := &net.Dialer{}
+		//				// 发起连接
+		return dialer.DialContext(ctx, network, addr)
+	}
 	if len(proxyoptions) > 0 {
 		//		var addr=address
 		//		_, port, err := net.SplitHostPort(addr)
@@ -49,20 +58,29 @@ func Proxy_net_Dial(network string, address string, proxyoptions ProxyOptions) (
 		//		// 发起连接
 		//		return dialer.DialContext(ctx, network, newAddr)
 		var ctx = context.Background()
-		return Proxy_net_DialContext(ctx, network, address, proxyoptions)
+		return Proxy_net_DialContext(ctx, network, addr, proxyoptions)
 	} else {
-		connection, err1 := net.Dial(network, address)
+		connection, err1 := net.Dial(network, addr)
 
 		if err1 != nil {
-			log.Println("failure connect to " + address + " by " + network + "" + err1.Error())
+			log.Println("failure connect to " + addr + " by " + network + "" + err1.Error())
 			return nil, err1
 		}
-		log.Println("success connect to " + address + " by " + network + "")
+		log.Println("success connect to " + addr + " by " + network + "")
 		return connection, err1
 	}
 }
 func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions) (net.Conn, error) {
+	hostname, _, err := net.SplitHostPort(address)
+	if err != nil {
+		return nil, err
+	}
 
+	if IsIP(hostname) {
+		dialer := &net.Dialer{}
+		//				// 发起连接
+		return dialer.DialContext(ctx, network, address)
+	}
 	if len(proxyoptions) > 0 {
 		var errorsaray = make([]error, 0)
 		Shuffle(proxyoptions)
@@ -129,4 +147,9 @@ func Shuffle[T any](slice []T) {
 	rand1.Shuffle(len(slice), func(i, j int) {
 		slice[i], slice[j] = slice[j], slice[i]
 	})
+}
+
+// IsIP 判断给定的字符串是否是有效的 IPv4 或 IPv6 地址。
+func IsIP(s string) bool {
+	return net.ParseIP(s) != nil
 }

@@ -116,7 +116,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 	}
 	fmt.Println("address:" + address)
 	//获得了请求的 host 和 port，向服务端发起 tcp 连接
-	
+
 	var upstreamAddress string
 	if method == "CONNECT" {
 		upstreamAddress = address

@@ -3,23 +3,27 @@ package http
 import (
 	"context"
 	"crypto/tls"
-	// "bytes"
-	// "bytes"
 	"fmt"
 	"io"
 	"log"
 	"math/rand"
 	"net"
 	"net/http"
-	// "net/http/cookiejar"
 	"strings"
 	"time"
-	// "net/url"
 
 	"github.com/gin-gonic/gin"
 	"github.com/masx200/http-proxy-go-server/options"
-	// "github.com/go-kit/kit/sd/etcd"
 )
+
+// "bytes"
+// "bytes"
+
+// "net/http/cookiejar"
+
+// "net/url"
+
+// "github.com/go-kit/kit/sd/etcd"
 
 // Create a custom transport that uses the proxy for HTTP requests.
 // func newTransport(proxyAddress string) *http.Transport {
@@ -157,10 +161,16 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 		// 自定义 DialContext 函数
 		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 			// 解析出原地址中的端口
-			//				_, port, err := net.SplitHostPort(addr)
-			//				if err != nil {
-			//					return nil, err
-			//				}
+			hostname, _, err := net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
+
+			if IsIP(hostname) {
+				dialer := &net.Dialer{}
+				//				// 发起连接
+				return dialer.DialContext(ctx, network, addr)
+			}
 			//				// 用指定的 IP 地址和原端口创建新地址
 			//				newAddr := net.JoinHostPort(serverIP, port)
 			//				// 创建 net.Dialer 实例
@@ -173,10 +183,10 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 		DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 
 			//				// 解析出原地址中的端口
-			address, _, err := net.SplitHostPort(addr)
-			//				if err != nil {
-			//					return nil, err
-			//				}
+			hostname, _, err := net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
 			//				// 用指定的 IP 地址和原端口创建新地址
 			//				newAddr := net.JoinHostPort(serverIP, port)
 			//				// 创建 net.Dialer 实例
@@ -188,7 +198,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 			}
 			//			var address = addr
 			tlsConfig := &tls.Config{
-				ServerName: address,
+				ServerName: hostname,
 			}
 			// 创建 TLS 连接
 			tlsConn := tls.Client(conn, tlsConfig)
@@ -325,4 +335,9 @@ func generateRandomInt() int {
 	minport := 10000
 	maxport := 65535
 	return rand.Intn(maxport-minport+1) + minport
+}
+
+// IsIP 判断给定的字符串是否是有效的 IPv4 或 IPv6 地址。
+func IsIP(s string) bool {
+	return net.ParseIP(s) != nil
 }
