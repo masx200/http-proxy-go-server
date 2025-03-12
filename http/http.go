@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"crypto/tls"
-
 	// "bytes"
 	// "bytes"
 	"fmt"
@@ -12,11 +11,9 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
-
 	// "net/http/cookiejar"
 	"strings"
 	"time"
-
 	// "net/url"
 
 	"github.com/gin-gonic/gin"
