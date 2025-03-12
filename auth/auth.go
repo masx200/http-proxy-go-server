@@ -11,11 +11,11 @@ import (
 	"net/http"
 	"net/url"
 	// "net/url"
-	"strings"
-
 	http_server "github.com/masx200/http-proxy-go-server/http"
 	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/http-proxy-go-server/simple"
+	"strconv"
+	"strings"
 )
 
 // options.ProxyOptions
@@ -99,7 +99,10 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 
 	// 验证身份
 	if !isAuthenticated(proxyAuth, username, password) {
-		fmt.Fprint(client, "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"Proxy\"\r\n\r\n")
+		var body = "407 Proxy Authentication Required"
+		fmt.Fprint(client, "HTTP/1.1 407 Proxy Authentication Required\r\ncontent-length: "+strconv.Itoa(len(body))+"\r\nProxy-Authenticate: Basic realm=\"Proxy\"\r\n\r\n")
+		fmt.Fprint(client, body)
+
 		fmt.Println("身份验证失败")
 		return
 	}
@@ -148,6 +151,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
 		return
 	}
+	log.Println("连接成功：" + upstreamAddress)
 	//	for _, err := range errors {
 	//		if err != nil {
 	//			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
