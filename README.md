@@ -1,5 +1,11 @@
 # http-proxy-go-server
 
+`http-proxy-go-server` 是一个基于 Golang（Go 语言）实现的 HTTP
+代理服务器。这个服务器允许你通过指定的 IP 地址和端口作为 HTTP
+代理来转发网络请求。从提供的命令行参数来看，它的主要功能和配置选项如下：
+
+## usage
+
 http-proxy-go-server
 
 ```
@@ -16,10 +22,6 @@ http-proxy-go-server
 -username string
       username
 ```
-
-`http-proxy-go-server` 是一个基于 Golang（Go 语言）实现的 HTTP
-代理服务器。这个服务器允许你通过指定的 IP 地址和端口作为 HTTP
-代理来转发网络请求。从提供的命令行参数来看，它的主要功能和配置选项如下：
 
 1. `-hostname string`：设置服务器绑定的主机名，默认为
    "0.0.0.0"，表示服务器将监听所有可用的网络接口。
