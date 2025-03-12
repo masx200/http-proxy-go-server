@@ -60,12 +60,17 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 		for index, dohurl := range proxyoptions.Dohurls {
 			var dohip = proxyoptions.Dohips[index]
 			var ips []net.IP
-
+			var errors []error
 			hostname, port, err := net.SplitHostPort(address)
 			if err != nil {
 				return nil, err
 			}
-			ips, errors := doh.ResolveDomainToIPsWithDoh(hostname, dohurl, dohip)
+			if dohip == "" {
+				ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurl)
+			} else {
+				ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurl, dohip)
+			}
+
 			if len(ips) == 0 && len(errors) > 0 {
 				errorsaray = append(errorsaray, errors...)
 				continue
