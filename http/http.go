@@ -173,7 +173,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 		DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 
 			//				// 解析出原地址中的端口
-			//				address, port, err := net.SplitHostPort(addr)
+			address, _, err := net.SplitHostPort(addr)
 			//				if err != nil {
 			//					return nil, err
 			//				}
@@ -186,7 +186,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 			if err != nil {
 				return nil, err
 			}
-			var address = addr
+			//			var address = addr
 			tlsConfig := &tls.Config{
 				ServerName: address,
 			}
