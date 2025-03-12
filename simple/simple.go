@@ -29,6 +29,7 @@ func Simple(hostname string, port int) {
 		client, err := l.Accept()
 		if err != nil {
 			log.Panic(err)
+			return
 		}
 
 		go Handle(client, upstreamAddress)

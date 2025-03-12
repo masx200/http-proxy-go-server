@@ -33,6 +33,7 @@ func Auth(hostname string, port int, username, password string) {
 		client, err := l.Accept()
 		if err != nil {
 			log.Panic(err)
+			return
 		}
 
 		go Handle(client, username, password, upstreamAddress)
@@ -71,6 +72,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 	n, err := client.Read(b[:])
 	if err != nil {
 		log.Println(err)
+		fmt.Fprint(client, "HTTP/1.1 400 Bad Request\r\n\r\n")
 		return
 	}
 
@@ -126,6 +128,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		address, err = simple.ExtractAddressFromOtherRequestLine(line)
 		if err != nil {
 			log.Println(err)
+			fmt.Fprint(client, "HTTP/1.1 400 Bad Request\r\n\r\n")
 			return
 		}
 	}
@@ -150,6 +153,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 
 		req, err := http.ReadRequest(bufio.NewReader(bytes.NewBuffer(b[:n])))
 		if err != nil {
+			fmt.Fprint(client, "HTTP/1.1 400 Bad Request\r\n\r\n")
 			log.Println("Error parsing request:", err)
 			return
 		}
@@ -157,6 +161,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		req.Header.Del("Proxy-Authorization")
 		clienthost, port, err := net.SplitHostPort(client.RemoteAddr().String())
 		if err != nil {
+			fmt.Fprint(client, "HTTP/1.1 400 Bad Request\r\n\r\n")
 			log.Println(err)
 			return
 		}
@@ -182,6 +187,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		u, err := url.Parse(requestTarget)
 		if err != nil {
 			fmt.Println(fmt.Errorf("failed to parse url: %w", err))
+			fmt.Fprint(client, "HTTP/1.1 500 Internal Server Error\r\n\r\n")
 			return
 		}
 		/* 有的服务器不支持这种 "GET http://speedtest.cn/ HTTP/1.1" */
@@ -191,6 +197,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		err = req.Write(server)
 		if err != nil {
 			log.Println("Error writing request to server:", err)
+			fmt.Fprint(client, "HTTP/1.1 500 Internal Server Error\r\n\r\n")
 			return
 		}
 	}
