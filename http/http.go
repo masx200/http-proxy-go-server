@@ -129,7 +129,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	log.Println("forwardedByList:", forwardedByList)
 	if len(forwardedByList) != len(setFromForwardedBy(forwardedByList)) {
 		w.WriteHeader(508)
-		fmt.Fprintln(w, "Duplicate 'by' identifiers found in 'Forwarded' header.")
+		fmt.Fprintln(w, "508 Loop Detected")
 		log.Println("Duplicate 'by' identifiers found in 'Forwarded' header.")
 		return
 	}
@@ -290,11 +290,11 @@ func Http(hostname string, port int, proxyoptions options.ProxyOptions) {
 	}
 	log.Printf("Proxy server started on port %s", listener.Addr())
 	var LocalAddr = listener.Addr().String()
-	engine.Any("/*path", func(c *gin.Context) {
+	engine.Use( func(c *gin.Context) {
 		var w = c.Writer
 		var r = c.Request
 		proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions)
-
+c.Abort()
 	})
 	// 设置自定义处理器
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
