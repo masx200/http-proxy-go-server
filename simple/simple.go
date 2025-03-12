@@ -123,20 +123,20 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 	} else {
 		upstreamAddress = httpUpstreamAddress
 	}
-	server, errors := options.Proxy_net_Dial("tcp", upstreamAddress, proxyoptions) //net.Dial("tcp", upstreamAddress)
+	server, err := options.Proxy_net_Dial("tcp", upstreamAddress, proxyoptions) //net.Dial("tcp", upstreamAddress)
 
-	for _, err := range errors {
-		if err != nil {
-			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
-			log.Println(err)
-			return
-		}
+	//	for _, err := range errors {
+	//		if err != nil {
+	//			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+	//			log.Println(err)
+	//			return
+	//		}
+	//	}
+	if err != nil {
+		log.Println(err)
+		fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+		return
 	}
-	// if err != nil {
-	// 	log.Println(err)
-	// 	fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
-	// 	return
-	// }
 	//如果使用 https 协议，需先向客户端表示连接建立完毕
 	if method == "CONNECT" {
 		fmt.Fprint(client, "HTTP/1.1 200 Connection established\r\n\r\n")

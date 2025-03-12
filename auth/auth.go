@@ -142,19 +142,19 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		upstreamAddress = httpUpstreamAddress
 	}
 	//获得了请求的 host 和 port，向服务端发起 tcp 连接
-	server, errors := options.Proxy_net_Dial("tcp", upstreamAddress, proxyoptions) // net.Dial("tcp", upstreamAddress)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
-	// 	return
-	// }
-	for _, err := range errors {
-		if err != nil {
-			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
-			log.Println(err)
-			return
-		}
+	server, err := options.Proxy_net_Dial("tcp", upstreamAddress, proxyoptions) // net.Dial("tcp", upstreamAddress)
+	if err != nil {
+		log.Println(err)
+		fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+		return
 	}
+	//	for _, err := range errors {
+	//		if err != nil {
+	//			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+	//			log.Println(err)
+	//			return
+	//		}
+	//	}
 	//如果使用 https 协议，需先向客户端表示连接建立完毕
 	if method == "CONNECT" {
 		fmt.Fprint(client, "HTTP/1.1 200 Connection established\r\n\r\n")
