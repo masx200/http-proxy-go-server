@@ -3,8 +3,6 @@ package http
 import (
 	"context"
 	"crypto/tls"
-	"github.com/gin-gonic/gin"
-	"github.com/masx200/http-proxy-go-server/options"
 
 	// "bytes"
 	// "bytes"
@@ -14,11 +12,16 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+
 	// "net/http/cookiejar"
 	"strings"
 	"time"
-	// "github.com/go-kit/kit/sd/etcd"
+
 	// "net/url"
+
+	"github.com/gin-gonic/gin"
+	"github.com/masx200/http-proxy-go-server/options"
+	// "github.com/go-kit/kit/sd/etcd"
 )
 
 // Create a custom transport that uses the proxy for HTTP requests.
@@ -208,7 +211,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 
 		/* Jar: jar */} // 替换为你的代理服务器地址和端口
 
-	if len(proxyoptions.Dohurls) > 0 {
+	if len(proxyoptions) > 0 {
 
 		client.Transport = transport
 	}
