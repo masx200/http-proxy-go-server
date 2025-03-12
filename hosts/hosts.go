@@ -75,10 +75,10 @@ func ParseHostsFile(filePath string) (map[string][]string, error) {
 			continue
 		}
 
-		ip := parts[0]
-		for _, domain := range parts[1:] {
-			hostsMap[domain] = append(hostsMap[domain], ip)
-		}
+		ip := strings.TrimSpace(parts[0])
+		domain := strings.TrimSpace(parts[1])
+		hostsMap[domain] = append(hostsMap[domain], ip)
+
 	}
 
 	if err := scanner.Err(); err != nil {
