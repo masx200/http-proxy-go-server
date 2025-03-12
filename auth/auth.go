@@ -10,14 +10,17 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+
 	// "net/url"
 	"strings"
 
 	http_server "github.com/masx200/http-proxy-go-server/http"
+	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/http-proxy-go-server/simple"
 )
 
-func Auth(hostname string, port int, username, password string) {
+// options.ProxyOptions
+func Auth(hostname string, port int, username, password string, proxyoptions options.ProxyOptions) {
 	// tcp 连接，监听 8080 端口
 	l, err := net.Listen("tcp", hostname+":"+fmt.Sprint(port))
 	if err != nil {

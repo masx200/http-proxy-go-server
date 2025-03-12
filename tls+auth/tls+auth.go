@@ -3,13 +3,14 @@ package tls_auth
 import (
 	"crypto/tls"
 	"fmt"
-	http_server "github.com/masx200/http-proxy-go-server/http"
 	"log"
 
 	"github.com/masx200/http-proxy-go-server/auth"
+	http_server "github.com/masx200/http-proxy-go-server/http"
+	"github.com/masx200/http-proxy-go-server/options"
 )
 
-func Tls_auth(server_cert string, server_key, hostname string, port int, username, password string) {
+func Tls_auth(server_cert string, server_key, hostname string, port int, username, password string, proxyoptions options.ProxyOptions) {
 
 	cert, err := tls.LoadX509KeyPair(server_cert, server_key)
 	if err != nil {

@@ -6,10 +6,11 @@ import (
 	"log"
 
 	http_server "github.com/masx200/http-proxy-go-server/http"
+	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/http-proxy-go-server/simple"
 )
 
-func Tls(server_cert string, server_key, hostname string, port int) {
+func Tls(server_cert string, server_key, hostname string, port int, proxyoptions options.ProxyOptions) {
 
 	cert, err := tls.LoadX509KeyPair(server_cert, server_key)
 	if err != nil {

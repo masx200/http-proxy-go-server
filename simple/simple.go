@@ -11,9 +11,10 @@ import (
 	"strings"
 
 	http_server "github.com/masx200/http-proxy-go-server/http"
+	"github.com/masx200/http-proxy-go-server/options"
 )
 
-func Simple(hostname string, port int) {
+func Simple(hostname string, port int, proxyoptions options.ProxyOptions) {
 	// tcp 连接，监听 8080 端口
 	l, err := net.Listen("tcp", hostname+":"+fmt.Sprint(port))
 	if err != nil {

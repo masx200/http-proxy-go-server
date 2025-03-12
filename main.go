@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/masx200/http-proxy-go-server/auth"
+	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/http-proxy-go-server/simple"
 	"github.com/masx200/http-proxy-go-server/tls"
 	tls_auth "github.com/masx200/http-proxy-go-server/tls+auth"
@@ -14,7 +15,7 @@ import (
 type multiString []string
 
 func (m *multiString) String() string {
-	return "["+strings.Join(*m, ", ")+"]"
+	return "[" + strings.Join(*m, ", ") + "]"
 }
 
 func (m *multiString) Set(value string) error {
@@ -57,23 +58,26 @@ func main() {
 		"password:", *password)
 	fmt.Println(
 		"dohurl:", dohurls.String())
-	fmt.Println(
-		"dohip:", dohips.String())
-
+	fmt.Println("dohip:", dohips.String())
+	var proxyoptions = options.ProxyOptions{Dohurls: []string(dohurls), Dohips: []string(dohips)}
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
-		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password)
+		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, proxyoptions)
 		return
 	}
+	// if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
+	// 	tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password)
+	// 	return
+	// }
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) == 0 && len(*server_key) == 0 {
-		auth.Auth(*hostname, *port, *username, *password)
+		auth.Auth(*hostname, *port, *username, *password, proxyoptions)
 		return
 	}
 	if len(*username) == 0 && len(*password) == 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
-		tls.Tls(*server_cert, *server_key, *hostname, *port)
+		tls.Tls(*server_cert, *server_key, *hostname, *port, proxyoptions)
 		return
 	}
 	if len(*username) == 0 && len(*password) == 0 && len(*server_cert) == 0 && len(*server_key) == 0 {
-		simple.Simple(*hostname, *port)
+		simple.Simple(*hostname, *port, proxyoptions)
 		return
 	}
 
