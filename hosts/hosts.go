@@ -9,7 +9,7 @@ import (
 )
 
 // ResolveDomainToIPs 根据域名解析出对应的 IP 地址列表
-func ResolveDomainToIPs(domain string) ([]net.IP, error) {
+func ResolveDomainToIPsWithHosts(domain string) ([]net.IP, error) {
 	// 根据操作系统选择 hosts 文件路径
 	var hostsFilePath string
 	switch runtime.GOOS {

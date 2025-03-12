@@ -2,12 +2,14 @@ package doh
 
 import (
 	"fmt"
+	"net"
 	"strings"
 	"sync"
 
-	"github.com/miekg/dns"
 	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
+	"github.com/miekg/dns"
 )
+
 func Dohnslookup(domain string, dnstype string, dohurl string, dohip ...string) []*dns.Msg {
 	fmt.Println("domain:", domain, "dnstype:", dnstype, "dohurl:", dohurl)
 	//results := make([]*dns.Msg, 0)
@@ -42,4 +44,26 @@ func Dohnslookup(domain string, dnstype string, dohurl string, dohip ...string) 
 	}
 	wg.Wait()
 	return results
+}
+func ResolveDomainToIPsWithDoh(domain string, dohurl string, dohip ...string) ([]net.IP, error) { // 使用 A 和 AAAA 记录类型查询域名
+	dnstypes := "A,AAAA"
+	responses := Dohnslookup(domain, dnstypes, dohurl, dohip...)
+
+	var ips []net.IP
+	for _, response := range responses {
+		for _, record := range response.Answer {
+			switch r := record.(type) {
+			case *dns.A:
+				ips = append(ips, r.A)
+			case *dns.AAAA:
+				ips = append(ips, r.AAAA)
+			}
+		}
+	}
+
+	if len(ips) == 0 {
+		return nil, fmt.Errorf("no IP addresses found for domain %s", domain)
+	}
+
+	return ips, nil
 }
