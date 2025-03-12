@@ -45,3 +45,9 @@ http-proxy-go-server
 总结来说，`http-proxy-go-server` 提供了一个可配置的、支持基本认证且可以运行在
 HTTP 或 HTTPS
 模式下的代理服务器。用户可以根据需要调整其监听地址、端口、认证凭据以及是否启用加密通信等配置项。
+
+## example
+
+```bash
+"/root/http-proxy-go-server/main" -dohurl "https://******************************" -dohip  "************" -port 58888 -username admin -password "*************************************"  -server_cert "**********************************************"  -server_key "**********************************************"
+```
