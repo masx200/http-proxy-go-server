@@ -264,7 +264,7 @@ func GenerateRandomIntPort() int {
 }
 
 func generateRandomInt() int {
-	min := 10000
-	max := 65535
-	return rand.Intn(max-min+1) + min
+	minport := 10000
+	maxport := 65535
+	return rand.Intn(maxport-minport+1) + minport
 }
