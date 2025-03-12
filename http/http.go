@@ -275,9 +275,9 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 //		}
 //	}
 func Http(hostname string, port int, proxyoptions options.ProxyOptions, username, password string) {
-
+	gin.SetMode(gin.ReleaseMode)
 	engine := gin.Default()
-
+	gin.SetMode(gin.ReleaseMode)
 	// jar, err := cookiejar.New(nil)
 	// if err != nil {
 	// 	log.Fatal("ListenAndServe: ", err)
