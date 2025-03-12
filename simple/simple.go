@@ -67,6 +67,7 @@ func Handle(client net.Conn, httpUpstreamAddress string) {
 	n, err := client.Read(b[:])
 	if err != nil {
 		log.Println(err)
+		fmt.Fprint(client, "HTTP/1.1 400 Bad Request\r\n\r\n")
 		return
 	}
 
@@ -106,6 +107,7 @@ func Handle(client net.Conn, httpUpstreamAddress string) {
 		// }
 		address, err = ExtractAddressFromOtherRequestLine(line)
 		if err != nil {
+			fmt.Fprint(client, "HTTP/1.1 400 Bad Request\r\n\r\n")
 			log.Println(err)
 			return
 		}
@@ -133,6 +135,7 @@ func Handle(client net.Conn, httpUpstreamAddress string) {
 		//如果使用 http 协议，需将从客户端得到的 http 请求转发给服务端
 		clienthost, port, err := net.SplitHostPort(client.RemoteAddr().String())
 		if err != nil {
+			fmt.Fprint(client, "HTTP/1.1 400 Bad Request\r\n\r\n")
 			log.Println(err)
 			return
 		}
@@ -148,6 +151,7 @@ func Handle(client net.Conn, httpUpstreamAddress string) {
 		var headers map[string]string = map[string]string{"Forwarded": forwarded}
 		shouldReturn := WriteRequestLineAndHeadersWithRequestURI(requestLine, server, n, b, headers)
 		if shouldReturn {
+			fmt.Fprint(client, "HTTP/1.1 500 Internal Server Error\r\n\r\n")
 			return
 		}
 	}
