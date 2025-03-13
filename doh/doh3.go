@@ -7,11 +7,11 @@ import (
 	"strings"
 	"sync"
 
-	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
+	h3_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h3"
 	"github.com/miekg/dns"
 )
 
-func Dohnslookup(domain string, dnstype string, dohurl string, dohip ...string) ([]*dns.Msg, []error) {
+func Doh3nslookup(domain string, dnstype string, dohurl string, dohip ...string) ([]*dns.Msg, []error) {
 	fmt.Println("domain:", domain, "dnstype:", dnstype, "dohurl:", dohurl)
 	//results := make([]*dns.Msg, 0)
 	var errors = make([]error, 0)
@@ -29,7 +29,7 @@ func Dohnslookup(domain string, dnstype string, dohurl string, dohip ...string) 
 				msg.SetQuestion(d+".", dns.StringToType[t])
 				// fmt.Println(msg.String())
 
-				res, err := dns_experiment.DohClient(msg, dohurl, dohip...)
+				res, err := h3_experiment.DoHTTP3Client(msg, dohurl, dohip...)
 				mutex.Lock()
 
 				defer mutex.Unlock()
@@ -49,15 +49,7 @@ func Dohnslookup(domain string, dnstype string, dohurl string, dohip ...string) 
 	wg.Wait()
 	return results, errors
 }
-// ResolveDomainToIPsWithDoh 使用 A 和 AAAA 记录类型查询域名，将域名解析为 IP 地址
-// 参数:
-//   - domain: 要解析的域名
-//   - dohurl: DNS over HTTPS (DoH) 服务的 URL
-//   - dohip: 可选的 DoH 服务器 IP 地址
-// 返回值:
-//   - []net.IP: 解析得到的 IP 地址列表
-//   - []error: 解析过程中出现的错误列表
-func ResolveDomainToIPsWithDoh(domain string, dohurl string, dohip ...string) ([]net.IP, []error) { // 使用 A 和 AAAA 记录类型查询域名
+func ResolveDomainToIPsWithDoh3(domain string, dohurl string, dohip ...string) ([]net.IP, []error) { // 使用 A 和 AAAA 记录类型查询域名
 	dnstypes := "A,AAAA"
 	responses, errors := Dohnslookup(domain, dnstypes, dohurl, dohip...)
 	if len(responses) == 0 && len(errors) > 0 {

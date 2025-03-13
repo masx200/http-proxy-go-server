@@ -7,10 +7,12 @@ toolchain go1.23.2
 require github.com/gin-gonic/gin v1.10.0
 
 require (
+	github.com/ebi-yade/altsvc-go v0.1.1 // indirect
 	github.com/fanjindong/go-cache v0.0.5 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38 // indirect
 	github.com/onsi/ginkgo/v2 v2.9.5 // indirect
+	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/quic-go/quic-go v0.48.2 // indirect
 	github.com/tantalor93/doq-go v0.10.0 // indirect
 	go.uber.org/mock v0.4.0 // indirect
