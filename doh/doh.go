@@ -49,11 +49,13 @@ func Dohnslookup(domain string, dnstype string, dohurl string, dohip ...string) 
 	wg.Wait()
 	return results, errors
 }
+
 // ResolveDomainToIPsWithDoh 使用 A 和 AAAA 记录类型查询域名，将域名解析为 IP 地址
 // 参数:
 //   - domain: 要解析的域名
 //   - dohurl: DNS over HTTPS (DoH) 服务的 URL
 //   - dohip: 可选的 DoH 服务器 IP 地址
+//
 // 返回值:
 //   - []net.IP: 解析得到的 IP 地址列表
 //   - []error: 解析过程中出现的错误列表
@@ -85,7 +87,7 @@ func ResolveDomainToIPsWithDoh(domain string, dohurl string, dohip ...string) ([
 	}
 
 	// 打印日志
-	log.Println("dns resolved " + domain + " ips:" + strings.Join(ipStrings, ","))
+	log.Println("dns resolved " + domain + " ips:[" + strings.Join(ipStrings, ",")+"]")
 
 	return ips, nil
 }

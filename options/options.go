@@ -30,8 +30,9 @@ func init() {
 }
 
 type ProxyOption struct {
-	Dohurl string
-	Dohip  string
+	Dohurl  string
+	Dohip   string
+	Dohalpn string
 }
 type ProxyOptions = []ProxyOption
 
@@ -162,16 +163,28 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 		for _, dohurlopt := range proxyoptions {
 
 			var dohip = dohurlopt.Dohip
+			var dohalpn = dohurlopt.Dohalpn
 			var ips []net.IP
 			var errors []error
 			hostname, port, err := net.SplitHostPort(address)
 			if err != nil {
 				return nil, err
 			}
-			if dohip == "" {
-				ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurlopt.Dohurl)
+
+			if dohalpn == "h3" {
+				if dohip == "" {
+
+					ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, dohurlopt.Dohurl)
+				} else {
+					ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, dohurlopt.Dohurl, dohip)
+				}
 			} else {
-				ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurlopt.Dohurl, dohip)
+				if dohip == "" {
+
+					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurlopt.Dohurl)
+				} else {
+					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurlopt.Dohurl, dohip)
+				}
 			}
 
 			if len(ips) == 0 && len(errors) > 0 {
@@ -194,7 +207,7 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 						continue
 					} else {
 
-						log.Println("success connect to " + address + " by " + network + " by " + dohurlopt.Dohurl + " by " + dohip + " by " + serverIP)
+						log.Println("success connect to address=" + address + " by network=" + network + " by Dohurl=" + dohurlopt.Dohurl + " by dohip=" + dohip + " by serverIP=" + serverIP)
 						return connection, err1
 					}
 				}

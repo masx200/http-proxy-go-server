@@ -51,7 +51,7 @@ func Doh3nslookup(domain string, dnstype string, dohurl string, dohip ...string)
 }
 func ResolveDomainToIPsWithDoh3(domain string, dohurl string, dohip ...string) ([]net.IP, []error) { // 使用 A 和 AAAA 记录类型查询域名
 	dnstypes := "A,AAAA"
-	responses, errors := Dohnslookup(domain, dnstypes, dohurl, dohip...)
+	responses, errors := Doh3nslookup(domain, dnstypes, dohurl, dohip...)
 	if len(responses) == 0 && len(errors) > 0 {
 		return nil, errors
 	}
@@ -77,7 +77,7 @@ func ResolveDomainToIPsWithDoh3(domain string, dohurl string, dohip ...string) (
 	}
 
 	// 打印日志
-	log.Println("dns resolved " + domain + " ips:" + strings.Join(ipStrings, ","))
+	log.Println("dns resolved " + domain + " ips:[" + strings.Join(ipStrings, ",")+"]")
 
 	return ips, nil
 }

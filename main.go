@@ -27,12 +27,14 @@ func main() {
 	// 自定义字符串切片类型，实现 flag.Value 接口
 
 	var (
-		dohurls multiString
-		dohips  multiString
+		dohurls  multiString
+		dohips   multiString
+		dohalpns multiString
 	)
 	// 注册可重复参数
-	flag.Var(&dohurls, "dohurl", "DOH URL (可重复)")
-	flag.Var(&dohips, "dohip", "DOH IP (可重复)")
+	flag.Var(&dohurls, "dohurl", "DOH URL (可重复),支持http协议和https协议")
+	flag.Var(&dohips, "dohip", "DOH IP (可重复),支持ipv4地址和ipv6地址")
+	flag.Var(&dohalpns, "dohalpn", "DOH alpn (可重复),支持h2协议和h3协议")
 
 	var (
 		hostname    = flag.String("hostname", "0.0.0.0", "an String value for hostname")
@@ -43,6 +45,7 @@ func main() {
 		password    = flag.String("password", "", "password")
 	)
 	flag.Parse()
+	fmt.Println("dohalpn:", dohalpns.String())
 	//parse cmd flags
 	fmt.Println(
 		"hostname:", *hostname)
@@ -69,8 +72,14 @@ func main() {
 		} else {
 			dohip = ""
 		}
+		var dohalpn string
+		if len(dohalpns) > i {
+			dohalpn = dohalpns[i]
+		} else {
+			dohalpn = ""
+		}
 
-		proxyoptions = append(proxyoptions, options.ProxyOption{Dohurl: dohurl, Dohip: dohip})
+		proxyoptions = append(proxyoptions, options.ProxyOption{Dohurl: dohurl, Dohip: dohip, Dohalpn: dohalpn})
 	}
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
 		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, proxyoptions)

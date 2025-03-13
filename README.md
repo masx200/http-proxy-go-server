@@ -8,23 +8,25 @@
 
 http-proxy-go-server
 
-```
+```text
+-dohalpn value
+        DOH alpn (可重复),支持h2协议和h3协议
 -dohip value
-        DOH IP (可重复)
+        DOH IP (可重复),支持ipv4地址和ipv6地址
 -dohurl value
-        DOH URL (可重复)
+        DOH URL (可重复),支持http协议和https协议
 -hostname string
-      an String value for hostname (default "0.0.0.0")
+        an String value for hostname (default "0.0.0.0")
 -password string
-      password
+        password
 -port int
-      TCP port to listen on (default 8080)
+        TCP port to listen on (default 8080)
 -server_cert string
-      tls server cert
+        tls server cert
 -server_key string
-      tls server key
+        tls server key
 -username string
-      username
+        username
 ```
 
 1. `-hostname string`：设置服务器绑定的主机名，默认为
