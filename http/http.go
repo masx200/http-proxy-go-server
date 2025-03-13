@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -107,12 +108,14 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	if username != "" && password != "" {
 		var Proxy_Authorization = r.Header.Get("Proxy-Authorization")
 		if !isAuthenticated(Proxy_Authorization, username, password) {
-			//var body = "407 Proxy Authentication Required"
+			var body = "407 Proxy Authentication Required"
 			// fmt.Fprint(client, "HTTP/1.1 407 Proxy Authentication Required\r\ncontent-length: "+strconv.Itoa(len(body))+"\r\nProxy-Authenticate: Basic realm=\"Proxy\"\r\n\r\n")
 			// fmt.Fprint(client, body)
-			w.Header().Add("Proxy-Authenticate", "Basic realm=\"Proxy\"")
+			w.Header().Set("Proxy-Authenticate", "Basic realm=\"Proxy\"")
+			w.Header().Set("content-length", strconv.Itoa(len(body)))
 			w.WriteHeader(407)
-			fmt.Fprintln(w, "407 Proxy Authentication Required")
+			w.Write([]byte(body))
+			//fmt.Fprintln(w, "407 Proxy Authentication Required")
 			fmt.Println("身份验证失败")
 			//w.Close()
 			return

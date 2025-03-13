@@ -10,12 +10,13 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	// "net/url"
+	"strings"
+
 	http_server "github.com/masx200/http-proxy-go-server/http"
 	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/http-proxy-go-server/simple"
-	"strconv"
-	"strings"
 )
 
 // options.ProxyOptions
@@ -99,10 +100,25 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 
 	// 验证身份
 	if !isAuthenticated(proxyAuth, username, password) {
-		var body = "407 Proxy Authentication Required"
+		/* var body = "407 Proxy Authentication Required"
 		fmt.Fprint(client, "HTTP/1.1 407 Proxy Authentication Required\r\ncontent-length: "+strconv.Itoa(len(body))+"\r\nProxy-Authenticate: Basic realm=\"Proxy\"\r\n\r\n")
 		fmt.Fprint(client, body)
-
+		*/
+		// 创建一个新的 HTTP 响应
+		resp := &http.Response{
+			StatusCode: 407,
+			Status:     "407 Proxy Authentication Required",
+			Header: http.Header{
+				"Content-Length":     []string{strconv.Itoa(len("407 Proxy Authentication Required"))},
+				"Proxy-Authenticate": []string{"Basic realm=\"Proxy\""},
+			},
+			Body:          io.NopCloser(strings.NewReader("407 Proxy Authentication Required")),
+			ContentLength: int64(len("407 Proxy Authentication Required")),
+			ProtoMajor:    1,
+			ProtoMinor:    1,
+		}
+		// 将响应写入客户端连接
+		resp.Write(client)
 		fmt.Println("身份验证失败")
 		return
 	}
