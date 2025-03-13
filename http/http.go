@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"log"
@@ -102,6 +103,22 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	fmt.Println("host:", r.Host)
 	log.Println("proxyHandler", "header:")
 	/*/* 这里删除除了第一次请求的 Proxy-Authorization  删除代理认证信息 */
+
+	if username != "" && password != "" {
+		var Proxy_Authorization = r.Header.Get("Proxy-Authorization")
+		if !isAuthenticated(Proxy_Authorization, username, password) {
+			//var body = "407 Proxy Authentication Required"
+			// fmt.Fprint(client, "HTTP/1.1 407 Proxy Authentication Required\r\ncontent-length: "+strconv.Itoa(len(body))+"\r\nProxy-Authenticate: Basic realm=\"Proxy\"\r\n\r\n")
+			// fmt.Fprint(client, body)
+			w.Header().Add("Proxy-Authenticate", "Basic realm=\"Proxy\"")
+			w.WriteHeader(407)
+			fmt.Fprintln(w, "407 Proxy Authentication Required")
+			fmt.Println("身份验证失败")
+			//w.Close()
+			return
+		}
+		fmt.Println("身份验证成功")
+	}
 
 	r.Header.Del("Proxy-Authorization")
 	clienthost, port, err := net.SplitHostPort(r.RemoteAddr)
@@ -343,4 +360,22 @@ func generateRandomInt() int {
 // IsIP 判断给定的字符串是否是有效的 IPv4 或 IPv6 地址。
 func IsIP(s string) bool {
 	return net.ParseIP(s) != nil
+}
+func isAuthenticated(proxyAuth, expectedUsername, expectedPassword string) bool {
+	if !strings.HasPrefix(proxyAuth, "Basic ") {
+		return false
+	}
+
+	auth := strings.TrimPrefix(proxyAuth, "Basic ")
+	decodedAuth, err := base64.StdEncoding.DecodeString(auth)
+	if err != nil {
+		return false
+	}
+
+	username, password, ok := strings.Cut(string(decodedAuth), ":")
+	if !ok {
+		return false
+	}
+
+	return username == expectedUsername && password == expectedPassword
 }
