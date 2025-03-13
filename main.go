@@ -63,7 +63,13 @@ func main() {
 
 	for i, dohurl := range dohurls {
 
-		dohip := dohips[i]
+		var dohip string
+		if len(dohips) > i {
+			dohip = dohips[i]
+		} else {
+			dohip = ""
+		}
+
 		proxyoptions = append(proxyoptions, options.ProxyOption{Dohurl: dohurl, Dohip: dohip})
 	}
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
