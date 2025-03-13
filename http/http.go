@@ -321,7 +321,7 @@ func Http(hostname string, port int, proxyoptions options.ProxyOptions, username
 	//engine.Handler().ServeHTTP(w, r)
 	//})
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		engine.Handler().ServeHTTP(w, r)
 	})
 	// 开始服务
