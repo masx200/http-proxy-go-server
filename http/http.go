@@ -250,7 +250,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 		return
 	}
 	proxyReq.Header = r.Header.Clone()
-
+	proxyReq.ContentLength = r.ContentLength
 	resp, err := client.Do(proxyReq)
 	if err != nil {
 		log.Println(err)
