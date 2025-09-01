@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	// "net/http"
+	"net"
 	"os"
 	"strings"
 
@@ -27,8 +27,8 @@ func (m *multiString) Set(value string) error {
 }
 
 type UpStream struct {
-	HTTP_PROXY  string `json:"http_proxy"`
-	HTTPS_PROXY string `json:"https_proxy"`
+	HTTP_PROXY  string   `json:"http_proxy"`
+	HTTPS_PROXY string   `json:"https_proxy"`
 	BypassList  []string `json:"bypass_list"`
 }
 
@@ -69,6 +69,147 @@ func loadConfig(configFile string) (*Config, error) {
 	}
 
 	return &config, nil
+}
+
+// isValidDomain 检查字符串是否为有效的域名格式
+func isValidDomain(domain string) bool {
+	// 检查是否包含协议前缀
+	if strings.HasPrefix(domain, "http://") || strings.HasPrefix(domain, "https://") {
+		return false
+	}
+	// 检查是否包含非法字符
+	if strings.Contains(domain, "/") || strings.Contains(domain, ":") {
+		return false
+	}
+	// 检查是否为空
+	if domain == "" {
+		return false
+	}
+	// 检查是否为IP地址格式
+	if net.ParseIP(domain) != nil {
+		return false
+	}
+	return true
+}
+
+// matchWildcard 检查域名是否匹配通配符模式
+func matchWildcard(pattern, domain string) bool {
+	if pattern == "*" {
+		return true
+	}
+	if strings.HasPrefix(pattern, "*.") {
+		suffix := pattern[2:]
+		return strings.HasSuffix(domain, suffix) || domain == suffix
+	}
+	return pattern == domain
+}
+
+// SelectProxyURLWithCIDR 根据输入的域名或IP地址选择代理服务器的URL，支持CIDR匹配
+func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
+	Pattern  string `json:"pattern"`
+	Upstream string `json:"upstream"`
+}, domain string) (string, error) {
+	// 首先尝试解析为IP地址
+	ip := net.ParseIP(domain)
+	if ip != nil {
+		// 如果是IP地址，检查CIDR匹配
+		for _, rule := range rules {
+			// 检查是否是CIDR格式
+			if strings.Contains(rule.Pattern, "/") {
+				_, ipNet, err := net.ParseCIDR(rule.Pattern)
+				if err == nil && ipNet.Contains(ip) {
+					// 找到匹配的CIDR，返回对应的代理
+					if upstream, exists := upstreams[rule.Upstream]; exists {
+						if upstream.HTTPS_PROXY != "" {
+							return upstream.HTTPS_PROXY, nil
+						}
+						if upstream.HTTP_PROXY != "" {
+							return upstream.HTTP_PROXY, nil
+						}
+					}
+				}
+			} else if rule.Pattern == domain || strings.HasPrefix(domain, rule.Pattern) {
+				// 精确IP匹配或前缀匹配
+				if upstream, exists := upstreams[rule.Upstream]; exists {
+					if upstream.HTTPS_PROXY != "" {
+						return upstream.HTTPS_PROXY, nil
+					}
+					if upstream.HTTP_PROXY != "" {
+						return upstream.HTTP_PROXY, nil
+					}
+				}
+			}
+		}
+	} else {
+		// 检查是否为有效的域名格式
+		if !isValidDomain(domain) {
+			return "", fmt.Errorf("invalid domain format: %s", domain)
+		}
+
+		// 如果是域名，进行域名匹配
+		for _, rule := range rules {
+			// 检查是否是CIDR格式（域名不应该匹配CIDR）
+			if !strings.Contains(rule.Pattern, "/") {
+				if matchWildcard(rule.Pattern, domain) || strings.Contains(domain, rule.Pattern) {
+					// 找到匹配的域名模式，返回对应的代理
+					if upstream, exists := upstreams[rule.Upstream]; exists {
+						if upstream.HTTP_PROXY != "" {
+							return upstream.HTTP_PROXY, nil
+						}
+						if upstream.HTTPS_PROXY != "" {
+							return upstream.HTTPS_PROXY, nil
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// 如果没有匹配的规则，返回空字符串和错误
+	return "", fmt.Errorf("no matching proxy rule found for domain: %s", domain)
+}
+
+// IsBypassedWithCIDR 检查目标是否在bypass列表中，支持CIDR匹配
+func IsBypassedWithCIDR(upstreams map[string]UpStream, rules []struct {
+	Pattern  string `json:"pattern"`
+	Upstream string `json:"upstream"`
+}, target string) bool {
+	// 首先尝试解析为IP地址
+	ip := net.ParseIP(target)
+	if ip != nil {
+		// 如果是IP地址，检查CIDR匹配
+		for _, rule := range rules {
+			if upstream, exists := upstreams[rule.Upstream]; exists {
+				// 检查bypass列表中的CIDR
+				for _, bypass := range upstream.BypassList {
+					if strings.Contains(bypass, "/") {
+						_, ipNet, err := net.ParseCIDR(bypass)
+						if err == nil && ipNet.Contains(ip) {
+							return true
+						}
+					} else if bypass == target || strings.HasPrefix(target, bypass) {
+						return true
+					}
+				}
+			}
+		}
+	} else {
+		// 如果是域名，进行域名匹配
+		for _, rule := range rules {
+			if upstream, exists := upstreams[rule.Upstream]; exists {
+				for _, bypass := range upstream.BypassList {
+					if !strings.Contains(bypass, "/") {
+						if strings.Contains(target, bypass) ||
+							strings.HasPrefix(target, bypass) ||
+							strings.HasSuffix(target, bypass) {
+							return true
+						}
+					}
+				}
+			}
+		}
+	}
+	return false
 }
 
 func main() {
