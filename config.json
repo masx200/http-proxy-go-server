@@ -1,0 +1,17 @@
+{
+  "hostname": "0.0.0.0",
+  "port": 8080,
+  "server_cert": "",
+  "server_key": "",
+  "username": "",
+  "password": "",
+  "dohurls": [
+    "https://dns.alidns.com/dns-query"
+  ],
+  "dohips": [
+    "223.5.5.5"
+  ],
+  "dohalpns": [
+    "h2"
+  ]
+}

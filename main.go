@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/masx200/http-proxy-go-server/auth"
@@ -23,9 +25,40 @@ func (m *multiString) Set(value string) error {
 	return nil
 }
 
-func main() {
-	// 自定义字符串切片类型，实现 flag.Value 接口
+// Config 结构体用于JSON配置文件
+type Config struct {
+	Hostname   string   `json:"hostname"`
+	Port       int      `json:"port"`
+	ServerCert string   `json:"server_cert"`
+	ServerKey  string   `json:"server_key"`
+	Username   string   `json:"username"`
+	Password   string   `json:"password"`
+	Dohurls    []string `json:"dohurls"`
+	Dohips     []string `json:"dohips"`
+	Dohalpns   []string `json:"dohalpns"`
+}
 
+// loadConfig 从JSON文件加载配置
+func loadConfig(configFile string) (*Config, error) {
+	data, err := os.ReadFile(configFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var config Config
+	err = json.Unmarshal(data, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config, nil
+}
+
+func main() {
+	// 添加配置文件参数
+	configFile := flag.String("config", "", "JSON配置文件路径")
+
+	// 自定义字符串切片类型，实现 flag.Value 接口
 	var (
 		dohurls  multiString
 		dohips   multiString
@@ -45,6 +78,45 @@ func main() {
 		password    = flag.String("password", "", "password")
 	)
 	flag.Parse()
+
+	// 如果指定了配置文件，则从配置文件读取参数
+	var config *Config
+	var err error
+	if *configFile != "" {
+		config, err = loadConfig(*configFile)
+		if err != nil {
+			fmt.Printf("读取配置文件失败: %v\n", err)
+			os.Exit(1)
+		}
+		// 使用配置文件的值覆盖命令行参数的默认值
+		if config.Hostname != "" {
+			*hostname = config.Hostname
+		}
+		if config.Port != 0 {
+			*port = config.Port
+		}
+		if config.ServerCert != "" {
+			*server_cert = config.ServerCert
+		}
+		if config.ServerKey != "" {
+			*server_key = config.ServerKey
+		}
+		if config.Username != "" {
+			*username = config.Username
+		}
+		if config.Password != "" {
+			*password = config.Password
+		}
+		if len(config.Dohurls) > 0 {
+			dohurls = multiString(config.Dohurls)
+		}
+		if len(config.Dohips) > 0 {
+			dohips = multiString(config.Dohips)
+		}
+		if len(config.Dohalpns) > 0 {
+			dohalpns = multiString(config.Dohalpns)
+		}
+	}
 	fmt.Println("dohalpn:", dohalpns.String())
 	//parse cmd flags
 	fmt.Println(
