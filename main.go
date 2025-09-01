@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	// "net/http"
 	"os"
 	"strings"
 
@@ -25,6 +26,16 @@ func (m *multiString) Set(value string) error {
 	return nil
 }
 
+type UpStream struct {
+	HTTP_PROXY  string `json:"http_proxy"`
+	HTTPS_PROXY string `json:"https_proxy"`
+	BypassList  []string `json:"bypass_list"`
+}
+
+// func init() {
+// 	http.ProxyFromEnvironment()
+// }
+
 // Config 结构体用于JSON配置文件
 type Config struct {
 	Hostname   string   `json:"hostname"`
@@ -36,6 +47,12 @@ type Config struct {
 	Dohurls    []string `json:"dohurls"`
 	Dohips     []string `json:"dohips"`
 	Dohalpns   []string `json:"dohalpns"`
+
+	UpStreams map[string]UpStream `json:"upstreams"`
+	Rules     []struct {
+		Pattern  string `json:"pattern"`
+		Upstream string `json:"upstream"`
+	} `json:"rules"`
 }
 
 // loadConfig 从JSON文件加载配置

@@ -18,25 +18,6 @@ import (
 	"github.com/masx200/http-proxy-go-server/options"
 )
 
-// "bytes"
-// "bytes"
-
-// "net/http/cookiejar"
-
-// "net/url"
-
-// "github.com/go-kit/kit/sd/etcd"
-
-// Create a custom transport that uses the proxy for HTTP requests.
-// func newTransport(proxyAddress string) *http.Transport {
-// 	proxyURL, _ := url.Parse(proxyAddress) // 注意处理错误
-// 	return &http.Transport{
-// 		Proxy: http.ProxyURL(proxyURL),
-// 	}
-// }
-
-// ServeHTTP is a handler that forwards incoming requests to the target URL specified in the request.
-
 func startsWithHTTP(s string) bool {
 	return strings.HasPrefix(s, "http://")
 }
