@@ -6,19 +6,26 @@
   "username": "",
   "password": "",
   "dohurls": [
-    "https://dns.alidns.com/dns-query"
+    "https://dns.alidns.com/dns-query",
+    "https://one.one.one.one/dns-query"
   ],
   "dohips": [
-    "223.5.5.5"
+    "223.5.5.5",
+    "1.1.1.1"
   ],
   "dohalpns": [
+    "h2",
     "h2"
   ],
   "upstreams": {
     "localhost": {
       "http_proxy": "http://127.0.0.1:7890",
       "https_proxy": "http://127.0.0.1:7890",
-      "bypass_list": ["localhost", "127.0.0.1", "[::1]"]
+      "bypass_list": [
+        "localhost",
+        "127.0.0.1",
+        "[::1]"
+      ]
     }
   },
   "rules": [
