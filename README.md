@@ -50,7 +50,8 @@ HTTP 或 HTTPS
 
 ## JSON 配置文件
 
-除了命令行参数外，`http-proxy-go-server` 还支持通过 JSON 配置文件进行配置。使用 `-config` 参数指定配置文件路径。
+除了命令行参数外，`http-proxy-go-server` 还支持通过 JSON 配置文件进行配置。使用
+`-config` 参数指定配置文件路径。
 
 ### 配置文件结构
 

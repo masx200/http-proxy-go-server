@@ -351,7 +351,7 @@ func main() {
 
 	var tranportConfigurations = []func(*http.Transport) *http.Transport{}
 
-	if config.UpStreams != nil && config.Rules != nil {
+	if config.UpStreams != nil && config.Rules != nil && len(config.Rules) > 0 && len(config.UpStreams) > 0 {
 		tranportConfigurations = append(tranportConfigurations, func(t *http.Transport) *http.Transport {
 			t.Proxy = func(r *http.Request) (*url.URL, error) {
 
