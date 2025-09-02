@@ -19,8 +19,8 @@
   ],
   "upstreams": {
     "localhost": {
-      "http_proxy": "http://127.0.0.1:7890",
-      "https_proxy": "http://127.0.0.1:7890",
+      "http_proxy": "http://admin:admin@127.0.0.1:7890",
+      "https_proxy": "http://admin:admin@127.0.0.1:7890",
       "bypass_list": [
         "localhost",
         "127.0.0.1",
@@ -29,9 +29,11 @@
     }
   },
   "rules": [
+
     {
       "pattern": "*",
       "upstream": "localhost"
     }
+    
   ]
 }

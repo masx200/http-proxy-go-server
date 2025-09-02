@@ -168,7 +168,7 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 	}
 
 	// 如果没有匹配的规则，返回空字符串和错误
-	return "", fmt.Errorf("no matching proxy rule found for domain: %s", domain)
+	return "", nil
 }
 
 // IsBypassedWithCIDR 检查目标是否在bypass列表中，支持CIDR匹配
