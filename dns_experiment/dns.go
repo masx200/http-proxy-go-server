@@ -7,7 +7,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"net"
-	"time"
+	// "time"
 	// "crypto/tls"
 	// "fmt"
 	// "io"
@@ -105,8 +105,8 @@ func setPortIfMissing(rawURL string) (string, error) {
 // r: 代表DNS应答消息的dns.Msg对象。
 // err: 如果过程中发生错误，则返回错误信息。
 func DohClient(msg *dns.Msg, dohServerURL string, dohip string, tranportConfigurations ...func(*http.Transport) *http.Transport) (r *dns.Msg, err error) {
-	var ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	// var ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+	// defer cancel()
 	/* 为了doh的缓存,需要设置id为0 ,可以缓存*/
 	msg.Id = 0
 	body, err := msg.Pack()
@@ -114,7 +114,8 @@ func DohClient(msg *dns.Msg, dohServerURL string, dohip string, tranportConfigur
 		log.Println(dohServerURL, err)
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", dohServerURL, strings.NewReader(string(body)))
+	req, err := http.NewRequest("POST", dohServerURL, strings.NewReader(string(body)))
+	// req, err := http.NewRequestWithContext(ctx, "POST", dohServerURL, strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/dns-message")
 	//http request doh
 
@@ -125,49 +126,68 @@ func DohClient(msg *dns.Msg, dohServerURL string, dohip string, tranportConfigur
 		transport := &http.Transport{
 			ForceAttemptHTTP2: true,
 			// 自定义 DialContext 函数
-			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				// 解析出原地址中的端口
-				_, port, err := net.SplitHostPort(addr)
-				if err != nil {
-					return nil, err
-				}
-				// 用指定的 IP 地址和原端口创建新地址
-				newAddr := net.JoinHostPort(serverIP, port)
-				// 创建 net.Dialer 实例
-				dialer := &net.Dialer{}
-				// 发起连接
-				return dialer.DialContext(ctx, network, newAddr)
-			},
-			DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 
-				// 解析出原地址中的端口
-				address, port, err := net.SplitHostPort(addr)
-				if err != nil {
-					return nil, err
-				}
-				// 用指定的 IP 地址和原端口创建新地址
-				newAddr := net.JoinHostPort(serverIP, port)
-				// 创建 net.Dialer 实例
-				dialer := &net.Dialer{}
-				// 发起连接
-				conn, err := dialer.DialContext(ctx, network, newAddr)
-				if err != nil {
-					return nil, err
-				}
-				tlsConfig := &tls.Config{
-					ServerName: address,
-				}
-				// 创建 TLS 连接
-				tlsConn := tls.Client(conn, tlsConfig)
-				// 进行 TLS 握手
-				err = tlsConn.HandshakeContext(ctx)
-				if err != nil {
-					conn.Close()
-					return nil, err
-				}
-				return tlsConn, nil
-			},
 		}
+		var DialTLSContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+
+			fmt.Println("DialTLSContext", "dialing", network, "to", addr)
+			// 解析出原地址中的端口
+			address, port, err := net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
+			// 用指定的 IP 地址和原端口创建新地址
+			newAddr := net.JoinHostPort(serverIP, port)
+			if transport.Proxy != nil {
+
+				newAddr = addr
+			}
+			// 创建 net.Dialer 实例
+			dialer := &net.Dialer{}
+
+			fmt.Println("DialTLSContext", "dialing", network, "to", newAddr)
+			// 发起连接
+			conn, err := dialer.DialContext(ctx, network, newAddr)
+			if err != nil {
+				return nil, err
+			}
+			tlsConfig := &tls.Config{
+				ServerName: address,
+			}
+			// 创建 TLS 连接
+			tlsConn := tls.Client(conn, tlsConfig)
+			// 进行 TLS 握手
+			err = tlsConn.HandshakeContext(ctx)
+			if err != nil {
+				conn.Close()
+				return nil, err
+			}
+			return tlsConn, nil
+		}
+		transport.DialTLSContext = DialTLSContext
+		var DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+
+			fmt.Println("DialContext", "dialing", network, "to", addr)
+			// 解析出原地址中的端口
+			_, port, err := net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
+			// 用指定的 IP 地址和原端口创建新地址
+			newAddr := net.JoinHostPort(serverIP, port)
+			// 创建 net.Dialer 实例
+			dialer := &net.Dialer{}
+			if transport.Proxy != nil {
+				// 如果有代理，则使用代理的 DialContext 函数
+				return dialer.DialContext(ctx, network, addr)
+			}
+
+			fmt.Println("dialContext", "dialing", network, "to", newAddr)
+			// 发起连接
+			return dialer.DialContext(ctx, network, newAddr)
+		}
+
+		transport.DialContext = DialContext
 		for _, f := range tranportConfigurations {
 			transport = f(transport)
 		}
@@ -185,7 +205,7 @@ func DohClient(msg *dns.Msg, dohServerURL string, dohip string, tranportConfigur
 		}
 		client.Transport = transport
 	}
-
+	fmt.Println("开始发起doh请求", dohServerURL)
 	res, err := client.Do(req) //Post(dohServerURL, "application/dns-message", strings.NewReader(string(body)))
 	if err != nil {
 		log.Println(dohServerURL, err)
