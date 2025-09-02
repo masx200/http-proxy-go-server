@@ -37,7 +37,7 @@ type ProxyOption struct {
 }
 type ProxyOptions = []ProxyOption
 
-func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions,tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions,tranp
 		//		// 发起连接
 		//		return dialer.DialContext(ctx, network, newAddr)
 		var ctx = context.Background()
-		return Proxy_net_DialContext(ctx, network, addr, proxyoptions,tranportConfigurations ...)
+		return Proxy_net_DialContext(ctx, network, addr, proxyoptions, tranportConfigurations...)
 	} else {
 		connection, err1 := net.Dial(network, addr)
 
@@ -110,7 +110,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions,tranp
 		return connection, err1
 	}
 }
-func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions,tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, err
@@ -182,9 +182,9 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 			} else {
 				if dohip == "" {
 
-					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurlopt.Dohurl,"",tranportConfigurations ...)
+					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurlopt.Dohurl, "", tranportConfigurations...)
 				} else {
-					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurlopt.Dohurl, dohip,tranportConfigurations ...)
+					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurlopt.Dohurl, dohip, tranportConfigurations...)
 				}
 			}
 

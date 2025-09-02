@@ -176,14 +176,14 @@ func DohClient(msg *dns.Msg, dohServerURL string, dohip string, tranportConfigur
 		}
 	} else {
 		client = http.DefaultClient
-		var transport= http.DefaultTransport
-		
+		var transport = http.DefaultTransport
+
 		for _, f := range tranportConfigurations {
 			if t, ok := transport.(*http.Transport); ok {
 				transport = f(t)
 			}
 		}
-		client.Transport =transport
+		client.Transport = transport
 	}
 
 	res, err := client.Do(req) //Post(dohServerURL, "application/dns-message", strings.NewReader(string(body)))

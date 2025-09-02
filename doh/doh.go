@@ -12,7 +12,7 @@ import (
 	"github.com/miekg/dns"
 )
 
-func Dohnslookup(domain string, dnstype string, dohurl string, dohip string,tranportConfigurations ...func(*http.Transport) *http.Transport) ([]*dns.Msg, []error) {
+func Dohnslookup(domain string, dnstype string, dohurl string, dohip string, tranportConfigurations ...func(*http.Transport) *http.Transport) ([]*dns.Msg, []error) {
 	fmt.Println("domain:", domain, "dnstype:", dnstype, "dohurl:", dohurl)
 	//results := make([]*dns.Msg, 0)
 	var errors = make([]error, 0)
@@ -30,7 +30,7 @@ func Dohnslookup(domain string, dnstype string, dohurl string, dohip string,tran
 				msg.SetQuestion(d+".", dns.StringToType[t])
 				// fmt.Println(msg.String())
 
-				res, err := dns_experiment.DohClient(msg, dohurl, dohip,tranportConfigurations ...)
+				res, err := dns_experiment.DohClient(msg, dohurl, dohip, tranportConfigurations...)
 				mutex.Lock()
 
 				defer mutex.Unlock()
@@ -60,9 +60,9 @@ func Dohnslookup(domain string, dnstype string, dohurl string, dohip string,tran
 // 返回值:
 //   - []net.IP: 解析得到的 IP 地址列表
 //   - []error: 解析过程中出现的错误列表
-func ResolveDomainToIPsWithDoh(domain string, dohurl string, dohip string,tranportConfigurations ...func(*http.Transport) *http.Transport) ([]net.IP, []error) { // 使用 A 和 AAAA 记录类型查询域名
+func ResolveDomainToIPsWithDoh(domain string, dohurl string, dohip string, tranportConfigurations ...func(*http.Transport) *http.Transport) ([]net.IP, []error) { // 使用 A 和 AAAA 记录类型查询域名
 	dnstypes := "A,AAAA"
-	responses, errors := Dohnslookup(domain, dnstypes, dohurl, dohip,tranportConfigurations ...)
+	responses, errors := Dohnslookup(domain, dnstypes, dohurl, dohip, tranportConfigurations...)
 	if len(responses) == 0 && len(errors) > 0 {
 		return nil, errors
 	}

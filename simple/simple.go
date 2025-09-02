@@ -34,7 +34,7 @@ func Simple(hostname string, port int, proxyoptions options.ProxyOptions, tranpo
 			return
 		}
 
-		go Handle(client, upstreamAddress, proxyoptions,tranportConfigurations...)
+		go Handle(client, upstreamAddress, proxyoptions, tranportConfigurations...)
 	}
 }
 
@@ -56,7 +56,7 @@ func Simple(hostname string, port int, proxyoptions options.ProxyOptions, tranpo
 // 	}
 // }
 
-func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.ProxyOptions,tranportConfigurations... func(*http.Transport) *http.Transport) {
+func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	if client == nil {
 		return
 	}

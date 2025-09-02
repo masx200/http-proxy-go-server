@@ -277,7 +277,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 //			log.Fatal("Serve: ", err)
 //		}
 //	}
-func Http(hostname string, port int, proxyoptions options.ProxyOptions, username, password string,tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Http(hostname string, port int, proxyoptions options.ProxyOptions, username, password string, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
@@ -296,7 +296,7 @@ func Http(hostname string, port int, proxyoptions options.ProxyOptions, username
 	engine.Use(func(c *gin.Context) {
 		var w = c.Writer
 		var r = c.Request
-		proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, username, password,tranportConfigurations ...)
+		proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, username, password, tranportConfigurations...)
 		c.Abort()
 	})
 	// 设置自定义处理器

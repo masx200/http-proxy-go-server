@@ -11,7 +11,7 @@ import (
 	"github.com/masx200/http-proxy-go-server/simple"
 )
 
-func Tls(server_cert string, server_key, hostname string, port int, proxyoptions options.ProxyOptions,tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Tls(server_cert string, server_key, hostname string, port int, proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 
 	cert, err := tls.LoadX509KeyPair(server_cert, server_key)
 	if err != nil {
@@ -30,7 +30,7 @@ func Tls(server_cert string, server_key, hostname string, port int, proxyoptions
 	xh := http_server.GenerateRandomLoopbackIP()
 	x1 := http_server.GenerateRandomIntPort()
 	var upstreamAddress string = xh + ":" + fmt.Sprint(rune(x1))
-	go http_server.Http(xh, x1, proxyoptions, "", "",tranportConfigurations...)
+	go http_server.Http(xh, x1, proxyoptions, "", "", tranportConfigurations...)
 	// 死循环，每当遇到连接时，调用 handle
 	for {
 		client, err := l.Accept()
@@ -38,6 +38,6 @@ func Tls(server_cert string, server_key, hostname string, port int, proxyoptions
 			log.Panic(err)
 		}
 
-		go simple.Handle(client, upstreamAddress, proxyoptions,tranportConfigurations...)
+		go simple.Handle(client, upstreamAddress, proxyoptions, tranportConfigurations...)
 	}
 }

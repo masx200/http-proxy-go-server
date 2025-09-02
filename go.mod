@@ -4,7 +4,10 @@ go 1.22
 
 toolchain go1.23.2
 
-require github.com/gin-gonic/gin v1.10.0
+require (
+	github.com/gin-gonic/gin v1.10.0
+	github.com/tantalor93/doq-go v0.10.0
+)
 
 require (
 	github.com/ebi-yade/altsvc-go v0.1.1 // indirect
@@ -14,7 +17,6 @@ require (
 	github.com/onsi/ginkgo/v2 v2.9.5 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/quic-go/quic-go v0.48.2 // indirect
-	github.com/tantalor93/doq-go v0.10.0 // indirect
 	go.uber.org/mock v0.4.0 // indirect
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
 	golang.org/x/mod v0.18.0 // indirect

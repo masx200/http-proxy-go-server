@@ -20,7 +20,7 @@ import (
 )
 
 // options.ProxyOptions
-func Auth(hostname string, port int, username, password string, proxyoptions options.ProxyOptions,tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Auth(hostname string, port int, username, password string, proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	// tcp 连接，监听 8080 端口
 	l, err := net.Listen("tcp", hostname+":"+fmt.Sprint(port))
 	if err != nil {
@@ -30,7 +30,7 @@ func Auth(hostname string, port int, username, password string, proxyoptions opt
 	xh := http_server.GenerateRandomLoopbackIP()
 	x1 := http_server.GenerateRandomIntPort()
 	var upstreamAddress string = xh + ":" + fmt.Sprint(rune(x1))
-	go http_server.Http(xh, x1, proxyoptions, username, password,tranportConfigurations...)
+	go http_server.Http(xh, x1, proxyoptions, username, password, tranportConfigurations...)
 	// 死循环，每当遇到连接时，调用 handle
 	for {
 		client, err := l.Accept()
@@ -39,7 +39,7 @@ func Auth(hostname string, port int, username, password string, proxyoptions opt
 			return
 		}
 
-		go Handle(client, username, password, upstreamAddress, proxyoptions,tranportConfigurations...)
+		go Handle(client, username, password, upstreamAddress, proxyoptions, tranportConfigurations...)
 	}
 }
 
