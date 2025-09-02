@@ -136,11 +136,26 @@ func DohClient(msg *dns.Msg, dohServerURL string, dohip string, tranportConfigur
 			if err != nil {
 				return nil, err
 			}
+			// 从dohServerURL中解析出原始端口
+			parsedURL, err := url.Parse(dohServerURL)
+			if err != nil {
+				return nil, err
+			}
+			originalPort := parsedURL.Port()
+			if originalPort == "" {
+				if parsedURL.Scheme == "https" {
+					originalPort = "443"
+				} else {
+					originalPort = "80"
+				}
+			}
 			// 用指定的 IP 地址和原端口创建新地址
 			newAddr := net.JoinHostPort(serverIP, port)
-			if transport.Proxy != nil {
-
+			// 判断是否经过了代理：比较当前端口和原始端口是否不同
+			if transport.Proxy != nil && port != originalPort {
+				// 如果经过了proxy，则端口会和原来的不一样，使用原始地址
 				newAddr = addr
+				fmt.Println("DialTLSContext detected proxy, using original addr:", addr)
 			}
 			// 创建 net.Dialer 实例
 			dialer := &net.Dialer{}
@@ -173,12 +188,27 @@ func DohClient(msg *dns.Msg, dohServerURL string, dohip string, tranportConfigur
 			if err != nil {
 				return nil, err
 			}
+			// 从dohServerURL中解析出原始端口
+			parsedURL, err := url.Parse(dohServerURL)
+			if err != nil {
+				return nil, err
+			}
+			originalPort := parsedURL.Port()
+			if originalPort == "" {
+				if parsedURL.Scheme == "https" {
+					originalPort = "443"
+				} else {
+					originalPort = "80"
+				}
+			}
 			// 用指定的 IP 地址和原端口创建新地址
 			newAddr := net.JoinHostPort(serverIP, port)
 			// 创建 net.Dialer 实例
 			dialer := &net.Dialer{}
-			if transport.Proxy != nil {
-				// 如果有代理，则使用代理的 DialContext 函数
+			// 判断是否经过了代理：比较当前端口和原始端口是否不同
+			if transport.Proxy != nil && port != originalPort {
+				// 如果经过了proxy，则端口会和原来的不一样，使用原始地址
+				fmt.Println("DialContext detected proxy, using original addr:", addr)
 				return dialer.DialContext(ctx, network, addr)
 			}
 
