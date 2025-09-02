@@ -26,7 +26,7 @@ func Simple(hostname string, port int, proxyoptions options.ProxyOptions, tranpo
 	xh := http_server.GenerateRandomLoopbackIP()
 	x1 := http_server.GenerateRandomIntPort()
 	var upstreamAddress string = xh + ":" + fmt.Sprint(rune(x1))
-	go http_server.Http(xh, x1, proxyoptions, "", "")
+	go http_server.Http(xh, x1, proxyoptions, "", "", tranportConfigurations...)
 	// 死循环，每当遇到连接时，调用 handle
 	for {
 		client, err := l.Accept()

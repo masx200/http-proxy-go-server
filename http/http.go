@@ -296,7 +296,7 @@ func Http(hostname string, port int, proxyoptions options.ProxyOptions, username
 	engine.Use(func(c *gin.Context) {
 		var w = c.Writer
 		var r = c.Request
-		proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, username, password)
+		proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, username, password,tranportConfigurations ...)
 		c.Abort()
 	})
 	// 设置自定义处理器

@@ -30,7 +30,7 @@ func Tls_auth(server_cert string, server_key, hostname string, port int, usernam
 	xh := http_server.GenerateRandomLoopbackIP()
 	x1 := http_server.GenerateRandomIntPort()
 	var upstreamAddress string = xh + ":" + fmt.Sprint(rune(x1))
-	go http_server.Http(xh, x1, proxyoptions, username, password)
+	go http_server.Http(xh, x1, proxyoptions, username, password,tranportConfigurations...)
 	// 死循环，每当遇到连接时，调用 handle
 	for {
 		client, err := l.Accept()

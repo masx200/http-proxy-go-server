@@ -224,28 +224,28 @@ func ProxySelector(r *http.Request, UpStreams map[string]UpStream, Rules []struc
 	if host == "" {
 		host = r.Host
 	}
-	
+
 	// 移除端口号
 	if strings.Contains(host, ":") {
 		host = strings.Split(host, ":")[0]
 	}
-	
+
 	// 检查是否应该被绕过
 	if IsBypassedWithCIDR(UpStreams, Rules, host) {
 		return nil, nil
 	}
-	
+
 	// 选择代理URL
 	proxyURL, err := SelectProxyURLWithCIDR(UpStreams, Rules, host)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// 解析代理URL
 	if proxyURL != "" {
 		return url.Parse(proxyURL)
 	}
-	
+
 	return nil, nil
 }
 
@@ -351,15 +351,33 @@ func main() {
 
 	var tranportConfigurations = []func(*http.Transport) *http.Transport{}
 
-
-	if config.UpStreams != nil && config.Rules != nil { 
-		tranportConfigurations=append(tranportConfigurations,func(t *http.Transport) *http.Transport {
+	if config.UpStreams != nil && config.Rules != nil {
+		tranportConfigurations = append(tranportConfigurations, func(t *http.Transport) *http.Transport {
 			t.Proxy = func(r *http.Request) (*url.URL, error) {
-				return ProxySelector(r, config.UpStreams, config.Rules)
+
+				fmt.Println("ProxySelector", r.URL.Host)
+				proxyURL, err := ProxySelector(r, config.UpStreams, config.Rules)
+				if err != nil {
+					fmt.Printf("ProxySelector 出错: %v\n", err)
+				} else {
+					if proxyURL != nil {
+						fmt.Printf("选择的代理 URL: %s\n", proxyURL.String())
+					} else {
+						fmt.Println("未选择代理")
+					}
+				}
+				return proxyURL, err
 			}
 			return t
 		})
 	}
+
+	by, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(string(by))
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
 		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, proxyoptions, tranportConfigurations...)
 		return
