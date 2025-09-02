@@ -38,6 +38,6 @@ func Tls(server_cert string, server_key, hostname string, port int, proxyoptions
 			log.Panic(err)
 		}
 
-		go simple.Handle(client, upstreamAddress, proxyoptions)
+		go simple.Handle(client, upstreamAddress, proxyoptions,tranportConfigurations...)
 	}
 }

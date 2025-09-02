@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-
 	// "regexp"
 	"strings"
 
@@ -35,7 +34,7 @@ func Simple(hostname string, port int, proxyoptions options.ProxyOptions, tranpo
 			return
 		}
 
-		go Handle(client, upstreamAddress, proxyoptions)
+		go Handle(client, upstreamAddress, proxyoptions,tranportConfigurations...)
 	}
 }
 
@@ -57,7 +56,7 @@ func Simple(hostname string, port int, proxyoptions options.ProxyOptions, tranpo
 // 	}
 // }
 
-func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.ProxyOptions) {
+func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.ProxyOptions,tranportConfigurations... func(*http.Transport) *http.Transport) {
 	if client == nil {
 		return
 	}
@@ -126,7 +125,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 		upstreamAddress = httpUpstreamAddress
 	}
 	// fmt.Println("upstreamAddress:" + httpUpstreamAddress)
-	server, err := options.Proxy_net_Dial("tcp", upstreamAddress, proxyoptions) //net.Dial("tcp", upstreamAddress)
+	server, err := options.Proxy_net_Dial("tcp", upstreamAddress, proxyoptions, tranportConfigurations...) //net.Dial("tcp", upstreamAddress)
 
 	//	for _, err := range errors {
 	//		if err != nil {
