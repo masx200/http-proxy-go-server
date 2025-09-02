@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"strings"
 
@@ -311,8 +312,10 @@ func main() {
 
 		proxyoptions = append(proxyoptions, options.ProxyOption{Dohurl: dohurl, Dohip: dohip, Dohalpn: dohalpn})
 	}
+
+	var tranportConfigurations = []func(*http.Transport) *http.Transport{}
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
-		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, proxyoptions)
+		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, proxyoptions, tranportConfigurations...)
 		return
 	}
 	// if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
@@ -320,15 +323,15 @@ func main() {
 	// 	return
 	// }
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) == 0 && len(*server_key) == 0 {
-		auth.Auth(*hostname, *port, *username, *password, proxyoptions)
+		auth.Auth(*hostname, *port, *username, *password, proxyoptions, tranportConfigurations...)
 		return
 	}
 	if len(*username) == 0 && len(*password) == 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
-		tls.Tls(*server_cert, *server_key, *hostname, *port, proxyoptions)
+		tls.Tls(*server_cert, *server_key, *hostname, *port, proxyoptions, tranportConfigurations...)
 		return
 	}
 	if len(*username) == 0 && len(*password) == 0 && len(*server_cert) == 0 && len(*server_key) == 0 {
-		simple.Simple(*hostname, *port, proxyoptions)
+		simple.Simple(*hostname, *port, proxyoptions, tranportConfigurations...)
 		return
 	}
 

@@ -6,7 +6,9 @@ import (
 	"io"
 	"log"
 	"net"
+	"net/http"
 	"net/url"
+
 	// "regexp"
 	"strings"
 
@@ -14,7 +16,7 @@ import (
 	"github.com/masx200/http-proxy-go-server/options"
 )
 
-func Simple(hostname string, port int, proxyoptions options.ProxyOptions) {
+func Simple(hostname string, port int, proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	// tcp 连接，监听 8080 端口
 	l, err := net.Listen("tcp", hostname+":"+fmt.Sprint(port))
 	if err != nil {
