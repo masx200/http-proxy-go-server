@@ -110,22 +110,32 @@ func matchWildcard(pattern, domain string) bool {
 func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 	Pattern  string `json:"pattern"`
 	Upstream string `json:"upstream"`
-}, domain string) (string, error) {
+}, domain string,scheme string) (string, error) {
 	// 首先尝试解析为IP地址
 	ip := net.ParseIP(domain)
 	if ip != nil {
 		// 如果是IP地址，检查CIDR匹配
 		for _, rule := range rules {
+
+			if rule.Pattern == "*" {
+				var upstream = upstreams[rule.Upstream]
+				if upstream.HTTPS_PROXY != "" && scheme == "https" {
+					return upstream.HTTPS_PROXY, nil
+				}
+				if upstream.HTTP_PROXY != "" && scheme == "http" {
+					return upstream.HTTP_PROXY, nil
+				}
+			}
 			// 检查是否是CIDR格式
 			if strings.Contains(rule.Pattern, "/") {
 				_, ipNet, err := net.ParseCIDR(rule.Pattern)
 				if err == nil && ipNet.Contains(ip) {
 					// 找到匹配的CIDR，返回对应的代理
 					if upstream, exists := upstreams[rule.Upstream]; exists {
-						if upstream.HTTPS_PROXY != "" {
+						if upstream.HTTPS_PROXY != "" && scheme == "https" {
 							return upstream.HTTPS_PROXY, nil
 						}
-						if upstream.HTTP_PROXY != "" {
+						if upstream.HTTP_PROXY != "" && scheme == "http" {
 							return upstream.HTTP_PROXY, nil
 						}
 					}
@@ -133,16 +143,17 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 			} else if rule.Pattern == domain || strings.HasPrefix(domain, rule.Pattern) {
 				// 精确IP匹配或前缀匹配
 				if upstream, exists := upstreams[rule.Upstream]; exists {
-					if upstream.HTTPS_PROXY != "" {
+					if upstream.HTTPS_PROXY != "" && scheme == "https" {
 						return upstream.HTTPS_PROXY, nil
 					}
-					if upstream.HTTP_PROXY != "" {
+					if upstream.HTTP_PROXY != "" && scheme == "http" {
 						return upstream.HTTP_PROXY, nil
 					}
 				}
 			}
 		}
 	} else {
+		
 		// 检查是否为有效的域名格式
 		if !isValidDomain(domain) {
 			return "", fmt.Errorf("invalid domain format: %s", domain)
@@ -150,15 +161,24 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 
 		// 如果是域名，进行域名匹配
 		for _, rule := range rules {
+			if rule.Pattern == "*" {
+				var upstream = upstreams[rule.Upstream]
+				if scheme == "https" && upstream.HTTPS_PROXY != "" {
+					return upstream.HTTPS_PROXY, nil
+				}
+				if scheme == "http" && upstream.HTTP_PROXY != "" {
+					return upstream.HTTP_PROXY, nil
+				}
+			}
 			// 检查是否是CIDR格式（域名不应该匹配CIDR）
 			if !strings.Contains(rule.Pattern, "/") {
 				if matchWildcard(rule.Pattern, domain) || strings.Contains(domain, rule.Pattern) {
 					// 找到匹配的域名模式，返回对应的代理
 					if upstream, exists := upstreams[rule.Upstream]; exists {
-						if upstream.HTTP_PROXY != "" {
+						if scheme == "http" && upstream.HTTP_PROXY != "" {
 							return upstream.HTTP_PROXY, nil
 						}
-						if upstream.HTTPS_PROXY != "" {
+						if scheme == "https" && upstream.HTTPS_PROXY != "" {
 							return upstream.HTTPS_PROXY, nil
 						}
 					}
@@ -219,6 +239,7 @@ func ProxySelector(r *http.Request, UpStreams map[string]UpStream, Rules []struc
 	Pattern  string `json:"pattern"`
 	Upstream string `json:"upstream"`
 }) (*url.URL, error) {
+	scheme:=r.URL.Scheme
 	// 提取请求的主机名
 	host := r.URL.Host
 	if host == "" {
@@ -236,7 +257,7 @@ func ProxySelector(r *http.Request, UpStreams map[string]UpStream, Rules []struc
 	}
 
 	// 选择代理URL
-	proxyURL, err := SelectProxyURLWithCIDR(UpStreams, Rules, host)
+	proxyURL, err := SelectProxyURLWithCIDR(UpStreams, Rules, host,scheme)
 	if err != nil {
 		return nil, err
 	}
