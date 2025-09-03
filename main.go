@@ -380,26 +380,27 @@ func main() {
 	}
 
 	var tranportConfigurations = []func(*http.Transport) *http.Transport{}
+	if config != nil {
+		if config.UpStreams != nil && config.Rules != nil && len(config.Rules) > 0 && len(config.UpStreams) > 0 {
+			tranportConfigurations = append(tranportConfigurations, func(t *http.Transport) *http.Transport {
+				t.Proxy = func(r *http.Request) (*url.URL, error) {
 
-	if config.UpStreams != nil && config.Rules != nil && len(config.Rules) > 0 && len(config.UpStreams) > 0 {
-		tranportConfigurations = append(tranportConfigurations, func(t *http.Transport) *http.Transport {
-			t.Proxy = func(r *http.Request) (*url.URL, error) {
-
-				fmt.Println("ProxySelector", r.URL.Host)
-				proxyURL, err := ProxySelector(r, config.UpStreams, config.Rules)
-				if err != nil {
-					fmt.Printf("ProxySelector 出错: %v\n", err)
-				} else {
-					if proxyURL != nil {
-						fmt.Printf("选择的代理 URL: %s\n", proxyURL.String())
+					fmt.Println("ProxySelector", r.URL.Host)
+					proxyURL, err := ProxySelector(r, config.UpStreams, config.Rules)
+					if err != nil {
+						fmt.Printf("ProxySelector 出错: %v\n", err)
 					} else {
-						fmt.Println("未选择代理")
+						if proxyURL != nil {
+							fmt.Printf("选择的代理 URL: %s\n", proxyURL.String())
+						} else {
+							fmt.Println("未选择代理")
+						}
 					}
+					return proxyURL, err
 				}
-				return proxyURL, err
-			}
-			return t
-		})
+				return t
+			})
+		}
 	}
 
 	by, err := json.MarshalIndent(config, "", "  ")
