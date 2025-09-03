@@ -8,9 +8,11 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+
 	// "regexp"
 	"strings"
 
+	"github.com/masx200/http-proxy-go-server/connect"
 	http_server "github.com/masx200/http-proxy-go-server/http"
 	"github.com/masx200/http-proxy-go-server/options"
 )
@@ -143,7 +145,13 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 	}
 	if method == "CONNECT" && proxyURL != nil {
 
-		log.Fatalln("TODO")
+		server, err = connect.ConnectViaHttpProxy(proxyURL)
+		if err != nil {
+			log.Println(err)
+			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+			return
+		}
+		log.Println("连接成功：" + upstreamAddress)
 	} else {
 		// fmt.Println("upstreamAddress:" + httpUpstreamAddress)
 		server, err = options.Proxy_net_Dial("tcp", upstreamAddress, proxyoptions, tranportConfigurations...) //net.Dial("tcp", upstreamAddress)

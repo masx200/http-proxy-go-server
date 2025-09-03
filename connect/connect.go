@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strings"
 )
+
 // ConnectViaHttpProxy 通过HTTP代理服务器建立网络连接。
 // 该函数使用HTTP CONNECT方法通过代理服务器连接到目标地址。
 //
@@ -21,8 +22,7 @@ import (
 
 func ConnectViaHttpProxy(proxyURL *url.URL) (net.Conn, error) {
 
-
-	var scheme=proxyURL.Scheme
+	var scheme = proxyURL.Scheme
 
 	// 解析代理服务器地址
 	proxyAddr := proxyURL.Host
@@ -82,10 +82,10 @@ func ConnectViaHttpProxy(proxyURL *url.URL) (net.Conn, error) {
 		username := proxyURL.User.Username()
 		password, _ := proxyURL.User.Password()
 		if username != "" && password != "" {
-				auth := username + ":" + password
-				connectReq += fmt.Sprintf("Proxy-Authorization: Basic %s\r\n", 
-					base64.StdEncoding.EncodeToString([]byte(auth)))
-			}
+			auth := username + ":" + password
+			connectReq += fmt.Sprintf("Proxy-Authorization: Basic %s\r\n",
+				base64.StdEncoding.EncodeToString([]byte(auth)))
+		}
 	}
 
 	connectReq += "\r\n"
