@@ -80,6 +80,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, tran
 		}
 		return nil, ErrorArray(errorsaray)
 	}
+	// hosts没有找到域名解析ip,可以忽略这个错误
 	if len(ips) == 0 && err != nil {
 		log.Println(err)
 	}
@@ -110,6 +111,21 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, tran
 		return connection, err1
 	}
 }
+
+// Proxy_net_DialContext 是一个支持代理和 DoH 解析的网络连接拨号函数。
+// 它会尝试通过本地 hosts 文件解析域名，如果失败则使用提供的 DoH 配置进行解析，
+// 并尝试连接到解析出的 IP 地址。
+//
+// 参数:
+//   - ctx: 上下文，用于控制连接的生命周期
+//   - network: 网络协议，例如 "tcp"、"udp"
+//   - address: 目标地址，格式为 "host:port"
+//   - proxyoptions: 代理选项列表，包含 DoH 配置
+//   - tranportConfigurations: 可选的 http.Transport 配置函数
+//
+// 返回值:
+//   - net.Conn: 成功建立的网络连接
+//   - error: 连接过程中发生的错误
 func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(address)
 	if err != nil {
