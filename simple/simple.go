@@ -37,24 +37,34 @@ func Simple(hostname string, port int, proxyoptions options.ProxyOptions, tranpo
 		go Handle(client, upstreamAddress, proxyoptions, tranportConfigurations...)
 	}
 }
+func CheckShouldUseProxy(upstreamAddress string, tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
 
-// func Main() {
-// 	// tcp 连接，监听 8080 端口
-// 	l, err := net.Listen("tcp", ":8080")
-// 	if err != nil {
-// 		log.Panic(err)
-// 	}
+	// clienthost, port, err := net.SplitHostPort(upstreamAddress)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-// 	// 死循环，每当遇到连接时，调用 handle
-// 	for {
-// 		client, err := l.Accept()
-// 		if err != nil {
-// 			log.Panic(err)
-// 		}
+	var transport = http.DefaultTransport
+	for _, f := range tranportConfigurations {
+		if t, ok := transport.(*http.Transport); ok {
+			transport = f(t)
+		}
+	}
+	if t, ok := transport.(*http.Transport); ok {
 
-// 		go Handle(client)
-// 	}
-// }
+		var proxy = t.Proxy
+		if proxy != nil {
+			req, err := http.NewRequest("GET", "https://"+upstreamAddress, nil)
+			if err != nil {
+				return nil, err
+			}
+			return proxy(req)
+		} else {
+			return nil, nil
+		}
+	}
+	return nil, nil
+}
 
 func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	if client == nil {
@@ -125,8 +135,13 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 		upstreamAddress = httpUpstreamAddress
 	}
 	var server net.Conn
+	proxyURL, err := CheckShouldUseProxy(httpUpstreamAddress, tranportConfigurations...)
 
-	if method == "CONNECT" {
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	if method == "CONNECT" && proxyURL != nil {
 
 		log.Fatalln("TODO")
 	} else {

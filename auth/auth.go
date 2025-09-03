@@ -19,6 +19,11 @@ import (
 	"github.com/masx200/http-proxy-go-server/simple"
 )
 
+func CheckShouldUseProxy(upstreamAddress string, tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
+
+	return simple.CheckShouldUseProxy(upstreamAddress, tranportConfigurations...)
+}
+
 // options.ProxyOptions
 func Auth(hostname string, port int, username, password string, proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	// tcp 连接，监听 8080 端口
@@ -42,24 +47,6 @@ func Auth(hostname string, port int, username, password string, proxyoptions opt
 		go Handle(client, username, password, upstreamAddress, proxyoptions, tranportConfigurations...)
 	}
 }
-
-// func Main() {
-// 	// tcp 连接，监听 8080 端口
-// 	l, err := net.Listen("tcp", ":8080")
-// 	if err != nil {
-// 		log.Panic(err)
-// 	}
-
-// 	// 死循环，每当遇到连接时，调用 handle
-// 	for {
-// 		client, err := l.Accept()
-// 		if err != nil {
-// 			log.Panic(err)
-// 		}
-
-// 		go Handle(client, "username", "password")
-// 	}
-// }
 
 func Handle(client net.Conn, username, password string, httpUpstreamAddress string, proxyoptions options.ProxyOptions,
 	tranportConfigurations ...func(*http.Transport) *http.Transport) {
@@ -162,8 +149,13 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		upstreamAddress = httpUpstreamAddress
 	}
 	var server net.Conn
+	proxyURL, err := CheckShouldUseProxy(httpUpstreamAddress, tranportConfigurations...)
 
-	if method == "CONNECT" {
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	if method == "CONNECT" && proxyURL != nil {
 
 		log.Fatalln("TODO")
 	} else {
