@@ -2,6 +2,7 @@ package connect
 
 import (
 	"bufio"
+	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"net"
@@ -10,14 +11,32 @@ import (
 )
 
 func ConnectViaHttpProxy(proxyURL *url.URL) (net.Conn, error) {
+
+
+	var scheme=proxyURL.Scheme
+
 	// 解析代理服务器地址
 	proxyAddr := proxyURL.Host
 	if !strings.Contains(proxyAddr, ":") {
-		proxyAddr += ":80" // 默认端口
+		if scheme == "https" {
+			proxyAddr += ":443" // HTTPS默认端口
+		} else {
+			proxyAddr += ":80" // HTTP默认端口
+		}
 	}
 
 	// 建立到代理服务器的TCP连接
-	conn, err := net.Dial("tcp", proxyAddr)
+	var conn net.Conn
+	var err error
+	if scheme == "https" {
+		// 使用TLS连接
+		conn, err = tls.Dial("tcp", proxyAddr, &tls.Config{
+			ServerName: proxyURL.Hostname(),
+		})
+	} else {
+		// 使用普通TCP连接
+		conn, err = net.Dial("tcp", proxyAddr)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to proxy: %v", err)
 	}
@@ -38,7 +57,7 @@ func ConnectViaHttpProxy(proxyURL *url.URL) (net.Conn, error) {
 
 	// 确保目标地址包含端口
 	if !strings.Contains(targetAddr, ":") {
-		if strings.HasPrefix(proxyURL.String(), "https://") {
+		if scheme == "https" {
 			targetAddr += ":443"
 		} else {
 			targetAddr += ":80"
