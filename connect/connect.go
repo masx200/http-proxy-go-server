@@ -9,6 +9,15 @@ import (
 	"net/url"
 	"strings"
 )
+// ConnectViaHttpProxy 通过HTTP代理服务器建立网络连接。
+// 该函数使用HTTP CONNECT方法通过代理服务器连接到目标地址。
+//
+// 参数:
+//   - proxyURL: 代理服务器的URL，包含代理地址、协议（http/https）、认证信息等。
+//
+// 返回值:
+//   - net.Conn: 成功时返回与目标地址建立的网络连接。
+//   - error: 如果连接失败或代理响应异常，返回相应的错误信息。
 
 func ConnectViaHttpProxy(proxyURL *url.URL) (net.Conn, error) {
 
