@@ -36,6 +36,7 @@ type ProxyOption struct {
 	Dohalpn string
 }
 type ProxyOptions = []ProxyOption
+
 // Proxy_net_Dial 通过指定的网络和地址建立连接，支持代理配置和传输层自定义配置。
 // 如果目标地址是IP，则直接连接；否则尝试解析域名并使用解析出的IP进行连接。
 // 如果本地 hosts 文件中没有解析到IP，且提供了代理选项，则使用代理连接。

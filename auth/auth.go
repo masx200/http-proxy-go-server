@@ -161,14 +161,22 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 	} else {
 		upstreamAddress = httpUpstreamAddress
 	}
-	//获得了请求的 host 和 port，向服务端发起 tcp 连接
-	server, err := options.Proxy_net_Dial("tcp", upstreamAddress, proxyoptions, tranportConfigurations...) // net.Dial("tcp", upstreamAddress)
-	if err != nil {
-		log.Println(err)
-		fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
-		return
+	var server net.Conn
+
+	if method == "CONNECT" {
+
+		log.Fatalln("TODO")
+	} else {
+		server, err = options.Proxy_net_Dial("tcp", upstreamAddress, proxyoptions, tranportConfigurations...) // net.Dial("tcp", upstreamAddress)
+		if err != nil {
+			log.Println(err)
+			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+			return
+		}
+		log.Println("连接成功：" + upstreamAddress)
 	}
-	log.Println("连接成功：" + upstreamAddress)
+	//获得了请求的 host 和 port，向服务端发起 tcp 连接
+
 	//	for _, err := range errors {
 	//		if err != nil {
 	//			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
