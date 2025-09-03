@@ -6,7 +6,7 @@ WORKDIR /build
 run sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirrors.tuna.tsinghua.edu.cn/alpine#g' /etc/apk/repositories
 # Install git
 RUN --mount=type=cache,target=/var/cache/apk \
-    apk add git
+    apk add git ca-certificates
 
 env GO111MODULE=on
 env  GOPROXY=https://goproxy.cn
@@ -36,3 +36,10 @@ COPY --from=build /bin/main .
 
 
 run chmod +x /app/main
+
+
+run sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirrors.tuna.tsinghua.edu.cn/alpine#g' /etc/apk/repositories
+
+
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add git ca-certificates curl
