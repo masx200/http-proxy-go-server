@@ -43,19 +43,19 @@ func TestSelectProxyURLWithCIDR(t *testing.T) {
 		expectedURL string
 		expectError bool
 	}{
-		
+
 		{
-		name:        "qq域名包含匹配",
-		domain:      "www.qq.com",
-		expectedURL: "http://proxy1.example.com:8080", // 非HTTPS域名返回HTTP代理
-		expectError: false,
-	},
+			name:        "qq域名包含匹配",
+			domain:      "www.qq.com",
+			expectedURL: "http://proxy1.example.com:8080", // 非HTTPS域名返回HTTP代理
+			expectError: false,
+		},
 		{
-		name:        "Google域名包含匹配",
-		domain:      "www.baidu.com",
-		expectedURL: "http://proxy3.example.com:8080", // 非HTTPS域名返回HTTP代理
-		expectError: false,
-	},
+			name:        "Google域名包含匹配",
+			domain:      "www.baidu.com",
+			expectedURL: "http://proxy3.example.com:8080", // 非HTTPS域名返回HTTP代理
+			expectError: false,
+		},
 		// 域名匹配测试（使用字符串包含匹配）
 		{
 			name:        "Google域名包含匹配",
@@ -183,8 +183,6 @@ func TestSelectProxyURLWithCIDR(t *testing.T) {
 		})
 	}
 }
-
-
 
 func TestSelectProxyURLWithCIDR_Priority(t *testing.T) {
 	// 测试规则优先级

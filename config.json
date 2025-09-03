@@ -5,17 +5,17 @@
   "server_key": "",
   "username": "",
   "password": "",
-  "dohurls": [
-    "https://dns.alidns.com/dns-query",
-    "https://one.one.one.one/dns-query"
-  ],
-  "dohips": [
-    "223.5.5.5",
-    "1.1.1.1"
-  ],
-  "dohalpns": [
-    "h2",
-    "h2"
+  "doh": [
+    {
+      "ip": "223.5.5.5",
+      "alpn": "h2",
+      "url": "https://dns.alidns.com/dns-query"
+    },
+    {
+      "ip": "1.1.1.1",
+      "alpn": "h2",
+      "url": "https://one.one.one.one/dns-query"
+    }
   ],
   "upstreams": {
     "localhost": {
@@ -29,11 +29,9 @@
     }
   },
   "rules": [
-
     {
       "pattern": "*",
       "upstream": "localhost"
     }
-    
   ]
 }

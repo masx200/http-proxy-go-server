@@ -38,17 +38,22 @@ type UpStream struct {
 // 	http.ProxyFromEnvironment()
 // }
 
+// DohConfig DOH配置结构体
+type DohConfig struct {
+	IP   string `json:"ip"`
+	Alpn string `json:"alpn"`
+	URL  string `json:"url"`
+}
+
 // Config 结构体用于JSON配置文件
 type Config struct {
-	Hostname   string   `json:"hostname"`
-	Port       int      `json:"port"`
-	ServerCert string   `json:"server_cert"`
-	ServerKey  string   `json:"server_key"`
-	Username   string   `json:"username"`
-	Password   string   `json:"password"`
-	Dohurls    []string `json:"dohurls"`
-	Dohips     []string `json:"dohips"`
-	Dohalpns   []string `json:"dohalpns"`
+	Hostname   string      `json:"hostname"`
+	Port       int         `json:"port"`
+	ServerCert string      `json:"server_cert"`
+	ServerKey  string      `json:"server_key"`
+	Username   string      `json:"username"`
+	Password   string      `json:"password"`
+	Doh        []DohConfig `json:"doh"`
 
 	UpStreams map[string]UpStream `json:"upstreams"`
 	Rules     []struct {
@@ -110,7 +115,7 @@ func matchWildcard(pattern, domain string) bool {
 func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 	Pattern  string `json:"pattern"`
 	Upstream string `json:"upstream"`
-}, domain string,scheme string) (string, error) {
+}, domain string, scheme string) (string, error) {
 	// 首先尝试解析为IP地址
 	ip := net.ParseIP(domain)
 	if ip != nil {
@@ -153,7 +158,7 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 			}
 		}
 	} else {
-		
+
 		// 检查是否为有效的域名格式
 		if !isValidDomain(domain) {
 			return "", fmt.Errorf("invalid domain format: %s", domain)
@@ -239,7 +244,7 @@ func ProxySelector(r *http.Request, UpStreams map[string]UpStream, Rules []struc
 	Pattern  string `json:"pattern"`
 	Upstream string `json:"upstream"`
 }) (*url.URL, error) {
-	scheme:=r.URL.Scheme
+	scheme := r.URL.Scheme
 	// 提取请求的主机名
 	host := r.URL.Host
 	if host == "" {
@@ -257,7 +262,7 @@ func ProxySelector(r *http.Request, UpStreams map[string]UpStream, Rules []struc
 	}
 
 	// 选择代理URL
-	proxyURL, err := SelectProxyURLWithCIDR(UpStreams, Rules, host,scheme)
+	proxyURL, err := SelectProxyURLWithCIDR(UpStreams, Rules, host, scheme)
 	if err != nil {
 		return nil, err
 	}
@@ -323,14 +328,18 @@ func main() {
 		if config.Password != "" {
 			*password = config.Password
 		}
-		if len(config.Dohurls) > 0 {
-			dohurls = multiString(config.Dohurls)
-		}
-		if len(config.Dohips) > 0 {
-			dohips = multiString(config.Dohips)
-		}
-		if len(config.Dohalpns) > 0 {
-			dohalpns = multiString(config.Dohalpns)
+		if len(config.Doh) > 0 {
+			for _, dohConfig := range config.Doh {
+				if dohConfig.URL != "" {
+					dohurls = append(dohurls, dohConfig.URL)
+				}
+				if dohConfig.IP != "" {
+					dohips = append(dohips, dohConfig.IP)
+				}
+				if dohConfig.Alpn != "" {
+					dohalpns = append(dohalpns, dohConfig.Alpn)
+				}
+			}
 		}
 	}
 	fmt.Println("dohalpn:", dohalpns.String())

@@ -65,9 +65,13 @@ JSON 配置文件支持以下参数：
   "server_key": "",
   "username": "",
   "password": "",
-  "dohurls": ["https://dns.alidns.com/dns-query"],
-  "dohips": ["223.5.5.5"],
-  "dohalpns": ["h2"]
+  "doh": [
+    {
+      "ip": "223.5.5.5",
+      "alpn": "h2",
+      "url": "https://dns.alidns.com/dns-query"
+    }
+  ]
 }
 ```
 
@@ -79,9 +83,10 @@ JSON 配置文件支持以下参数：
 - `server_key`: HTTPS 服务所需的 TLS 私钥文件路径
 - `username`: 访问代理服务器所需的用户名
 - `password`: 访问代理服务器所需的密码
-- `dohurls`: DOH URL 数组，支持 http 和 https 协议
-- `dohips`: DOH IP 数组，支持 ipv4 和 ipv6 地址
-- `dohalpns`: DOH alpn 数组，支持 h2 和 h3 协议
+- `doh`: DOH 配置对象数组，每个对象包含以下字段：
+  - `ip`: DOH 服务器 IP 地址，支持 ipv4 和 ipv6 地址
+  - `alpn`: DOH ALPN 协议，支持 h2 和 h3 协议
+  - `url`: DOH 服务器 URL，支持 http 和 https 协议
 
 ### 使用配置文件
 
