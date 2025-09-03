@@ -77,7 +77,7 @@ func ResolveDomainToIPsWithDoh3(domain string, dohurl string, dohip ...string) (
 	}
 
 	// 打印日志
-	log.Println("dns resolved " + domain + " ips:[" + strings.Join(ipStrings, ",")+"]")
+	log.Println("dns resolved " + domain + " ips:[" + strings.Join(ipStrings, ",") + "]")
 
 	return ips, nil
 }

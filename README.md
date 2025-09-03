@@ -48,8 +48,67 @@ http-proxy-go-server
 HTTP 或 HTTPS
 模式下的代理服务器。用户可以根据需要调整其监听地址、端口、认证凭据以及是否启用加密通信等配置项。
 
+## JSON 配置文件
+
+除了命令行参数外，`http-proxy-go-server` 还支持通过 JSON 配置文件进行配置。使用
+`-config` 参数指定配置文件路径。
+
+### 配置文件结构
+
+JSON 配置文件支持以下参数：
+
+```json
+{
+  "hostname": "0.0.0.0",
+  "port": 8080,
+  "server_cert": "",
+  "server_key": "",
+  "username": "",
+  "password": "",
+  "doh": [
+    {
+      "ip": "223.5.5.5",
+      "alpn": "h2",
+      "url": "https://dns.alidns.com/dns-query"
+    }
+  ]
+}
+```
+
+### 配置项说明
+
+- `hostname`: 服务器绑定的主机名，默认为 "0.0.0.0"
+- `port`: 服务器监听的 TCP 端口号，默认为 8080
+- `server_cert`: HTTPS 服务所需的 TLS 服务器证书文件路径
+- `server_key`: HTTPS 服务所需的 TLS 私钥文件路径
+- `username`: 访问代理服务器所需的用户名
+- `password`: 访问代理服务器所需的密码
+- `doh`: DOH 配置对象数组，每个对象包含以下字段：
+  - `ip`: DOH 服务器 IP 地址，支持 ipv4 和 ipv6 地址
+  - `alpn`: DOH ALPN 协议，支持 h2 和 h3 协议
+  - `url`: DOH 服务器 URL，支持 http 和 https 协议
+
+### 使用配置文件
+
+```bash
+# 使用配置文件启动服务器
+go run main.go -config config.json
+
+# 配置文件和命令行参数可以混合使用，命令行参数会覆盖配置文件中的对应值
+go run main.go -config config.json -port 9090 -username admin
+```
+
+### 配置文件优先级
+
+配置文件中的参数会被用作默认值，但命令行参数会覆盖配置文件中的对应值。这样可以灵活地在基础配置上进行个性化调整。
+
 ## example
 
 ```bash
 "/root/http-proxy-go-server/main" -dohurl "https://******************************" -dohip  "************" -port 58888 -username admin -password "*************************************"  -server_cert "**********************************************"  -server_key "**********************************************"
+```
+
+```bash
+# 使用配置文件的示例
+go run main.go -config config.json
 ```

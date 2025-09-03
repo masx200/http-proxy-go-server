@@ -18,25 +18,6 @@ import (
 	"github.com/masx200/http-proxy-go-server/options"
 )
 
-// "bytes"
-// "bytes"
-
-// "net/http/cookiejar"
-
-// "net/url"
-
-// "github.com/go-kit/kit/sd/etcd"
-
-// Create a custom transport that uses the proxy for HTTP requests.
-// func newTransport(proxyAddress string) *http.Transport {
-// 	proxyURL, _ := url.Parse(proxyAddress) // 注意处理错误
-// 	return &http.Transport{
-// 		Proxy: http.ProxyURL(proxyURL),
-// 	}
-// }
-
-// ServeHTTP is a handler that forwards incoming requests to the target URL specified in the request.
-
 func startsWithHTTP(s string) bool {
 	return strings.HasPrefix(s, "http://")
 }
@@ -98,7 +79,7 @@ func parseForwardedHeader(header string) ([]ForwardedBy, error) {
 
 	return forwardedByList, nil
 }
-func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, proxyoptions options.ProxyOptions, username, password string) {
+func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, proxyoptions options.ProxyOptions, username, password string, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	fmt.Println("method:", r.Method)
 	fmt.Println("url:", r.URL)
 	fmt.Println("host:", r.Host)
@@ -237,7 +218,9 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 		},
 
 		/* Jar: jar */} // 替换为你的代理服务器地址和端口
-
+	for _, f := range tranportConfigurations {
+		transport = f(transport)
+	}
 	if len(proxyoptions) > 0 {
 
 		client.Transport = transport
@@ -294,7 +277,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 //			log.Fatal("Serve: ", err)
 //		}
 //	}
-func Http(hostname string, port int, proxyoptions options.ProxyOptions, username, password string) {
+func Http(hostname string, port int, proxyoptions options.ProxyOptions, username, password string, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
@@ -313,7 +296,7 @@ func Http(hostname string, port int, proxyoptions options.ProxyOptions, username
 	engine.Use(func(c *gin.Context) {
 		var w = c.Writer
 		var r = c.Request
-		proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, username, password)
+		proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, username, password, tranportConfigurations...)
 		c.Abort()
 	})
 	// 设置自定义处理器

@@ -1,0 +1,37 @@
+{
+  "hostname": "0.0.0.0",
+  "port": 8080,
+  "server_cert": "",
+  "server_key": "",
+  "username": "",
+  "password": "",
+  "doh": [
+    {
+      "ip": "223.5.5.5",
+      "alpn": "h2",
+      "url": "https://dns.alidns.com/dns-query"
+    },
+    {
+      "ip": "1.1.1.1",
+      "alpn": "h2",
+      "url": "https://one.one.one.one/dns-query"
+    }
+  ],
+  "upstreams": {
+    "localhost": {
+      "http_proxy": "http://admin:pass@127.0.0.1:7890",
+      "https_proxy": "http://admin:pass@127.0.0.1:7890",
+      "bypass_list": [
+        "localhost",
+        "127.0.0.1",
+        "[::1]"
+      ]
+    }
+  },
+  "rules": [
+    {
+      "pattern": "*",
+      "upstream": "localhost"
+    }
+  ]
+}
