@@ -40,7 +40,7 @@ func Simple(hostname string, port int, proxyoptions options.ProxyOptions, tranpo
 	}
 }
 func CheckShouldUseProxy(upstreamAddress string, tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
-
+	fmt.Println("开始检查CheckShouldUseProxy", upstreamAddress)
 	// clienthost, port, err := net.SplitHostPort(upstreamAddress)
 	// if err != nil {
 	// 	return nil, err
@@ -137,7 +137,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 		upstreamAddress = httpUpstreamAddress
 	}
 	var server net.Conn
-	proxyURL, err := CheckShouldUseProxy(httpUpstreamAddress, tranportConfigurations...)
+	proxyURL, err := CheckShouldUseProxy(upstreamAddress, tranportConfigurations...)
 
 	if err != nil {
 		log.Println(err)

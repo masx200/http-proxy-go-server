@@ -21,7 +21,7 @@ import (
 //   - error: 如果连接失败或代理响应异常，返回相应的错误信息。
 
 func ConnectViaHttpProxy(proxyURL *url.URL, targetAddr string) (net.Conn, error) {
-
+	fmt.Println("开始连接代理服务器", proxyURL,targetAddr)
 	var scheme = proxyURL.Scheme
 
 	// 解析代理服务器地址

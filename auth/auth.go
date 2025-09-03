@@ -151,7 +151,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		upstreamAddress = httpUpstreamAddress
 	}
 	var server net.Conn
-	proxyURL, err := CheckShouldUseProxy(httpUpstreamAddress, tranportConfigurations...)
+	proxyURL, err := CheckShouldUseProxy(upstreamAddress, tranportConfigurations...)
 
 	if err != nil {
 		log.Println(err)
