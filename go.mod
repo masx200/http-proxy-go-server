@@ -4,10 +4,14 @@ go 1.23.0
 
 toolchain go1.23.2
 
+
+require github.com/gin-gonic/gin v1.10.1
+
 require (
-	github.com/gin-gonic/gin v1.10.0
+	
 	github.com/tantalor93/doq-go v0.10.0
 )
+
 
 require (
 	github.com/ebi-yade/altsvc-go v0.1.1 // indirect
