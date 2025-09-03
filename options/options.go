@@ -36,7 +36,19 @@ type ProxyOption struct {
 	Dohalpn string
 }
 type ProxyOptions = []ProxyOption
-
+// Proxy_net_Dial 通过指定的网络和地址建立连接，支持代理配置和传输层自定义配置。
+// 如果目标地址是IP，则直接连接；否则尝试解析域名并使用解析出的IP进行连接。
+// 如果本地 hosts 文件中没有解析到IP，且提供了代理选项，则使用代理连接。
+//
+// 参数:
+//   - network: 网络类型，如 "tcp"、"udp" 等
+//   - addr: 目标地址，格式为 "host:port"
+//   - proxyoptions: 代理配置选项，用于指定代理服务器等信息
+//   - tranportConfigurations: 可选的 http.Transport 配置函数，用于自定义传输层行为
+//
+// 返回值:
+//   - net.Conn: 成功建立的网络连接
+//   - error: 连接过程中发生的错误
 func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(addr)
 	if err != nil {
