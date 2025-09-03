@@ -11,13 +11,20 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+
 	// "net/url"
 	"strings"
 
+	"github.com/masx200/http-proxy-go-server/connect"
 	http_server "github.com/masx200/http-proxy-go-server/http"
 	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/http-proxy-go-server/simple"
 )
+
+func CheckShouldUseProxy(upstreamAddress string, tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
+
+	return simple.CheckShouldUseProxy(upstreamAddress, tranportConfigurations...)
+}
 
 // options.ProxyOptions
 func Auth(hostname string, port int, username, password string, proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) {
@@ -42,24 +49,6 @@ func Auth(hostname string, port int, username, password string, proxyoptions opt
 		go Handle(client, username, password, upstreamAddress, proxyoptions, tranportConfigurations...)
 	}
 }
-
-// func Main() {
-// 	// tcp 连接，监听 8080 端口
-// 	l, err := net.Listen("tcp", ":8080")
-// 	if err != nil {
-// 		log.Panic(err)
-// 	}
-
-// 	// 死循环，每当遇到连接时，调用 handle
-// 	for {
-// 		client, err := l.Accept()
-// 		if err != nil {
-// 			log.Panic(err)
-// 		}
-
-// 		go Handle(client, "username", "password")
-// 	}
-// }
 
 func Handle(client net.Conn, username, password string, httpUpstreamAddress string, proxyoptions options.ProxyOptions,
 	tranportConfigurations ...func(*http.Transport) *http.Transport) {
@@ -161,14 +150,33 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 	} else {
 		upstreamAddress = httpUpstreamAddress
 	}
-	//获得了请求的 host 和 port，向服务端发起 tcp 连接
-	server, err := options.Proxy_net_Dial("tcp", upstreamAddress, proxyoptions, tranportConfigurations...) // net.Dial("tcp", upstreamAddress)
+	var server net.Conn
+	proxyURL, err := CheckShouldUseProxy(httpUpstreamAddress, tranportConfigurations...)
+
 	if err != nil {
 		log.Println(err)
-		fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
 		return
 	}
-	log.Println("连接成功：" + upstreamAddress)
+	if method == "CONNECT" && proxyURL != nil {
+
+		server, err = connect.ConnectViaHttpProxy(proxyURL)
+		if err != nil {
+			log.Println(err)
+			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+			return
+		}
+		log.Println("连接成功：" + upstreamAddress)
+	} else {
+		server, err = options.Proxy_net_Dial("tcp", upstreamAddress, proxyoptions, tranportConfigurations...) // net.Dial("tcp", upstreamAddress)
+		if err != nil {
+			log.Println(err)
+			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+			return
+		}
+		log.Println("连接成功：" + upstreamAddress)
+	}
+	//获得了请求的 host 和 port，向服务端发起 tcp 连接
+
 	//	for _, err := range errors {
 	//		if err != nil {
 	//			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")

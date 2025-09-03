@@ -8,9 +8,11 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+
 	// "regexp"
 	"strings"
 
+	"github.com/masx200/http-proxy-go-server/connect"
 	http_server "github.com/masx200/http-proxy-go-server/http"
 	"github.com/masx200/http-proxy-go-server/options"
 )
@@ -37,24 +39,34 @@ func Simple(hostname string, port int, proxyoptions options.ProxyOptions, tranpo
 		go Handle(client, upstreamAddress, proxyoptions, tranportConfigurations...)
 	}
 }
+func CheckShouldUseProxy(upstreamAddress string, tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
 
-// func Main() {
-// 	// tcp 连接，监听 8080 端口
-// 	l, err := net.Listen("tcp", ":8080")
-// 	if err != nil {
-// 		log.Panic(err)
-// 	}
+	// clienthost, port, err := net.SplitHostPort(upstreamAddress)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-// 	// 死循环，每当遇到连接时，调用 handle
-// 	for {
-// 		client, err := l.Accept()
-// 		if err != nil {
-// 			log.Panic(err)
-// 		}
+	var transport = http.DefaultTransport
+	for _, f := range tranportConfigurations {
+		if t, ok := transport.(*http.Transport); ok {
+			transport = f(t)
+		}
+	}
+	if t, ok := transport.(*http.Transport); ok {
 
-// 		go Handle(client)
-// 	}
-// }
+		var proxy = t.Proxy
+		if proxy != nil {
+			req, err := http.NewRequest("GET", "https://"+upstreamAddress, nil)
+			if err != nil {
+				return nil, err
+			}
+			return proxy(req)
+		} else {
+			return nil, nil
+		}
+	}
+	return nil, nil
+}
 
 func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	if client == nil {
@@ -124,20 +136,39 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 	} else {
 		upstreamAddress = httpUpstreamAddress
 	}
-	// fmt.Println("upstreamAddress:" + httpUpstreamAddress)
-	server, err := options.Proxy_net_Dial("tcp", upstreamAddress, proxyoptions, tranportConfigurations...) //net.Dial("tcp", upstreamAddress)
+	var server net.Conn
+	proxyURL, err := CheckShouldUseProxy(httpUpstreamAddress, tranportConfigurations...)
 
-	//	for _, err := range errors {
-	//		if err != nil {
-	//			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
-	//			log.Println(err)
-	//			return
-	//		}
-	//	}
 	if err != nil {
 		log.Println(err)
-		fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
 		return
+	}
+	if method == "CONNECT" && proxyURL != nil {
+
+		server, err = connect.ConnectViaHttpProxy(proxyURL)
+		if err != nil {
+			log.Println(err)
+			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+			return
+		}
+		log.Println("连接成功：" + upstreamAddress)
+	} else {
+		// fmt.Println("upstreamAddress:" + httpUpstreamAddress)
+		server, err = options.Proxy_net_Dial("tcp", upstreamAddress, proxyoptions, tranportConfigurations...) //net.Dial("tcp", upstreamAddress)
+
+		//	for _, err := range errors {
+		//		if err != nil {
+		//			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+		//			log.Println(err)
+		//			return
+		//		}
+		//	}
+		if err != nil {
+			log.Println(err)
+			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+			return
+		}
+		log.Println("连接成功：" + upstreamAddress)
 	}
 	//如果使用 https 协议，需先向客户端表示连接建立完毕
 	if method == "CONNECT" {
