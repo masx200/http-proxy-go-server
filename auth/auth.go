@@ -159,7 +159,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 	}
 	if method == "CONNECT" && proxyURL != nil {
 
-		server, err = connect.ConnectViaHttpProxy(proxyURL)
+		server, err = connect.ConnectViaHttpProxy(proxyURL, upstreamAddress)
 		if err != nil {
 			log.Println(err)
 			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")

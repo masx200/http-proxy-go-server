@@ -20,7 +20,7 @@ import (
 //   - net.Conn: 成功时返回与目标地址建立的网络连接。
 //   - error: 如果连接失败或代理响应异常，返回相应的错误信息。
 
-func ConnectViaHttpProxy(proxyURL *url.URL) (net.Conn, error) {
+func ConnectViaHttpProxy(proxyURL *url.URL, targetAddr string) (net.Conn, error) {
 
 	var scheme = proxyURL.Scheme
 
@@ -51,18 +51,18 @@ func ConnectViaHttpProxy(proxyURL *url.URL) (net.Conn, error) {
 	}
 
 	// 从proxyURL中获取目标地址（这里假设proxyURL的Path或Opaque包含目标地址）
-	targetAddr := proxyURL.Path
-	if targetAddr == "" {
-		targetAddr = proxyURL.Opaque
-	}
-	if targetAddr != "" && targetAddr[0] == '/' {
-		targetAddr = targetAddr[1:]
-	}
+	// targetAddr := proxyURL.Path
+	// if targetAddr == "" {
+	// 	targetAddr = proxyURL.Opaque
+	// }
+	// if targetAddr != "" && targetAddr[0] == '/' {
+	// 	targetAddr = targetAddr[1:]
+	// }
 
-	if targetAddr == "" {
-		conn.Close()
-		return nil, fmt.Errorf("target address not specified in proxy URL")
-	}
+	// if targetAddr == "" {
+	// 	conn.Close()
+	// 	return nil, fmt.Errorf("target address not specified in proxy URL")
+	// }
 
 	// 确保目标地址包含端口
 	if !strings.Contains(targetAddr, ":") {
@@ -113,10 +113,10 @@ func ConnectViaHttpProxy(proxyURL *url.URL) (net.Conn, error) {
 
 	// 检查状态码
 	var statusCode int
-	_, err = fmt.Sscanf(respLine, "HTTP/1.%*d %d", &statusCode)
+	_, err = fmt.Sscanf(respLine, "HTTP/1.1 %d", &statusCode)
 	if err != nil {
 		conn.Close()
-		return nil, fmt.Errorf("failed to parse status code: %v", err)
+		return nil, fmt.Errorf("failed to parse status code: %v "+respLine, err)
 	}
 
 	// 读取剩余的头部
