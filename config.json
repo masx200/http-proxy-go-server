@@ -30,8 +30,13 @@
   },
   "rules": [
     {
-      "pattern": "*",
+      "filter": "any",
       "upstream": "localhost"
     }
-  ]
+  ],
+  "filters":{
+    "any":{
+      "patterns":["*"]
+    }
+  }
 }
