@@ -26,15 +26,27 @@ func TestSelectProxyURLWithCIDR(t *testing.T) {
 
 	// 设置测试用的rules
 	rules := []struct {
-		Pattern  string `json:"pattern"`
+		Filter   string `json:"filter"`
 		Upstream string `json:"upstream"`
 	}{
-		{Pattern: "google.com", Upstream: "proxy1"}, // 字符串包含匹配
-		{Pattern: "github.com", Upstream: "proxy1"},
-		{Pattern: "192.168.1.0/24", Upstream: "proxy2"},
-		{Pattern: "10.0.0.1", Upstream: "proxy2"},
-		{Pattern: "*.baidu.com", Upstream: "proxy3"},
-		{Pattern: "*", Upstream: "proxy1"}, // 通配符匹配所有
+		{Filter: "google", Upstream: "proxy1"}, // 字符串包含匹配
+		{Filter: "github", Upstream: "proxy1"},
+		{Filter: "network", Upstream: "proxy2"},
+		{Filter: "specific", Upstream: "proxy2"},
+		{Filter: "baidu", Upstream: "proxy3"},
+		{Filter: "any", Upstream: "proxy1"}, // 通配符匹配所有
+	}
+
+	// 设置测试用的filters
+	filters := map[string]struct {
+		Patterns []string `json:"patterns"`
+	}{
+		"google": {Patterns: []string{"google.com"}},
+		"github": {Patterns: []string{"github.com"}},
+		"network": {Patterns: []string{"192.168.1.0/24"}},
+		"specific": {Patterns: []string{"10.0.0.1"}},
+		"baidu": {Patterns: []string{"*.baidu.com"}},
+		"any": {Patterns: []string{"*"}},
 	}
 
 	tests := []struct {
@@ -156,7 +168,7 @@ func TestSelectProxyURLWithCIDR(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := SelectProxyURLWithCIDR(upstreams, rules, tt.domain, "http")
+			result, err := SelectProxyURLWithCIDR(upstreams, rules, filters, tt.domain, "http")
 
 			if tt.expectError {
 				if err == nil {
@@ -199,14 +211,22 @@ func TestSelectProxyURLWithCIDR_Priority(t *testing.T) {
 
 	// 规则按顺序，第一个匹配的规则生效
 	rules := []struct {
-		Pattern  string `json:"pattern"`
+		Filter   string `json:"filter"`
 		Upstream string `json:"upstream"`
 	}{
-		{Pattern: "com", Upstream: "proxy1"}, // 字符串包含匹配
-		{Pattern: "google.com", Upstream: "proxy2"},
+		{Filter: "com", Upstream: "proxy1"}, // 字符串包含匹配
+		{Filter: "google", Upstream: "proxy2"},
 	}
 
-	result, err := SelectProxyURLWithCIDR(upstreams, rules, "google.com", "http")
+	// 设置测试用的filters
+	filters := map[string]struct {
+		Patterns []string `json:"patterns"`
+	}{
+		"com": {Patterns: []string{"com"}},
+		"google": {Patterns: []string{"google.com"}},
+	}
+
+	result, err := SelectProxyURLWithCIDR(upstreams, rules, filters, "google.com", "http")
 
 	if err != nil {
 		t.Errorf("意外的错误: %v", err)
