@@ -633,8 +633,22 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream Up
 		return nil, fmt.Errorf("failed to connect to %s:%d via WebSocket proxy: %v", host, portNum, err)
 	}
 
-	// 返回网络连接
-	return websocketClient.NetConn(), nil
+	// 创建一个管道连接来处理WebSocket数据转发
+	clientConn, serverConn := net.Pipe()
+	
+	// 在goroutine中处理WebSocket数据转发
+	go func() {
+		defer clientConn.Close()
+		defer serverConn.Close()
+		// 使用ForwardData方法处理WebSocket连接
+		err := websocketClient.ForwardData(serverConn)
+		if err != nil {
+			fmt.Printf("WebSocket ForwardData error: %v\n", err)
+		}
+	}()
+
+	// 返回客户端连接
+	return clientConn, nil
 }
 
 func init() {
