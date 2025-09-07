@@ -17,6 +17,7 @@ import (
 	"github.com/masx200/http-proxy-go-server/connect"
 	http_server "github.com/masx200/http-proxy-go-server/http"
 	"github.com/masx200/http-proxy-go-server/options"
+	"github.com/masx200/http-proxy-go-server/utils"
 	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
 	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
 )
@@ -44,32 +45,7 @@ func Simple(hostname string, port int, proxyoptions options.ProxyOptions, tranpo
 	}
 }
 func CheckShouldUseProxy(upstreamAddress string, tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
-	fmt.Println("开始检查CheckShouldUseProxy", upstreamAddress)
-	// clienthost, port, err := net.SplitHostPort(upstreamAddress)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	var transport = http.DefaultTransport
-	for _, f := range tranportConfigurations {
-		if t, ok := transport.(*http.Transport); ok {
-			transport = f(t)
-		}
-	}
-	if t, ok := transport.(*http.Transport); ok {
-
-		var proxy = t.Proxy
-		if proxy != nil {
-			req, err := http.NewRequest("GET", "https://"+upstreamAddress, nil)
-			if err != nil {
-				return nil, err
-			}
-			return proxy(req)
-		} else {
-			return nil, nil
-		}
-	}
-	return nil, nil
+	return utils.CheckShouldUseProxy(upstreamAddress, tranportConfigurations...)
 }
 
 func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) {

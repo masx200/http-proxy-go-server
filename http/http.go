@@ -16,6 +16,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/masx200/http-proxy-go-server/options"
+	// "github.com/masx200/http-proxy-go-server/simple"
+	"github.com/masx200/http-proxy-go-server/utils"
 )
 
 func startsWithHTTP(s string) bool {
@@ -232,6 +234,8 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	utils.CheckShouldUseProxy(proxyReq.Host, tranportConfigurations...)
 	proxyReq.Header = r.Header.Clone()
 	proxyReq.ContentLength = r.ContentLength
 	resp, err := client.Do(proxyReq)
