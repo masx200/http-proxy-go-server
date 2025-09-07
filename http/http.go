@@ -260,23 +260,6 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	}
 }
 
-// func main() {
-// 	// 监听本地8080端口
-// 	listener, err := net.Listen("tcp", ":8080")
-// 	if err != nil {
-// 		log.Fatal("ListenAndServe: ", err)
-// 	}
-// 	log.Printf("Proxy server started on port %s", listener.Addr())
-
-// 	// 设置自定义处理器
-// 	http.HandleFunc("/", proxyHandler)
-
-//		// 开始服务
-//		err = http.Serve(listener, nil)
-//		if err != nil {
-//			log.Fatal("Serve: ", err)
-//		}
-//	}
 func Http(hostname string, port int, proxyoptions options.ProxyOptions, username, password string, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.Default()
@@ -314,33 +297,35 @@ func Http(hostname string, port int, proxyoptions options.ProxyOptions, username
 	}
 }
 func GenerateRandomLoopbackIP() string {
-	rand.Seed(time.Now().UnixNano())
 	randomIP := generateRandomIP()
 	fmt.Println("Random IP:", randomIP)
 	return randomIP.String()
 }
 
 func generateRandomIP() net.IP {
+	rd := rand.New(rand.NewSource(time.Now().UnixNano()))
+
 	ip := net.IPv4(
 		byte(127 /* +rand.Intn(1) */),
-		byte(rand.Intn(256)),
-		byte(rand.Intn(256)),
-		byte(rand.Intn(256)),
+		byte(rd.Intn(256)),
+		byte(rd.Intn(256)),
+		byte(rd.Intn(256)),
 	)
 	return ip
 }
 
 func GenerateRandomIntPort() int {
-	rand.Seed(time.Now().UnixNano())
 	randomInt := generateRandomInt()
 	fmt.Println("Random integer:", randomInt)
 	return randomInt
 }
 
 func generateRandomInt() int {
+	rd := rand.New(rand.NewSource(time.Now().UnixNano()))
+
 	minport := 10000
 	maxport := 65535
-	return rand.Intn(maxport-minport+1) + minport
+	return rd.Intn(maxport-minport+1) + minport
 }
 
 // IsIP 判断给定的字符串是否是有效的 IPv4 或 IPv6 地址。
