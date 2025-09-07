@@ -247,9 +247,15 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	}
 	if proxyUrl != nil && (proxyUrl.Scheme == "ws" || proxyUrl.Scheme == "wss") {
 
+		log.Println("使用代理：" + proxyUrl.String())
+
 		if transport, ok := client.Transport.(*http.Transport); ok {
 			transport.Proxy = nil
 			var DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+
+				log.Println("使用代理：" + proxyUrl.String())
+
+				log.Println("network,addr", network, addr)
 				return websocketDialContext(ctx, network, addr, proxyUrl)
 			}
 			transport.DialContext = DialContext
