@@ -11,14 +11,15 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-
-	// "net/url"
 	"strings"
+	"time"
 
 	"github.com/masx200/http-proxy-go-server/connect"
 	http_server "github.com/masx200/http-proxy-go-server/http"
 	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/http-proxy-go-server/simple"
+	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
+	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
 )
 
 func CheckShouldUseProxy(upstreamAddress string, tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
@@ -157,8 +158,77 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		log.Println(err)
 		return
 	}
-	if method == "CONNECT" && proxyURL != nil {
+	// 检查是否需要使用WebSocket代理
+	if proxyURL != nil && (strings.HasPrefix(proxyURL.String(), "ws://") || strings.HasPrefix(proxyURL.String(), "wss://")) {
+		// 解析目标地址
+		host, port, err := net.SplitHostPort(upstreamAddress)
+		if err != nil {
+			// 如果没有端口，尝试添加默认端口
+			if strings.Contains(upstreamAddress, ":") {
+				// IPv6地址
+				upstreamAddress = "[" + upstreamAddress + "]:80"
+			} else {
+				// 域名或IPv4地址
+				upstreamAddress = upstreamAddress + ":80"
+			}
+			host, port, err = net.SplitHostPort(upstreamAddress)
+			if err != nil {
+				log.Println("failed to parse address:", err)
+				fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+				return
+			}
+		}
 
+		// 转换端口号为整数
+		portNum, err := strconv.Atoi(port)
+		if err != nil {
+			log.Println("failed to parse port:", err)
+			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+			return
+		}
+
+		// 创建WebSocket客户端配置
+		wsConfig := interfaces.ClientConfig{
+			Username:   proxyURL.User.Username(),
+			Password:   "",
+			ServerAddr: proxyURL.String(),
+			Protocol:   "websocket",
+			Timeout:    30 * time.Second,
+		}
+		if proxyURL.User != nil {
+			if password, ok := proxyURL.User.Password(); ok {
+				wsConfig.Password = password
+			}
+		}
+
+		// 创建WebSocket客户端
+		websocketClient := socks5_websocket_proxy_golang_websocket.NewWebSocketClient(wsConfig)
+
+		// 连接到目标主机
+		err = websocketClient.Connect(host, portNum)
+		if err != nil {
+			log.Println("failed to connect via WebSocket proxy:", err)
+			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+			return
+		}
+
+		// 创建一个管道连接来处理WebSocket数据转发
+		clientConn, serverConn := net.Pipe()
+
+		// 在goroutine中处理WebSocket数据转发
+		go func() {
+			defer clientConn.Close()
+			defer serverConn.Close()
+			// 使用ForwardData方法处理WebSocket连接
+			err := websocketClient.ForwardData(serverConn)
+			if err != nil {
+				fmt.Printf("WebSocket ForwardData error: %v\n", err)
+			}
+		}()
+
+		server = clientConn
+		log.Println("WebSocket代理连接成功：" + upstreamAddress)
+	} else if method == "CONNECT" && proxyURL != nil {
 		server, err = connect.ConnectViaHttpProxy(proxyURL, upstreamAddress)
 		if err != nil {
 			log.Println(err)
