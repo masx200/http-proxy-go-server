@@ -244,18 +244,19 @@ func TestSelectProxyURLWithCIDR_WebSocketProxy(t *testing.T) {
 	// 测试WebSocket代理选择逻辑
 	upstreams := map[string]UpStream{
 		"proxy1": {
+			TYPE:        "websocket",
 			HTTP_PROXY:  "http://proxy1.example.com:8080",
 			HTTPS_PROXY: "http://proxy1.example.com:8080",
 			WS_PROXY:    "ws://proxy1.example.com:8080",
 			BypassList:  []string{"localhost", "127.0.0.1"},
 		},
-		"proxy2": {
+		"proxy2": {TYPE: "websocket",
 			HTTP_PROXY:  "http://proxy2.example.com:8080",
 			HTTPS_PROXY: "http://proxy2.example.com:8080",
 			WS_PROXY:    "ws://proxy2.example.com:8080",
 			BypassList:  []string{"*.local", "192.168.1.0/24"},
 		},
-		"proxy3": {
+		"proxy3": {TYPE: "http",
 			HTTP_PROXY:  "http://proxy3.example.com:8080",
 			HTTPS_PROXY: "http://proxy3.example.com:8080",
 			// proxy3 没有WS_PROXY，用于测试fallback逻辑

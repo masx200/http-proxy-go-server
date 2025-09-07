@@ -34,6 +34,7 @@ func (m *multiString) Set(value string) error {
 }
 
 type UpStream struct {
+	TYPE        string   `json:"type"`
 	HTTP_PROXY  string   `json:"http_proxy"`
 	HTTPS_PROXY string   `json:"https_proxy"`
 	BypassList  []string `json:"bypass_list"`
@@ -146,7 +147,7 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 				if pattern == "*" {
 					var upstream = upstreams[rule.Upstream]
 					// 优先检查WebSocket代理
-					if upstream.WS_PROXY != "" {
+					if upstream.TYPE == "websocket" && upstream.WS_PROXY != "" {
 						// 检查是否已经包含协议前缀
 						if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
 							return upstream.WS_PROXY, nil
@@ -167,7 +168,7 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 						// 找到匹配的CIDR，返回对应的代理
 						if upstream, exists := upstreams[rule.Upstream]; exists {
 							// 优先检查WebSocket代理
-							if upstream.WS_PROXY != "" {
+							if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
 								// 检查是否已经包含协议前缀
 								if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
 									return upstream.WS_PROXY, nil
@@ -186,7 +187,7 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 					// 精确IP匹配或前缀匹配
 					if upstream, exists := upstreams[rule.Upstream]; exists {
 						// 优先检查WebSocket代理
-						if upstream.WS_PROXY != "" {
+						if upstream.TYPE == "websocket" && upstream.WS_PROXY != "" {
 							// 检查是否已经包含协议前缀
 							if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
 								return upstream.WS_PROXY, nil
@@ -223,7 +224,7 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 				if pattern == "*" {
 					var upstream = upstreams[rule.Upstream]
 					// 优先检查WebSocket代理
-					if upstream.WS_PROXY != "" {
+					if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
 						// 检查是否已经包含协议前缀
 						if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
 							return upstream.WS_PROXY, nil
@@ -243,7 +244,7 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 						// 找到匹配的域名模式，返回对应的代理
 						if upstream, exists := upstreams[rule.Upstream]; exists {
 							// 优先检查WebSocket代理
-							if upstream.WS_PROXY != "" {
+							if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
 								// 检查是否已经包含协议前缀
 								if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
 									return upstream.WS_PROXY, nil
@@ -546,7 +547,7 @@ func main() {
 
 				// 检查是否有WebSocket代理配置
 				for _, upstream := range config.UpStreams {
-					if upstream.WS_PROXY != "" {
+					if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
 						// 创建自定义的DialContext函数来处理WebSocket代理
 						t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 							// 实现WebSocket代理连接逻辑
@@ -635,7 +636,7 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream Up
 
 	// 创建一个管道连接来处理WebSocket数据转发
 	clientConn, serverConn := net.Pipe()
-	
+
 	// 在goroutine中处理WebSocket数据转发
 	go func() {
 		defer clientConn.Close()
