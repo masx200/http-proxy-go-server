@@ -723,7 +723,3 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream Up
 	return clientConn, nil
 }
 
-func init() {
-	// var config interfaces.ClientConfig = interfaces.ClientConfig{}
-	// socks5_websocket_proxy_golang_websocket.NewWebSocketClient(config)
-}

@@ -7,15 +7,20 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"maps"
 	"math/rand"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/masx200/http-proxy-go-server/options"
+	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
+	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
+
 	// "github.com/masx200/http-proxy-go-server/simple"
 	"github.com/masx200/http-proxy-go-server/utils"
 )
@@ -81,7 +86,7 @@ func parseForwardedHeader(header string) ([]ForwardedBy, error) {
 
 	return forwardedByList, nil
 }
-func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, proxyoptions options.ProxyOptions, username, password string, tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, proxyoptions options.ProxyOptions, username, password string, tranportConfigurations ...func(*http.Transport) *http.Transport) error {
 	fmt.Println("method:", r.Method)
 	fmt.Println("url:", r.URL)
 	fmt.Println("host:", r.Host)
@@ -101,7 +106,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 			//fmt.Fprintln(w, "407 Proxy Authentication Required")
 			fmt.Println("身份验证失败")
 			//w.Close()
-			return
+			return nil
 		}
 		fmt.Println("身份验证成功")
 	}
@@ -110,7 +115,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	clienthost, port, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
 	log.Println("clienthost:", clienthost)
 	log.Println("clientport:", port)
@@ -134,12 +139,12 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 		w.WriteHeader(508)
 		fmt.Fprintln(w, "508 Loop Detected")
 		log.Println("Duplicate 'by' identifiers found in 'Forwarded' header.")
-		return
+		return nil
 	}
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "Error parsing 'Forwarded' header: %v", err)
-		return
+		return err
 	}
 	targetUrl := "http://" + r.Host + r.RequestURI
 	/*r.URL可能是http://开头,也可能只有路径  */
@@ -232,24 +237,67 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return err
 	}
 
-	utils.CheckShouldUseProxy(proxyReq.Host, tranportConfigurations...)
+	proxyUrl, err := utils.CheckShouldUseProxy(proxyReq.Host, tranportConfigurations...)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	if proxyUrl != nil && (proxyUrl.Scheme == "ws" || proxyUrl.Scheme == "wss") {
+
+		if transport, ok := client.Transport.(*http.Transport); ok {
+			transport.Proxy = nil
+			var DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+				return websocketDialContext(ctx, network, addr, proxyUrl)
+			}
+			transport.DialContext = DialContext
+			transport.DialTLSContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+
+				//				// 解析出原地址中的端口
+				hostname, _, err := net.SplitHostPort(addr)
+				if err != nil {
+					return nil, err
+				}
+				//				// 用指定的 IP 地址和原端口创建新地址
+				//				newAddr := net.JoinHostPort(serverIP, port)
+				//				// 创建 net.Dialer 实例
+				//				dialer := &net.Dialer{}
+				//				// 发起连接
+				conn, err := DialContext(ctx, network, addr)
+				if err != nil {
+					return nil, err
+				}
+				//			var address = addr
+				tlsConfig := &tls.Config{
+					ServerName: hostname,
+				}
+				// 创建 TLS 连接
+				tlsConn := tls.Client(conn, tlsConfig)
+				// 进行 TLS 握手
+				err = tlsConn.HandshakeContext(ctx)
+				if err != nil {
+					conn.Close()
+					return nil, err
+				}
+				return tlsConn, nil
+			}
+		}
+	}
+
 	proxyReq.Header = r.Header.Clone()
 	proxyReq.ContentLength = r.ContentLength
 	resp, err := client.Do(proxyReq)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
-		return
+		return err
 	}
 	defer resp.Body.Close()
 	w.WriteHeader(resp.StatusCode)
 	// Copy headers from the response to the client's response.
-	for k, v := range resp.Header {
-		w.Header()[k] = v
-	}
+	maps.Copy(w.Header(), resp.Header)
 
 	// Copy the response body back to the client.
 	/* bodyBytes2, err := io.ReadAll(resp.Body)
@@ -262,6 +310,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	if _, err := io.Copy(w, resp.Body /* bytes.NewReader(bodyBytes2) */); err != nil {
 		log.Println("Error writing response:", err)
 	}
+	return nil
 }
 
 func Http(hostname string, port int, proxyoptions options.ProxyOptions, username, password string, tranportConfigurations ...func(*http.Transport) *http.Transport) {
@@ -283,8 +332,14 @@ func Http(hostname string, port int, proxyoptions options.ProxyOptions, username
 	engine.Use(func(c *gin.Context) {
 		var w = c.Writer
 		var r = c.Request
-		proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, username, password, tranportConfigurations...)
+		err := proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, username, password, tranportConfigurations...)
 		c.Abort()
+
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	})
 	// 设置自定义处理器
 	//http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -353,4 +408,70 @@ func isAuthenticated(proxyAuth, expectedUsername, expectedPassword string) bool 
 	}
 
 	return username == expectedUsername && password == expectedPassword
+}
+func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *url.URL) (net.Conn, error) {
+	// 解析目标地址
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		// 如果没有端口，尝试添加默认端口
+		if network == "tcp" {
+			if strings.Contains(addr, ":") {
+				// IPv6地址
+				addr = "[" + addr + "]:80"
+			} else {
+				// 域名或IPv4地址
+				addr = addr + ":80"
+			}
+			host, port, err = net.SplitHostPort(addr)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse address %s: %v", addr, err)
+			}
+		} else {
+			return nil, fmt.Errorf("failed to parse address %s: %v", addr, err)
+		}
+	}
+
+	// 转换端口号为整数
+	portNum, err := strconv.Atoi(port)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse port %s: %v", port, err)
+	}
+
+	// 创建WebSocket客户端配置
+	wsConfig := interfaces.ClientConfig{
+		Username:   proxyUrl.User.Username(),
+		Password:   "",
+		ServerAddr: proxyUrl.Host,
+		Protocol:   "websocket",
+		Timeout:    30 * time.Second,
+	}
+	if proxyUrl.User != nil {
+		wsConfig.Username = proxyUrl.User.Username()
+		wsConfig.Password, _ = proxyUrl.User.Password()
+	}
+	// 创建WebSocket客户端
+	websocketClient := socks5_websocket_proxy_golang_websocket.NewWebSocketClient(wsConfig)
+
+	// 连接到目标主机
+	err = websocketClient.Connect(host, portNum)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to %s:%d via WebSocket proxy: %v", host, portNum, err)
+	}
+
+	// 创建一个管道连接来处理WebSocket数据转发
+	clientConn, serverConn := net.Pipe()
+
+	// 在goroutine中处理WebSocket数据转发
+	go func() {
+		defer clientConn.Close()
+		defer serverConn.Close()
+		// 使用ForwardData方法处理WebSocket连接
+		err := websocketClient.ForwardData(serverConn)
+		if err != nil {
+			fmt.Printf("WebSocket ForwardData error: %v\n", err)
+		}
+	}()
+
+	// 返回客户端连接
+	return clientConn, nil
 }
