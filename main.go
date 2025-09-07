@@ -621,8 +621,22 @@ func main() {
 					if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
 						// 创建自定义的DialContext函数来处理WebSocket代理
 						t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+
+
+
+							//overrideProxyURLCredentials
+							// 使用overrideProxyURLCredentials修改WebSocket代理URL中的用户名密码
+							modifiedWSProxy, err := overrideProxyURLCredentials(upstream.WS_PROXY, upstream.WS_USERNAME, upstream.WS_PASSWORD)
+							if err != nil {
+								return nil, fmt.Errorf("failed to override WebSocket proxy credentials: %v", err)
+							}
+							
+							// 创建修改后的upstream副本
+							modifiedUpstream := upstream
+							modifiedUpstream.WS_PROXY = modifiedWSProxy
+							
 							// 实现WebSocket代理连接逻辑
-							return websocketDialContext(ctx, network, addr, upstream)
+							return websocketDialContext(ctx, network, addr, modifiedUpstream)
 						}
 					}
 				}
