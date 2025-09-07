@@ -105,7 +105,7 @@ go run main.go -config config.json -port 9090 -username admin
 ## example
 
 ```bash
-"/root/http-proxy-go-server/main" -dohurl "https://******************************" -dohip  "************" -port 58888 -username admin -password "*************************************"  -server_cert "**********************************************"  -server_key "**********************************************"
+"/root/http-proxy-go-server/main" -dohurl "https://************" -dohip  "************" -port 58888 -username admin -password "*******************"  -server_cert "************"  -server_key "************"
 ```
 
 ```bash
@@ -113,7 +113,7 @@ go run main.go -config config.json -port 9090 -username admin
 go run main.go -config config.json
 ```
 
-## 使用curl测试
+## 使用 curl 测试
 
 ```
 curl -x http://127.0.0.1:8080 http://www.baidu.com
