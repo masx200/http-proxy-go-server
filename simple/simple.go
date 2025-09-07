@@ -169,7 +169,13 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 
 		// 创建WebSocket客户端
 		websocketClient := socks5_websocket_proxy_golang_websocket.NewWebSocketClient(wsConfig)
-
+		log.Println("WebSocket Config Details:")
+		log.Println("host, portNum", host, portNum)
+		log.Printf("  Username: %s", wsConfig.Username)
+		log.Printf("  Password: %s", wsConfig.Password)
+		log.Printf("  ServerAddr: %s", wsConfig.ServerAddr)
+		log.Printf("  Protocol: %s", wsConfig.Protocol)
+		log.Printf("  Timeout: %v", wsConfig.Timeout)
 		// 连接到目标主机
 		err = websocketClient.Connect(host, portNum)
 		if err != nil {

@@ -20,7 +20,6 @@ import (
 	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
 	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
-
 	// "github.com/masx200/http-proxy-go-server/simple"
 	"github.com/masx200/http-proxy-go-server/utils"
 )
@@ -249,8 +248,14 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 
 		log.Println("使用代理：" + proxyUrl.String())
 
+		if client.Transport == nil {
+			client.Transport = http.DefaultTransport
+		}
+
 		if transport, ok := client.Transport.(*http.Transport); ok {
 			transport.Proxy = nil
+
+			log.Println("已经修改了代理为websocket", proxyUrl.String())
 			var DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 
 				log.Println("使用代理：" + proxyUrl.String())
@@ -455,9 +460,19 @@ func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *u
 		wsConfig.Username = proxyUrl.User.Username()
 		wsConfig.Password, _ = proxyUrl.User.Password()
 	}
+
+	// 详细打印wsConfig的每个字段
+	log.Println("WebSocket Config Details:")
+	log.Println("host, portNum", host, portNum)
+	log.Printf("  Username: %s", wsConfig.Username)
+	log.Printf("  Password: %s", wsConfig.Password)
+	log.Printf("  ServerAddr: %s", wsConfig.ServerAddr)
+	log.Printf("  Protocol: %s", wsConfig.Protocol)
+	log.Printf("  Timeout: %v", wsConfig.Timeout)
+
 	// 创建WebSocket客户端
 	websocketClient := socks5_websocket_proxy_golang_websocket.NewWebSocketClient(wsConfig)
-
+	log.Println("host, portNum", host, portNum)
 	// 连接到目标主机
 	err = websocketClient.Connect(host, portNum)
 	if err != nil {

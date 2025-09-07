@@ -195,6 +195,13 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 			Protocol:   "websocket",
 			Timeout:    30 * time.Second,
 		}
+		log.Println("WebSocket Config Details:")
+		log.Println("host, portNum", host, portNum)
+		log.Printf("  Username: %s", wsConfig.Username)
+		log.Printf("  Password: %s", wsConfig.Password)
+		log.Printf("  ServerAddr: %s", wsConfig.ServerAddr)
+		log.Printf("  Protocol: %s", wsConfig.Protocol)
+		log.Printf("  Timeout: %v", wsConfig.Timeout)
 		if proxyURL.User != nil {
 			if password, ok := proxyURL.User.Password(); ok {
 				wsConfig.Password = password

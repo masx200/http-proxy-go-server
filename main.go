@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -622,19 +623,17 @@ func main() {
 						// 创建自定义的DialContext函数来处理WebSocket代理
 						t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 
-
-
 							//overrideProxyURLCredentials
 							// 使用overrideProxyURLCredentials修改WebSocket代理URL中的用户名密码
 							modifiedWSProxy, err := overrideProxyURLCredentials(upstream.WS_PROXY, upstream.WS_USERNAME, upstream.WS_PASSWORD)
 							if err != nil {
 								return nil, fmt.Errorf("failed to override WebSocket proxy credentials: %v", err)
 							}
-							
+
 							// 创建修改后的upstream副本
 							modifiedUpstream := upstream
 							modifiedUpstream.WS_PROXY = modifiedWSProxy
-							
+
 							// 实现WebSocket代理连接逻辑
 							return websocketDialContext(ctx, network, addr, modifiedUpstream)
 						}
@@ -709,7 +708,14 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream Up
 		Protocol:   "websocket",
 		Timeout:    30 * time.Second,
 	}
-
+	// 详细打印wsConfig的每个字段
+	log.Println("WebSocket Config Details:")
+	log.Println("host, portNum", host, portNum)
+	log.Printf("  Username: %s", wsConfig.Username)
+	log.Printf("  Password: %s", wsConfig.Password)
+	log.Printf("  ServerAddr: %s", wsConfig.ServerAddr)
+	log.Printf("  Protocol: %s", wsConfig.Protocol)
+	log.Printf("  Timeout: %v", wsConfig.Timeout)
 	// 创建WebSocket客户端
 	websocketClient := socks5_websocket_proxy_golang_websocket.NewWebSocketClient(wsConfig)
 
@@ -736,4 +742,3 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream Up
 	// 返回客户端连接
 	return clientConn, nil
 }
-
