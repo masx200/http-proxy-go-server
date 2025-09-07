@@ -42,6 +42,9 @@ type UpStream struct {
 	WS_PROXY    string `json:"ws_proxy"`    // WebSocket代理地址
 	WS_USERNAME string `json:"ws_username"` // WebSocket代理用户名
 	WS_PASSWORD string `json:"ws_password"` // WebSocket代理密码
+
+	HTTP_USERNAME string `json:"http_username"` // http代理用户名
+	HTTP_PASSWORD string `json:"http_password"` // http代理密码
 }
 
 // func init() {
@@ -124,6 +127,49 @@ func matchWildcard(pattern, domain string) bool {
 	return pattern == domain
 }
 
+// overrideProxyURLCredentials 覆盖代理URL中的用户名密码
+func overrideProxyURLCredentials(proxyURL string, username, password string) (string, error) {
+	if proxyURL == "" {
+		return proxyURL, nil
+	}
+
+	// 解析URL
+	parsedURL, err := url.Parse(proxyURL)
+	if err != nil {
+		return proxyURL, err
+	}
+
+	// 如果配置中提供了用户名，则覆盖URL中的用户名
+	if username != "" {
+		// 如果配置中提供了密码，则使用配置中的密码
+		if password != "" {
+			parsedURL.User = url.UserPassword(username, password)
+		} else {
+			// 如果配置中没有提供密码，但URL中有密码，则保留URL中的密码
+			if parsedURL.User != nil {
+				if _, hasPassword := parsedURL.User.Password(); hasPassword {
+					parsedURL.User = url.UserPassword(username, "")
+					if existingPassword, ok := parsedURL.User.Password(); ok {
+						parsedURL.User = url.UserPassword(username, existingPassword)
+					}
+				} else {
+					parsedURL.User = url.User(username)
+				}
+			} else {
+				parsedURL.User = url.User(username)
+			}
+		}
+	} else if password != "" {
+		// 如果只提供了密码但没有提供用户名，则保留URL中的用户名，只覆盖密码
+		if parsedURL.User != nil {
+			existingUsername := parsedURL.User.Username()
+			parsedURL.User = url.UserPassword(existingUsername, password)
+		}
+	}
+
+	return parsedURL.String(), nil
+}
+
 // SelectProxyURLWithCIDR 根据输入的域名或IP地址选择代理服务器的URL，支持CIDR匹配和WebSocket代理
 func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 	Filter   string `json:"filter"`
@@ -149,16 +195,22 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 					// 优先检查WebSocket代理
 					if upstream.TYPE == "websocket" && upstream.WS_PROXY != "" {
 						// 检查是否已经包含协议前缀
+						var wsProxyURL string
 						if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
-							return upstream.WS_PROXY, nil
+							wsProxyURL = upstream.WS_PROXY
+						} else {
+							wsProxyURL = "ws://" + upstream.WS_PROXY
 						}
-						return "ws://" + upstream.WS_PROXY, nil
+						// 使用配置中的ws_username和ws_password覆盖URL中的用户名密码
+						return overrideProxyURLCredentials(wsProxyURL, upstream.WS_USERNAME, upstream.WS_PASSWORD)
 					}
 					if upstream.HTTPS_PROXY != "" && scheme == "https" {
-						return upstream.HTTPS_PROXY, nil
+						// 使用配置中的http_username和http_password覆盖URL中的用户名密码
+						return overrideProxyURLCredentials(upstream.HTTPS_PROXY, upstream.HTTP_USERNAME, upstream.HTTP_PASSWORD)
 					}
 					if upstream.HTTP_PROXY != "" && scheme == "http" {
-						return upstream.HTTP_PROXY, nil
+						// 使用配置中的http_username和http_password覆盖URL中的用户名密码
+						return overrideProxyURLCredentials(upstream.HTTP_PROXY, upstream.HTTP_USERNAME, upstream.HTTP_PASSWORD)
 					}
 				}
 				// 检查是否是CIDR格式
@@ -170,16 +222,22 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 							// 优先检查WebSocket代理
 							if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
 								// 检查是否已经包含协议前缀
+								var wsProxyURL string
 								if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
-									return upstream.WS_PROXY, nil
+									wsProxyURL = upstream.WS_PROXY
+								} else {
+									wsProxyURL = "ws://" + upstream.WS_PROXY
 								}
-								return "ws://" + upstream.WS_PROXY, nil
+								// 使用配置中的ws_username和ws_password覆盖URL中的用户名密码
+								return overrideProxyURLCredentials(wsProxyURL, upstream.WS_USERNAME, upstream.WS_PASSWORD)
 							}
 							if upstream.HTTPS_PROXY != "" && scheme == "https" {
-								return upstream.HTTPS_PROXY, nil
+								// 使用配置中的http_username和http_password覆盖URL中的用户名密码
+								return overrideProxyURLCredentials(upstream.HTTPS_PROXY, upstream.HTTP_USERNAME, upstream.HTTP_PASSWORD)
 							}
 							if upstream.HTTP_PROXY != "" && scheme == "http" {
-								return upstream.HTTP_PROXY, nil
+								// 使用配置中的http_username和http_password覆盖URL中的用户名密码
+								return overrideProxyURLCredentials(upstream.HTTP_PROXY, upstream.HTTP_USERNAME, upstream.HTTP_PASSWORD)
 							}
 						}
 					}
@@ -226,16 +284,22 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 					// 优先检查WebSocket代理
 					if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
 						// 检查是否已经包含协议前缀
+						var wsProxyURL string
 						if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
-							return upstream.WS_PROXY, nil
+							wsProxyURL = upstream.WS_PROXY
+						} else {
+							wsProxyURL = "ws://" + upstream.WS_PROXY
 						}
-						return "ws://" + upstream.WS_PROXY, nil
+						// 使用配置中的ws_username和ws_password覆盖URL中的用户名密码
+						return overrideProxyURLCredentials(wsProxyURL, upstream.WS_USERNAME, upstream.WS_PASSWORD)
 					}
 					if scheme == "https" && upstream.HTTPS_PROXY != "" {
-						return upstream.HTTPS_PROXY, nil
+						// 使用配置中的http_username和http_password覆盖URL中的用户名密码
+						return overrideProxyURLCredentials(upstream.HTTPS_PROXY, upstream.HTTP_USERNAME, upstream.HTTP_PASSWORD)
 					}
 					if scheme == "http" && upstream.HTTP_PROXY != "" {
-						return upstream.HTTP_PROXY, nil
+						// 使用配置中的http_username和http_password覆盖URL中的用户名密码
+						return overrideProxyURLCredentials(upstream.HTTP_PROXY, upstream.HTTP_USERNAME, upstream.HTTP_PASSWORD)
 					}
 				}
 				// 检查是否是CIDR格式（域名不应该匹配CIDR）
@@ -246,16 +310,22 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 							// 优先检查WebSocket代理
 							if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
 								// 检查是否已经包含协议前缀
+								var wsProxyURL string
 								if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
-									return upstream.WS_PROXY, nil
+									wsProxyURL = upstream.WS_PROXY
+								} else {
+									wsProxyURL = "ws://" + upstream.WS_PROXY
 								}
-								return "ws://" + upstream.WS_PROXY, nil
+								// 使用配置中的ws_username和ws_password覆盖URL中的用户名密码
+								return overrideProxyURLCredentials(wsProxyURL, upstream.WS_USERNAME, upstream.WS_PASSWORD)
 							}
 							if scheme == "http" && upstream.HTTP_PROXY != "" {
-								return upstream.HTTP_PROXY, nil
+								// 使用配置中的http_username和http_password覆盖URL中的用户名密码
+								return overrideProxyURLCredentials(upstream.HTTP_PROXY, upstream.HTTP_USERNAME, upstream.HTTP_PASSWORD)
 							}
 							if scheme == "https" && upstream.HTTPS_PROXY != "" {
-								return upstream.HTTPS_PROXY, nil
+								// 使用配置中的http_username和http_password覆盖URL中的用户名密码
+								return overrideProxyURLCredentials(upstream.HTTPS_PROXY, upstream.HTTP_USERNAME, upstream.HTTP_PASSWORD)
 							}
 						}
 					}
@@ -478,7 +548,7 @@ func main() {
 
 		// 创建WebSocket代理配置
 		wsUpstream := UpStream{
-			TYPE: "websocket",
+			TYPE:        "websocket",
 			HTTP_PROXY:  "",
 			HTTPS_PROXY: "",
 			BypassList:  []string{},
