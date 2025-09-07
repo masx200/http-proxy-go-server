@@ -15,6 +15,8 @@ import (
 	"github.com/masx200/http-proxy-go-server/simple"
 	"github.com/masx200/http-proxy-go-server/tls"
 	tls_auth "github.com/masx200/http-proxy-go-server/tls+auth"
+	// "github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
+	// socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
 )
 
 type multiString []string
@@ -60,7 +62,7 @@ type Config struct {
 		Filter   string `json:"filter"`
 		Upstream string `json:"upstream"`
 	} `json:"rules"`
-	Filters   map[string]struct {
+	Filters map[string]struct {
 		Patterns []string `json:"patterns"`
 	} `json:"filters"`
 }
@@ -131,7 +133,7 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 			if !exists {
 				continue
 			}
-			
+
 			// 检查filter中的所有patterns
 			for _, pattern := range filter.Patterns {
 				if pattern == "*" {
@@ -184,7 +186,7 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 			if !exists {
 				continue
 			}
-			
+
 			// 检查filter中的所有patterns
 			for _, pattern := range filter.Patterns {
 				if pattern == "*" {
@@ -456,4 +458,8 @@ func main() {
 		return
 	}
 
+}
+func init() {
+	// var config interfaces.ClientConfig = interfaces.ClientConfig{}
+	// socks5_websocket_proxy_golang_websocket.NewWebSocketClient(config)
 }

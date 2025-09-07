@@ -34,9 +34,9 @@
       "upstream": "localhost"
     }
   ],
-  "filters":{
-    "any":{
-      "patterns":["*"]
+  "filters": {
+    "any": {
+      "patterns": ["*"]
     }
   }
 }
