@@ -112,3 +112,9 @@ go run main.go -config config.json -port 9090 -username admin
 # 使用配置文件的示例
 go run main.go -config config.json
 ```
+
+## 使用curl测试
+
+```
+curl -x http://127.0.0.1:8080 http://www.baidu.com
+```
