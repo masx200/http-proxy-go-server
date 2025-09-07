@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -15,8 +16,6 @@ import (
 	"github.com/masx200/http-proxy-go-server/simple"
 	"github.com/masx200/http-proxy-go-server/tls"
 	tls_auth "github.com/masx200/http-proxy-go-server/tls+auth"
-	// "github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
-	// socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
 )
 
 type multiString []string
@@ -34,6 +33,10 @@ type UpStream struct {
 	HTTP_PROXY  string   `json:"http_proxy"`
 	HTTPS_PROXY string   `json:"https_proxy"`
 	BypassList  []string `json:"bypass_list"`
+	// 新增WebSocket支持
+	WS_PROXY    string `json:"ws_proxy"`    // WebSocket代理地址
+	WS_USERNAME string `json:"ws_username"` // WebSocket代理用户名
+	WS_PASSWORD string `json:"ws_password"` // WebSocket代理密码
 }
 
 // func init() {
@@ -116,7 +119,7 @@ func matchWildcard(pattern, domain string) bool {
 	return pattern == domain
 }
 
-// SelectProxyURLWithCIDR 根据输入的域名或IP地址选择代理服务器的URL，支持CIDR匹配
+// SelectProxyURLWithCIDR 根据输入的域名或IP地址选择代理服务器的URL，支持CIDR匹配和WebSocket代理
 func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 	Filter   string `json:"filter"`
 	Upstream string `json:"upstream"`
@@ -138,6 +141,14 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 			for _, pattern := range filter.Patterns {
 				if pattern == "*" {
 					var upstream = upstreams[rule.Upstream]
+					// 优先检查WebSocket代理
+					if upstream.WS_PROXY != "" {
+						// 检查是否已经包含协议前缀
+						if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
+							return upstream.WS_PROXY, nil
+						}
+						return "ws://" + upstream.WS_PROXY, nil
+					}
 					if upstream.HTTPS_PROXY != "" && scheme == "https" {
 						return upstream.HTTPS_PROXY, nil
 					}
@@ -151,6 +162,14 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 					if err == nil && ipNet.Contains(ip) {
 						// 找到匹配的CIDR，返回对应的代理
 						if upstream, exists := upstreams[rule.Upstream]; exists {
+							// 优先检查WebSocket代理
+							if upstream.WS_PROXY != "" {
+								// 检查是否已经包含协议前缀
+								if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
+									return upstream.WS_PROXY, nil
+								}
+								return "ws://" + upstream.WS_PROXY, nil
+							}
 							if upstream.HTTPS_PROXY != "" && scheme == "https" {
 								return upstream.HTTPS_PROXY, nil
 							}
@@ -162,6 +181,14 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 				} else if pattern == domain || strings.HasPrefix(domain, pattern) {
 					// 精确IP匹配或前缀匹配
 					if upstream, exists := upstreams[rule.Upstream]; exists {
+						// 优先检查WebSocket代理
+						if upstream.WS_PROXY != "" {
+							// 检查是否已经包含协议前缀
+							if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
+								return upstream.WS_PROXY, nil
+							}
+							return "ws://" + upstream.WS_PROXY, nil
+						}
 						if upstream.HTTPS_PROXY != "" && scheme == "https" {
 							return upstream.HTTPS_PROXY, nil
 						}
@@ -191,6 +218,14 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 			for _, pattern := range filter.Patterns {
 				if pattern == "*" {
 					var upstream = upstreams[rule.Upstream]
+					// 优先检查WebSocket代理
+					if upstream.WS_PROXY != "" {
+						// 检查是否已经包含协议前缀
+						if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
+							return upstream.WS_PROXY, nil
+						}
+						return "ws://" + upstream.WS_PROXY, nil
+					}
 					if scheme == "https" && upstream.HTTPS_PROXY != "" {
 						return upstream.HTTPS_PROXY, nil
 					}
@@ -203,6 +238,14 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 					if matchWildcard(pattern, domain) || strings.Contains(domain, pattern) {
 						// 找到匹配的域名模式，返回对应的代理
 						if upstream, exists := upstreams[rule.Upstream]; exists {
+							// 优先检查WebSocket代理
+							if upstream.WS_PROXY != "" {
+								// 检查是否已经包含协议前缀
+								if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
+									return upstream.WS_PROXY, nil
+								}
+								return "ws://" + upstream.WS_PROXY, nil
+							}
 							if scheme == "http" && upstream.HTTP_PROXY != "" {
 								return upstream.HTTP_PROXY, nil
 							}
@@ -265,7 +308,7 @@ func IsBypassedWithCIDR(upstreams map[string]UpStream, rules []struct {
 	return false
 }
 
-// ProxySelector 使用SelectProxyURLWithCIDR和IsBypassedWithCIDR实现代理选择逻辑
+// ProxySelector 使用SelectProxyURLWithCIDR和IsBypassedWithCIDR实现代理选择逻辑，支持WebSocket代理
 func ProxySelector(r *http.Request, UpStreams map[string]UpStream, Rules []struct {
 	Filter   string `json:"filter"`
 	Upstream string `json:"upstream"`
@@ -297,6 +340,11 @@ func ProxySelector(r *http.Request, UpStreams map[string]UpStream, Rules []struc
 
 	// 解析代理URL
 	if proxyURL != "" {
+		// 检查是否是WebSocket代理
+		if strings.HasPrefix(proxyURL, "ws://") || strings.HasPrefix(proxyURL, "wss://") {
+			// 对于WebSocket代理，返回一个特殊的URL，后续在transport配置中处理
+			return url.Parse(proxyURL)
+		}
 		return url.Parse(proxyURL)
 	}
 
@@ -325,6 +373,11 @@ func main() {
 		server_key  = flag.String("server_key", "", "tls server key")
 		username    = flag.String("username", "", "username")
 		password    = flag.String("password", "", "password")
+		// 新增WebSocket代理相关参数
+		upstreamType     = flag.String("upstream-type", "", "upstream proxy type (websocket)")
+		upstreamAddress  = flag.String("upstream-address", "", "upstream proxy address (e.g., ws://127.0.0.1:1081)")
+		upstreamUsername = flag.String("upstream-username", "", "upstream proxy username")
+		upstreamPassword = flag.String("upstream-password", "", "upstream proxy password")
 	)
 	flag.Parse()
 
@@ -387,7 +440,67 @@ func main() {
 	fmt.Println(
 		"dohurl:", dohurls.String())
 	fmt.Println("dohip:", dohips.String())
+	fmt.Println("upstream-type:", *upstreamType)
+	fmt.Println("upstream-address:", *upstreamAddress)
+	fmt.Println("upstream-username:", *upstreamUsername)
+	fmt.Println("upstream-password:", *upstreamPassword)
+
 	var proxyoptions = options.ProxyOptions{}
+
+	// 处理WebSocket代理参数
+	if *upstreamType == "websocket" && *upstreamAddress != "" {
+		// 如果配置为空，则创建一个默认配置
+		if config == nil {
+			config = &Config{}
+		}
+		// 如果UpStreams为空，则初始化
+		if config.UpStreams == nil {
+			config.UpStreams = make(map[string]UpStream)
+		}
+		// 如果Rules为空，则初始化
+		if config.Rules == nil {
+			config.Rules = []struct {
+				Filter   string `json:"filter"`
+				Upstream string `json:"upstream"`
+			}{}
+		}
+		// 如果Filters为空，则初始化
+		if config.Filters == nil {
+			config.Filters = make(map[string]struct {
+				Patterns []string `json:"patterns"`
+			})
+		}
+
+		// 创建WebSocket代理配置
+		wsUpstream := UpStream{
+			HTTP_PROXY:  "",
+			HTTPS_PROXY: "",
+			BypassList:  []string{},
+			WS_PROXY:    *upstreamAddress,
+			WS_USERNAME: *upstreamUsername,
+			WS_PASSWORD: *upstreamPassword,
+		}
+
+		// 添加到UpStreams
+		config.UpStreams["websocket_upstream"] = wsUpstream
+
+		// 添加规则和过滤器
+		config.Rules = append(config.Rules, struct {
+			Filter   string `json:"filter"`
+			Upstream string `json:"upstream"`
+		}{
+			Filter:   "websocket_filter",
+			Upstream: "websocket_upstream",
+		})
+
+		config.Filters["websocket_filter"] = struct {
+			Patterns []string `json:"patterns"`
+		}{
+			Patterns: []string{"*"},
+		}
+
+		fmt.Println("WebSocket代理配置已添加")
+	}
 
 	for i, dohurl := range dohurls {
 
@@ -426,11 +539,21 @@ func main() {
 					}
 					return proxyURL, err
 				}
+
+				// 检查是否有WebSocket代理配置
+				for _, upstream := range config.UpStreams {
+					if upstream.WS_PROXY != "" {
+						// 创建自定义的DialContext函数来处理WebSocket代理
+						t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+							// 实现WebSocket代理连接逻辑
+							return websocketDialContext(ctx, network, addr, upstream)
+						}
+					}
+				}
 				return t
 			})
 		}
 	}
-
 	by, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
 		fmt.Println(err)
@@ -457,8 +580,18 @@ func main() {
 		simple.Simple(*hostname, *port, proxyoptions, tranportConfigurations...)
 		return
 	}
-
 }
+
+// websocketDialContext 实现WebSocket代理连接
+func websocketDialContext(ctx context.Context, network, addr string, upstream UpStream) (net.Conn, error) {
+	// 这里需要实现WebSocket代理连接逻辑
+	// 由于WebSocket代理的实现比较复杂，需要建立WebSocket连接并通过WebSocket隧道传输TCP流量
+	// 这是一个简化的实现，实际使用时需要根据具体的WebSocket代理协议来实现
+
+	// 暂时返回错误，表示WebSocket代理连接尚未实现
+	return nil, fmt.Errorf("WebSocket代理连接尚未实现")
+}
+
 func init() {
 	// var config interfaces.ClientConfig = interfaces.ClientConfig{}
 	// socks5_websocket_proxy_golang_websocket.NewWebSocketClient(config)

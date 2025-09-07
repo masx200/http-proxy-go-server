@@ -41,12 +41,12 @@ func TestSelectProxyURLWithCIDR(t *testing.T) {
 	filters := map[string]struct {
 		Patterns []string `json:"patterns"`
 	}{
-		"google": {Patterns: []string{"google.com"}},
-		"github": {Patterns: []string{"github.com"}},
-		"network": {Patterns: []string{"192.168.1.0/24"}},
+		"google":   {Patterns: []string{"google.com"}},
+		"github":   {Patterns: []string{"github.com"}},
+		"network":  {Patterns: []string{"192.168.1.0/24"}},
 		"specific": {Patterns: []string{"10.0.0.1"}},
-		"baidu": {Patterns: []string{"*.baidu.com"}},
-		"any": {Patterns: []string{"*"}},
+		"baidu":    {Patterns: []string{"*.baidu.com"}},
+		"any":      {Patterns: []string{"*"}},
 	}
 
 	tests := []struct {
@@ -222,7 +222,7 @@ func TestSelectProxyURLWithCIDR_Priority(t *testing.T) {
 	filters := map[string]struct {
 		Patterns []string `json:"patterns"`
 	}{
-		"com": {Patterns: []string{"com"}},
+		"com":    {Patterns: []string{"com"}},
 		"google": {Patterns: []string{"google.com"}},
 	}
 
@@ -237,5 +237,116 @@ func TestSelectProxyURLWithCIDR_Priority(t *testing.T) {
 	expectedURL := "http://proxy1.example.com:8080" // 非HTTPS域名返回HTTP代理
 	if result != expectedURL {
 		t.Errorf("期望URL: %s, 实际得到: %s", expectedURL, result)
+	}
+}
+
+func TestSelectProxyURLWithCIDR_WebSocketProxy(t *testing.T) {
+	// 测试WebSocket代理选择逻辑
+	upstreams := map[string]UpStream{
+		"proxy1": {
+			HTTP_PROXY:  "http://proxy1.example.com:8080",
+			HTTPS_PROXY: "http://proxy1.example.com:8080",
+			WS_PROXY:    "ws://proxy1.example.com:8080",
+			BypassList:  []string{"localhost", "127.0.0.1"},
+		},
+		"proxy2": {
+			HTTP_PROXY:  "http://proxy2.example.com:8080",
+			HTTPS_PROXY: "http://proxy2.example.com:8080",
+			WS_PROXY:    "ws://proxy2.example.com:8080",
+			BypassList:  []string{"*.local", "192.168.1.0/24"},
+		},
+		"proxy3": {
+			HTTP_PROXY:  "http://proxy3.example.com:8080",
+			HTTPS_PROXY: "http://proxy3.example.com:8080",
+			// proxy3 没有WS_PROXY，用于测试fallback逻辑
+			BypassList: []string{"*.local", "192.168.1.0/24"},
+		},
+	}
+
+	// 设置测试用的rules
+	rules := []struct {
+		Filter   string `json:"filter"`
+		Upstream string `json:"upstream"`
+	}{
+		{Filter: "google", Upstream: "proxy1"},
+		{Filter: "github", Upstream: "proxy1"},
+		{Filter: "network", Upstream: "proxy2"},
+		{Filter: "specific", Upstream: "proxy2"},
+		{Filter: "baidu", Upstream: "proxy3"},
+		{Filter: "any", Upstream: "proxy1"},
+	}
+
+	// 设置测试用的filters
+	filters := map[string]struct {
+		Patterns []string `json:"patterns"`
+	}{
+		"google":   {Patterns: []string{"google.com"}},
+		"github":   {Patterns: []string{"github.com"}},
+		"network":  {Patterns: []string{"192.168.1.0/24"}},
+		"specific": {Patterns: []string{"10.0.0.1"}},
+		"baidu":    {Patterns: []string{"*.baidu.com"}},
+		"any":      {Patterns: []string{"*"}},
+	}
+
+	tests := []struct {
+		name        string
+		domain      string
+		expectedURL string
+		expectError bool
+	}{
+		// WebSocket代理优先选择测试
+		{
+			name:        "WebSocket代理优先选择-域名匹配",
+			domain:      "www.google.com",
+			expectedURL: "ws://proxy1.example.com:8080", // 应该返回WebSocket代理
+			expectError: false,
+		},
+		{
+			name:        "WebSocket代理优先选择-CIDR匹配",
+			domain:      "192.168.1.100",
+			expectedURL: "ws://proxy2.example.com:8080", // 应该返回WebSocket代理
+			expectError: false,
+		},
+		{
+			name:        "WebSocket代理优先选择-精确IP匹配",
+			domain:      "10.0.0.1",
+			expectedURL: "ws://proxy2.example.com:8080", // 应该返回WebSocket代理
+			expectError: false,
+		},
+		{
+			name:        "WebSocket代理优先选择-通配符匹配",
+			domain:      "unknown.domain.com",
+			expectedURL: "ws://proxy1.example.com:8080", // 应该返回WebSocket代理
+			expectError: false,
+		},
+		// Fallback到HTTP代理测试
+		{
+			name:        "Fallback到HTTP代理-无WebSocket代理",
+			domain:      "www.baidu.com",
+			expectedURL: "http://proxy3.example.com:8080", // proxy3没有WS_PROXY，应该返回HTTP代理
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := SelectProxyURLWithCIDR(upstreams, rules, filters, tt.domain, "http")
+
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("期望错误但没有得到错误")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("意外的错误: %v", err)
+				return
+			}
+
+			if result != tt.expectedURL {
+				t.Errorf("期望URL: %s, 实际得到: %s", tt.expectedURL, result)
+			}
+		})
 	}
 }
