@@ -5,7 +5,7 @@ go 1.24.1
 require github.com/gin-gonic/gin v1.10.1
 
 require (
-	github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250907075154-5e166104de32
+	github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250907160113-f72b89552e64
 	github.com/tantalor93/doq-go v0.10.0
 )
 
