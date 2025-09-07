@@ -9,13 +9,17 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/masx200/http-proxy-go-server/auth"
 	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/http-proxy-go-server/simple"
 	"github.com/masx200/http-proxy-go-server/tls"
 	tls_auth "github.com/masx200/http-proxy-go-server/tls+auth"
+	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
+	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
 )
 
 type multiString []string
@@ -584,12 +588,53 @@ func main() {
 
 // websocketDialContext 实现WebSocket代理连接
 func websocketDialContext(ctx context.Context, network, addr string, upstream UpStream) (net.Conn, error) {
-	// 这里需要实现WebSocket代理连接逻辑
-	// 由于WebSocket代理的实现比较复杂，需要建立WebSocket连接并通过WebSocket隧道传输TCP流量
-	// 这是一个简化的实现，实际使用时需要根据具体的WebSocket代理协议来实现
+	// 解析目标地址
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		// 如果没有端口，尝试添加默认端口
+		if network == "tcp" {
+			if strings.Contains(addr, ":") {
+				// IPv6地址
+				addr = "[" + addr + "]:80"
+			} else {
+				// 域名或IPv4地址
+				addr = addr + ":80"
+			}
+			host, port, err = net.SplitHostPort(addr)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse address %s: %v", addr, err)
+			}
+		} else {
+			return nil, fmt.Errorf("failed to parse address %s: %v", addr, err)
+		}
+	}
 
-	// 暂时返回错误，表示WebSocket代理连接尚未实现
-	return nil, fmt.Errorf("WebSocket代理连接尚未实现")
+	// 转换端口号为整数
+	portNum, err := strconv.Atoi(port)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse port %s: %v", port, err)
+	}
+
+	// 创建WebSocket客户端配置
+	wsConfig := interfaces.ClientConfig{
+		Username:   upstream.WS_USERNAME,
+		Password:   upstream.WS_PASSWORD,
+		ServerAddr: upstream.WS_PROXY,
+		Protocol:   "websocket",
+		Timeout:    30 * time.Second,
+	}
+
+	// 创建WebSocket客户端
+	websocketClient := socks5_websocket_proxy_golang_websocket.NewWebSocketClient(wsConfig)
+
+	// 连接到目标主机
+	err = websocketClient.Connect(host, portNum)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to %s:%d via WebSocket proxy: %v", host, portNum, err)
+	}
+
+	// 返回网络连接
+	return websocketClient.NetConn(), nil
 }
 
 func init() {
