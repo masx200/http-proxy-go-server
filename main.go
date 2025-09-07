@@ -478,6 +478,7 @@ func main() {
 
 		// 创建WebSocket代理配置
 		wsUpstream := UpStream{
+			TYPE: "websocket",
 			HTTP_PROXY:  "",
 			HTTPS_PROXY: "",
 			BypassList:  []string{},
