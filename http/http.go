@@ -452,7 +452,7 @@ func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *u
 	wsConfig := interfaces.ClientConfig{
 		Username:   proxyUrl.User.Username(),
 		Password:   "",
-		ServerAddr: proxyUrl.Host,
+		ServerAddr: proxyUrl.String(),
 		Protocol:   "websocket",
 		Timeout:    30 * time.Second,
 	}
