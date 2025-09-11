@@ -19,19 +19,19 @@ import (
 	"time"
 )
 
-// runWebSocketSocks5Proxy 测试WebSocket和SOCKS5级联代理服务器
-func runWebSocketSocks5Proxy(t *testing.T) {
+// runWebSockethttpProxy 测试WebSocket和http级联代理服务器
+func runWebSockethttpProxy(t *testing.T) {
 	// 创建进程管理器
 	processManager := NewProcessManager()
 	defer processManager.CleanupAll()
 
 	// 创建缓冲区来捕获服务器输出
 	var websocketOutput bytes.Buffer
-	var socks5Output bytes.Buffer
+	var httpOutput bytes.Buffer
 
 	// 创建多写入器
 	websocketWriter := io.MultiWriter(os.Stdout, &websocketOutput)
-	socks5Writer := io.MultiWriter(os.Stdout, &socks5Output)
+	httpWriter := io.MultiWriter(os.Stdout, &httpOutput)
 
 	// 清理可能存在的旧的可执行文件
 	if _, err := os.Stat("main.exe"); err == nil {
@@ -48,7 +48,7 @@ func runWebSocketSocks5Proxy(t *testing.T) {
 
 	// 测试结果记录
 	var testResults []string
-	testResults = append(testResults, "# WebSocket和SOCKS5级联代理测试记录")
+	testResults = append(testResults, "# WebSocket和http级联代理测试记录")
 	testResults = append(testResults, "")
 	testResults = append(testResults, "## 测试时间")
 	testResults = append(testResults, time.Now().Format("2006-01-02 15:04:05"))
@@ -68,7 +68,7 @@ func runWebSocketSocks5Proxy(t *testing.T) {
 	testResults = append(testResults, "执行命令: `go build -o main.exe ../cmd/main.go`")
 	testResults = append(testResults, "")
 
-	buildCmd1 := exec.Command("go", "build", "-o", "socks5-websocket-proxy-golang.exe", "github.com/masx200/socks5-websocket-proxy-golang/cmd")
+	buildCmd1 := exec.Command("go", "build", "-o", "http-websocket-proxy-golang.exe", "github.com/masx200/socks5-websocket-proxy-golang/cmd")
 	buildCmd1.Stdout = websocketWriter
 	buildCmd1.Stderr = websocketWriter
 
@@ -89,10 +89,10 @@ func runWebSocketSocks5Proxy(t *testing.T) {
 	// 启动WebSocket服务器（作为上游）
 	testResults = append(testResults, "## 2. 启动WebSocket服务器（上游）")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `./socks5-websocket-proxy-golang.exe -mode server -protocol websocket -addr :38800`")
+	testResults = append(testResults, "执行命令: `./http-websocket-proxy-golang.exe -mode server -protocol websocket -addr :38800`")
 	testResults = append(testResults, "")
 
-	websocketCmd := exec.Command("./socks5-websocket-proxy-golang.exe", "-mode", "server", "-protocol", "websocket", "-addr", ":38800")
+	websocketCmd := exec.Command("./http-websocket-proxy-golang.exe", "-mode", "server", "-protocol", "websocket", "-addr", ":38800")
 	websocketCmd.Stdout = websocketWriter
 	websocketCmd.Stderr = websocketWriter
 
@@ -132,51 +132,51 @@ func runWebSocketSocks5Proxy(t *testing.T) {
 	testResults = append(testResults, "✅ WebSocket服务器启动成功")
 	testResults = append(testResults, "")
 
-	// 启动SOCKS5服务器（设置upstream为WebSocket服务器）
-	testResults = append(testResults, "## 3. 启动SOCKS5服务器（下游）")
+	// 启动http服务器（设置upstream为WebSocket服务器）
+	testResults = append(testResults, "## 3. 启动http服务器（下游）")
 	testResults = append(testResults, "")
 	testResults = append(testResults, "执行命令: `./main.exe  -port 10810 -upstream-type websocket -upstream-address ws://localhost:38800`")
 	testResults = append(testResults, "")
 
-	socks5Cmd := exec.Command("./main.exe", "-port", "10810",
+	httpCmd := exec.Command("./main.exe", "-port", "10810",
 		"-upstream-type", "websocket", "-upstream-address", "ws://localhost:38800")
-	socks5Cmd.Stdout = socks5Writer
-	socks5Cmd.Stderr = socks5Writer
+	httpCmd.Stdout = httpWriter
+	httpCmd.Stderr = httpWriter
 
 	// 设置进程属性
 	if runtime.GOOS == "windows" {
-		socks5Cmd.SysProcAttr = &syscall.SysProcAttr{
+		httpCmd.SysProcAttr = &syscall.SysProcAttr{
 			CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP,
 		}
 	}
 
-	err = socks5Cmd.Start()
+	err = httpCmd.Start()
 	if err != nil {
-		t.Fatalf("启动SOCKS5服务器失败: %v", err)
+		t.Fatalf("启动http服务器失败: %v", err)
 	}
 
-	processManager.AddProcess(socks5Cmd)
-	log.Printf("SOCKS5服务器已启动，PID: %d\n", socks5Cmd.Process.Pid)
-	testResults = append(testResults, fmt.Sprintf("📋 SOCKS5服务器进程PID: %d", socks5Cmd.Process.Pid))
+	processManager.AddProcess(httpCmd)
+	log.Printf("http服务器已启动，PID: %d\n", httpCmd.Process.Pid)
+	testResults = append(testResults, fmt.Sprintf("📋 http服务器进程PID: %d", httpCmd.Process.Pid))
 	testResults = append(testResults, "")
 
-	// 等待SOCKS5服务器启动
-	testResults = append(testResults, "等待SOCKS5服务器启动...")
-	socks5Started := false
+	// 等待http服务器启动
+	testResults = append(testResults, "等待http服务器启动...")
+	httpStarted := false
 	for i := 0; i < 10; i++ {
-		if isSocks5ProxyRunning() {
-			socks5Started = true
+		if ishttpProxyRunning() {
+			httpStarted = true
 			break
 		}
 		time.Sleep(1 * time.Second)
-		log.Printf("等待SOCKS5服务器启动... %d/10\n", i+1)
+		log.Printf("等待http服务器启动... %d/10\n", i+1)
 	}
 
-	if !socks5Started {
-		t.Fatal("SOCKS5服务器启动失败")
+	if !httpStarted {
+		t.Fatal("http服务器启动失败")
 	}
 
-	testResults = append(testResults, "✅ SOCKS5服务器启动成功")
+	testResults = append(testResults, "✅ http服务器启动成功")
 	testResults = append(testResults, "")
 
 	// 等待额外的时间确保服务器完全启动
@@ -305,14 +305,14 @@ func runWebSocketSocks5Proxy(t *testing.T) {
 		}
 		testResults = append(testResults, "")
 
-		// 终止SOCKS5服务器
-		testResults = append(testResults, "🛑 正在终止SOCKS5服务器进程...")
-		if socks5Cmd.Process != nil {
-			if err := socks5Cmd.Process.Kill(); err != nil {
-				testResults = append(testResults, fmt.Sprintf("❌ 终止SOCKS5服务器进程失败: %v", err))
+		// 终止http服务器
+		testResults = append(testResults, "🛑 正在终止http服务器进程...")
+		if httpCmd.Process != nil {
+			if err := httpCmd.Process.Kill(); err != nil {
+				testResults = append(testResults, fmt.Sprintf("❌ 终止http服务器进程失败: %v", err))
 			} else {
-				socks5Cmd.Wait()
-				testResults = append(testResults, "✅ SOCKS5服务器进程已终止")
+				httpCmd.Wait()
+				testResults = append(testResults, "✅ http服务器进程已终止")
 			}
 		}
 		testResults = append(testResults, "")
@@ -345,11 +345,11 @@ func runWebSocketSocks5Proxy(t *testing.T) {
 		testResults = append(testResults, "```")
 		testResults = append(testResults, "")
 
-		testResults = append(testResults, "### SOCKS5服务器日志输出")
+		testResults = append(testResults, "### http服务器日志输出")
 		testResults = append(testResults, "")
 		testResults = append(testResults, "```")
-		socks5Lines := strings.Split(socks5Output.String(), "\n")
-		for _, line := range socks5Lines {
+		httpLines := strings.Split(httpOutput.String(), "\n")
+		for _, line := range httpLines {
 			if strings.TrimSpace(line) != "" {
 				testResults = append(testResults, line)
 			}
@@ -387,10 +387,10 @@ func runWebSocketSocks5Proxy(t *testing.T) {
 			websocketCmd.Wait()
 		}
 
-		// 终止SOCKS5服务器
-		if socks5Cmd.Process != nil {
-			socks5Cmd.Process.Kill()
-			socks5Cmd.Wait()
+		// 终止http服务器
+		if httpCmd.Process != nil {
+			httpCmd.Process.Kill()
+			httpCmd.Wait()
 		}
 
 		// 清理所有进程
@@ -412,8 +412,8 @@ func runWebSocketSocks5Proxy(t *testing.T) {
 	}
 }
 
-// isSocks5ProxyRunning 检查SOCKS5代理服务器是否正在运行
-func isSocks5ProxyRunning() bool {
+// ishttpProxyRunning 检查http代理服务器是否正在运行
+func ishttpProxyRunning() bool {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
 	}
@@ -458,8 +458,8 @@ func IsPortOccupied2(port int) bool {
 
 // WriteTestResults2 写入测试结果到文件
 func WriteTestResults2(results []string) error {
-	// 写入到websocket_socks5_test_record.md
-	file, err := os.OpenFile("websocket_socks5_test_record.md", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	// 写入到websocket_http_test_record.md
+	file, err := os.OpenFile("websocket_http_test_record.md", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		return err
 	}
@@ -501,7 +501,7 @@ func TestMain2(t *testing.T) {
 	// 在goroutine中运行测试
 	go func() {
 		// 运行测试
-		runWebSocketSocks5Proxy(t)
+		runWebSockethttpProxy(t)
 		resultChan <- true
 	}()
 
@@ -523,7 +523,7 @@ func TestMain2(t *testing.T) {
 
 		// 记录超时信息
 		timeoutMessage := []string{
-			"# WebSocket和SOCKS5级联测试超时记录",
+			"# WebSocket和http级联测试超时记录",
 			"",
 			"## 超时时间",
 			time.Now().Format("2006-01-02 15:04:05"),
