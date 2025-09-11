@@ -264,6 +264,8 @@ go run main.go -upstream-type websocket -upstream-address ws://127.0.0.1:1081 -u
 
 ```go
 type UpStream struct {
+
+  TYPE        string   `json:"type"`
     HTTP_PROXY  string   `json:"http_proxy"`
     HTTPS_PROXY string   `json:"https_proxy"`
     BypassList  []string `json:"bypass_list"`
