@@ -3,11 +3,11 @@ package connect
 import (
 	"context"
 	"fmt"
+	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
+	"log"
 	"net"
 	"net/url"
 	"strconv"
-
-	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
 )
 
 // HttpProxyClient HTTP代理客户端实现
@@ -28,6 +28,9 @@ func NewHttpProxyClient(config interfaces.ClientConfig) (interfaces.ProxyClient,
 
 // Connect 连接到目标主机
 func (c *HttpProxyClient) Connect(host string, port int) error {
+
+	log.Println("Connecting to", host, port, "via HTTP proxy", c.config.ServerAddr)
+
 	if c.conn != nil {
 		c.conn.Close()
 	}
