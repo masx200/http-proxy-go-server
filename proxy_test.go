@@ -42,7 +42,7 @@ func (pm *ProcessManager) AddProcess(cmd *exec.Cmd) {
 func (pm *ProcessManager) CleanupAll() {
 	pm.mutex.Lock()
 	defer pm.mutex.Unlock()
-	
+
 	for _, cmd := range pm.processes {
 		if cmd.Process != nil {
 			cmd.Process.Kill()
@@ -56,7 +56,7 @@ func (pm *ProcessManager) CleanupAll() {
 func (pm *ProcessManager) GetPIDs() []string {
 	pm.mutex.Lock()
 	defer pm.mutex.Unlock()
-	
+
 	var pids []string
 	for _, cmd := range pm.processes {
 		if cmd.Process != nil {
@@ -71,10 +71,13 @@ func TestProxyServer(t *testing.T) {
 	// 创建进程管理器
 	processManager := NewProcessManager()
 	defer processManager.CleanupAll()
-	
+
 	// 创建缓冲区来捕获代理服务器的输出
 	var proxyOutput bytes.Buffer
-	
+
+	// 创建一个多写入器，同时写入到标准输出和缓冲区
+	multiWriter := io.MultiWriter(os.Stdout, &proxyOutput)
+
 	// 添加测试超时检查
 	timeoutTimer := time.AfterFunc(18*time.Second, func() {
 		fmt.Println("\n⚠️ 测试即将超时，正在清理进程...")
@@ -116,7 +119,7 @@ func TestProxyServer(t *testing.T) {
 				"❌ 测试超时",
 			}
 		}
-		
+
 		// 调试信息：将proxyOutput状态添加到测试记录
 		timeoutTestResults = append(timeoutTestResults, "")
 		timeoutTestResults = append(timeoutTestResults, "## 调试信息")
@@ -127,7 +130,7 @@ func TestProxyServer(t *testing.T) {
 		timeoutTestResults = append(timeoutTestResults, "```")
 		timeoutTestResults = append(timeoutTestResults, proxyOutput.String())
 		timeoutTestResults = append(timeoutTestResults, "```")
-		
+
 		// 写入超时测试记录
 		if err := writeTestResults(timeoutTestResults); err != nil {
 			fmt.Printf("写入超时测试记录失败: %v\n", err)
@@ -135,7 +138,7 @@ func TestProxyServer(t *testing.T) {
 		processManager.CleanupAll()
 	})
 	defer timeoutTimer.Stop()
-	
+
 	// 测试结果记录
 	var testResults []string
 	testResults = append(testResults, "# HTTP代理服务器测试记录")
@@ -157,17 +160,17 @@ func TestProxyServer(t *testing.T) {
 
 	// 启动代理服务器进程
 	cmd := exec.Command("go", "run", "-v", "./main.go")
-	// 设置代理服务器的输出缓冲区
-	cmd.Stdout = &proxyOutput
-	cmd.Stderr = &proxyOutput
+	// 设置代理服务器的输出到多写入器，同时输出到控制台和缓冲区
+	cmd.Stdout = multiWriter
+	cmd.Stderr = multiWriter
 	err := cmd.Start()
 	if err != nil {
 		t.Fatalf("启动代理服务器失败: %v", err)
 	}
-	
+
 	// 将代理服务器进程添加到管理器
 	processManager.AddProcess(cmd)
-	
+
 	// 记录代理服务器PID
 	testResults = append(testResults, fmt.Sprintf("📋 代理服务器进程PID: %d", cmd.Process.Pid))
 	testResults = append(testResults, "")
@@ -200,14 +203,14 @@ func TestProxyServer(t *testing.T) {
 	var curlOutput1 bytes.Buffer
 	curlCmd1.Stdout = &curlOutput1
 	curlCmd1.Stderr = &curlOutput1
-	
+
 	// 启动curl进程
 	err1 := curlCmd1.Run()
 	output1 := curlOutput1.Bytes()
-	
+
 	// 将curl进程添加到管理器
 	processManager.AddProcess(curlCmd1)
-	
+
 	// 记录curl进程PID
 	testResults = append(testResults, fmt.Sprintf("📋 Curl测试1进程PID: %d", curlCmd1.Process.Pid))
 	testResults = append(testResults, "")
@@ -236,14 +239,14 @@ func TestProxyServer(t *testing.T) {
 	var curlOutput2 bytes.Buffer
 	curlCmd2.Stdout = &curlOutput2
 	curlCmd2.Stderr = &curlOutput2
-	
+
 	// 启动curl进程
 	err2 := curlCmd2.Run()
 	output2 := curlOutput2.Bytes()
-	
+
 	// 将curl进程添加到管理器
 	processManager.AddProcess(curlCmd2)
-	
+
 	// 记录curl进程PID
 	testResults = append(testResults, fmt.Sprintf("📋 Curl测试2进程PID: %d", curlCmd2.Process.Pid))
 	testResults = append(testResults, "")
@@ -272,14 +275,14 @@ func TestProxyServer(t *testing.T) {
 	var curlOutput3 bytes.Buffer
 	curlCmd3.Stdout = &curlOutput3
 	curlCmd3.Stderr = &curlOutput3
-	
+
 	// 启动curl进程
 	err3 := curlCmd3.Run()
 	output3 := curlOutput3.Bytes()
-	
+
 	// 将curl进程添加到管理器
 	processManager.AddProcess(curlCmd3)
-	
+
 	// 记录curl进程PID
 	testResults = append(testResults, fmt.Sprintf("📋 Curl测试3进程PID: %d", curlCmd3.Process.Pid))
 	testResults = append(testResults, "")
@@ -329,14 +332,26 @@ func TestProxyServer(t *testing.T) {
 
 		// 停止超时计时器
 		timeoutTimer.Stop()
-		
+
+		// 明确终止代理服务器进程
+		testResults = append(testResults, "🛑 正在终止代理服务器进程...")
+		if cmd.Process != nil {
+			if err := cmd.Process.Kill(); err != nil {
+				testResults = append(testResults, fmt.Sprintf("❌ 终止代理服务器进程失败: %v", err))
+			} else {
+				cmd.Wait() // 等待进程完全退出
+				testResults = append(testResults, "✅ 代理服务器进程已终止")
+			}
+		}
+		testResults = append(testResults, "")
+
 		// 清理所有进程
 		testResults = append(testResults, "🧹 正在清理所有子进程...")
 		testResults = append(testResults, "")
 		processManager.CleanupAll()
 		testResults = append(testResults, "✅ 所有子进程已清理完成")
 		testResults = append(testResults, "")
-		
+
 		// 等待进程完全关闭并释放资源
 		time.Sleep(2 * time.Second)
 
@@ -355,12 +370,12 @@ func TestProxyServer(t *testing.T) {
 			testResults = append(testResults, "```")
 			testResults = append(testResults, "")
 		}
-		
+
 		// 将curl进程输出添加到测试记录
 		testResults = append(testResults, "### 所有子进程日志输出")
 		testResults = append(testResults, "")
 		testResults = append(testResults, "```")
-		
+
 		// 添加curl1输出
 		if curlOutput1.Len() > 0 {
 			testResults = append(testResults, "--- Curl测试1输出 ---")
@@ -371,7 +386,7 @@ func TestProxyServer(t *testing.T) {
 				}
 			}
 		}
-		
+
 		// 添加curl2输出
 		if curlOutput2.Len() > 0 {
 			testResults = append(testResults, "--- Curl测试2输出 ---")
@@ -382,7 +397,7 @@ func TestProxyServer(t *testing.T) {
 				}
 			}
 		}
-		
+
 		// 添加curl3输出
 		if curlOutput3.Len() > 0 {
 			testResults = append(testResults, "--- Curl测试3输出 ---")
@@ -393,7 +408,7 @@ func TestProxyServer(t *testing.T) {
 				}
 			}
 		}
-		
+
 		testResults = append(testResults, "```")
 		testResults = append(testResults, "")
 
@@ -417,13 +432,25 @@ func TestProxyServer(t *testing.T) {
 		testResults = append(testResults, "⚠️ 部分测试失败，但仍需关闭代理服务器进程...")
 		testResults = append(testResults, "")
 
+		// 明确终止代理服务器进程
+		testResults = append(testResults, "🛑 正在终止代理服务器进程...")
+		if cmd.Process != nil {
+			if err := cmd.Process.Kill(); err != nil {
+				testResults = append(testResults, fmt.Sprintf("❌ 终止代理服务器进程失败: %v", err))
+			} else {
+				cmd.Wait() // 等待进程完全退出
+				testResults = append(testResults, "✅ 代理服务器进程已终止")
+			}
+		}
+		testResults = append(testResults, "")
+
 		// 清理所有进程
 		testResults = append(testResults, "🧹 正在清理所有子进程...")
 		testResults = append(testResults, "")
 		processManager.CleanupAll()
 		testResults = append(testResults, "✅ 所有子进程已清理完成")
 		testResults = append(testResults, "")
-		
+
 		// 等待进程完全关闭并释放资源
 		time.Sleep(2 * time.Second)
 
@@ -498,7 +525,7 @@ func isProxyServerRunning() bool {
 // writeTestResults 写入测试结果到文件
 func writeTestResults(results []string) error {
 	// 写入到测试记录.md
-	file, err := os.OpenFile("测试记录.md", os.O_RDWR|os.O_APPEND, 0644)
+	file, err := os.OpenFile("测试记录.md", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		return err
 	}
@@ -533,16 +560,20 @@ func TestMain(m *testing.M) {
 	// 创建带有20秒超时的上下文
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	
+
 	// 创建通道来接收测试结果
 	resultChan := make(chan int, 1)
+	
+	// 保存所有运行中的进程，以便在超时时强制终止
+	var runningProcesses []*os.Process
+	var processMutex sync.Mutex
 	
 	// 在goroutine中运行测试
 	go func() {
 		code := m.Run()
 		resultChan <- code
 	}()
-	
+
 	// 等待测试完成或超时
 	select {
 	case code := <-resultChan:
@@ -551,7 +582,17 @@ func TestMain(m *testing.M) {
 	case <-ctx.Done():
 		// 超时或取消
 		fmt.Println("\n⏰ 测试超时（20秒），强制退出...")
-		
+
+		// 强制终止所有记录的进程
+		fmt.Println("正在终止所有运行中的进程...")
+		processMutex.Lock()
+		for _, proc := range runningProcesses {
+			if proc != nil {
+				proc.Kill()
+			}
+		}
+		processMutex.Unlock()
+
 		// 记录超时信息到测试记录
 		timeoutMessage := []string{
 			"# 测试超时记录",
@@ -566,13 +607,15 @@ func TestMain(m *testing.M) {
 			"- curl命令卡住",
 			"- 网络连接问题",
 			"",
+			fmt.Sprintf("已尝试终止 %d 个运行中的进程", len(runningProcesses)),
+			"",
 		}
-		
+
 		// 写入超时记录
 		if err := writeTestResults(timeoutMessage); err != nil {
 			fmt.Printf("写入超时记录失败: %v\n", err)
 		}
-		
+
 		// 强制退出
 		os.Exit(1)
 	}
