@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -98,33 +97,16 @@ func TestProxyServer(t *testing.T) {
 	var proxyOutput bytes.Buffer
 	var proxyOutputMutex sync.Mutex
 
-	// 创建一个管道来捕获log输出
-	logReader, logWriter := io.Pipe()
-	defer logWriter.Close()
-	defer logReader.Close()
-	
-	// 重定向log输出到我们的管道
-	originalLogOutput := log.Writer()
-	log.SetOutput(io.MultiWriter(originalLogOutput, logWriter, os.Stdout))
-	defer log.SetOutput(originalLogOutput)
-	
-	// 启动一个goroutine来读取log输出并添加到proxyOutput
-	var logWg sync.WaitGroup
-	logWg.Add(1)
-	go func() {
-		defer logWg.Done()
-		scanner := bufio.NewScanner(logReader)
-		for scanner.Scan() {
-			proxyOutputMutex.Lock()
-			proxyOutput.WriteString(scanner.Text() + "\n")
-			proxyOutputMutex.Unlock()
-			// 同时输出到控制台以便调试
-			fmt.Println("[LOG]", scanner.Text())
-		}
-	}()
+	// 简化日志捕获：直接从进程输出中读取
+	// 不再使用复杂的log重定向机制，避免冲突
 	
 	// 创建一个多写入器，同时写入到标准输出和缓冲区
 	multiWriter := io.MultiWriter(os.Stdout, &proxyOutput)
+	
+	// 清理可能存在的旧的可执行文件
+	if _, err := os.Stat("main.exe"); err == nil {
+		os.Remove("main.exe")
+	}
 
 	// 添加测试超时检查
 	timeoutTimer := time.AfterFunc(25*time.Second, func() {
@@ -215,8 +197,20 @@ func TestProxyServer(t *testing.T) {
 	testResults = append(testResults, "执行命令: `go run -v ./main.go`")
 	testResults = append(testResults, "")
 
-	// 启动代理服务器进程（使用独立可执行文件）
-	cmd := exec.Command("go", "run", "-v", "./main.go") // 使用编译后的可执行文件
+	// 先编译代理服务器
+	testResults = append(testResults, "编译代理服务器...")
+	buildCmd := exec.Command("go", "build", "-o", "main.exe", "./main.go")
+	buildCmd.Stdout = multiWriter
+	buildCmd.Stderr = multiWriter
+	
+	if err := buildCmd.Run(); err != nil {
+		t.Fatalf("编译代理服务器失败: %v", err)
+	}
+	testResults = append(testResults, "✅ 代理服务器编译成功")
+	testResults = append(testResults, "")
+	
+	// 启动代理服务器进程（使用编译后的可执行文件）
+	cmd := exec.Command("./main.exe")
 	cmd.Stdout = multiWriter
 	cmd.Stderr = multiWriter
 	
@@ -271,6 +265,9 @@ func TestProxyServer(t *testing.T) {
 
 	// 添加启动成功的日志输出提示
 	fmt.Println("代理服务器启动成功，开始执行测试...")
+	
+	// 等待额外的时间确保服务器完全启动
+	time.Sleep(2 * time.Second)
 
 	// 测试HTTP代理功能
 	testResults = append(testResults, "## 2. 测试HTTP代理功能")
@@ -443,11 +440,14 @@ func TestProxyServer(t *testing.T) {
 		// 等待进程完全关闭并释放资源
 		time.Sleep(2 * time.Second)
 		
-		// 等待log读取goroutine完成
-		logWg.Wait()
+		// 等待进程完全退出
+		time.Sleep(2 * time.Second)
 		
-		// 关闭log管道
-		logWriter.Close()
+		// 清理编译的可执行文件
+		if _, err := os.Stat("main.exe"); err == nil {
+			os.Remove("main.exe")
+			testResults = append(testResults, "🧹 已清理编译的可执行文件")
+		}
 		
 		// 将代理服务器输出添加到测试记录
 		fmt.Println("正在记录代理服务器日志...")
@@ -574,11 +574,14 @@ func TestProxyServer(t *testing.T) {
 		// 等待进程完全关闭并释放资源
 		time.Sleep(2 * time.Second)
 		
-		// 等待log读取goroutine完成
-		logWg.Wait()
+		// 等待进程完全退出
+		time.Sleep(2 * time.Second)
 		
-		// 关闭log管道
-		logWriter.Close()
+		// 清理编译的可执行文件
+		if _, err := os.Stat("main.exe"); err == nil {
+			os.Remove("main.exe")
+			testResults = append(testResults, "🧹 已清理编译的可执行文件")
+		}
 		
 		// 将代理服务器输出添加到测试记录
 		
