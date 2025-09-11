@@ -56,6 +56,7 @@ http-proxy-go-server
 
 7. `-upstream-address string`：设置上游代理地址，支持 WebSocket、SOCKS5 和 HTTP
    协议，例如：
+
    - WebSocket: `ws://127.0.0.1:1081`
    - SOCKS5: `socks5://127.0.0.1:1080`
    - HTTP: `http://127.0.0.1:8080`
@@ -121,10 +122,10 @@ JSON 配置文件支持以下参数：
 
 ```bash
 # 使用配置文件启动服务器
-go run main.go -config config.json
+go run -v ./cmd/main.go -config config.json
 
 # 配置文件和命令行参数可以混合使用，命令行参数会覆盖配置文件中的对应值
-go run main.go -config config.json -port 9090 -username admin
+go run -v ./cmd/main.go -config config.json -port 9090 -username admin
 ```
 
 ### 配置文件优先级
@@ -139,7 +140,7 @@ go run main.go -config config.json -port 9090 -username admin
 
 ```bash
 # 使用配置文件的示例
-go run main.go -config config.json
+go run -v ./cmd/main.go -config config.json
 ```
 
 ## 使用 curl 测试
@@ -213,12 +214,12 @@ curl -x http://127.0.0.1:8080 http://www.baidu.com
 - 修改 simple.Handle 函数支持 WebSocket 代理连接
 - 修改 auth.Handle 函数支持 WebSocket 代理连接
 - 添加 WebSocket 代理相关的导入包
-- 实现HTTP数据包解析获取目标服务器域名和端口
-- 支持CONNECT方法和其他HTTP方法的解析
+- 实现 HTTP 数据包解析获取目标服务器域名和端口
+- 支持 CONNECT 方法和其他 HTTP 方法的解析
 - 调用 socks5_websocket_proxy_golang_websocket.NewWebSocketClient(wsConfig)
 - 将解析的参数传递给相应的代理函数
 
-#### ✅ 9. 实现配置文件中用户名密码覆盖代理URL中的用户名密码功能
+#### ✅ 9. 实现配置文件中用户名密码覆盖代理 URL 中的用户名密码功能
 
 - 添加 overrideProxyURLCredentials 辅助函数
 - 支持仅覆盖用户名、仅覆盖密码或同时覆盖两者的场景
@@ -241,8 +242,8 @@ curl -x http://127.0.0.1:8080 http://www.baidu.com
 2. **WebSocket 客户端集成** - 使用 socks5-websocket-proxy-golang 库
 3. **配置扩展** - 保持向后兼容的同时添加新功能
 4. **连接管理** - 确保 WebSocket 连接的正确建立和关闭
-5. **HTTP数据包解析** - 解析目标服务器域名和端口
-6. **用户名密码覆盖** - 支持配置文件中的认证信息覆盖URL中的认证信息
+5. **HTTP 数据包解析** - 解析目标服务器域名和端口
+6. **用户名密码覆盖** - 支持配置文件中的认证信息覆盖 URL 中的认证信息
 
 ### 使用示例
 
@@ -250,7 +251,7 @@ curl -x http://127.0.0.1:8080 http://www.baidu.com
 
 ```bash
 # 使用WebSocket上游代理
-go run main.go -upstream-type websocket -upstream-address ws://127.0.0.1:1081 -upstream-username user -upstream-password pass
+go run -v ./cmd/main.go -upstream-type websocket -upstream-address ws://127.0.0.1:1081 -upstream-username user -upstream-password pass
 ```
 
 #### 配置文件使用
@@ -406,10 +407,10 @@ type UpStream struct {
 
 ```bash
 # 使用SOCKS5上游代理
-go run main.go -upstream-type socks5 -upstream-address socks5://127.0.0.1:1080 -upstream-username user -upstream-password pass
+go run -v ./cmd/main.go -upstream-type socks5 -upstream-address socks5://127.0.0.1:1080 -upstream-username user -upstream-password pass
 
 # 使用SOCKS5 over TLS上游代理
-go run main.go -upstream-type socks5 -upstream-address socks5s://127.0.0.1:1080 -upstream-username user -upstream-password pass
+go run -v ./cmd/main.go -upstream-type socks5 -upstream-address socks5s://127.0.0.1:1080 -upstream-username user -upstream-password pass
 ```
 
 #### 配置文件使用
@@ -580,10 +581,10 @@ SOCKS5 代理支持以下协议前缀：
 
 ```bash
 # 使用HTTP上游代理
-go run main.go -upstream-type http -upstream-address http://127.0.0.1:8080 -upstream-username user -upstream-password pass
+go run -v ./cmd/main.go -upstream-type http -upstream-address http://127.0.0.1:8080 -upstream-username user -upstream-password pass
 
 # 使用带认证的HTTP上游代理
-go run main.go -upstream-type http -upstream-address http://user:pass@127.0.0.1:8080
+go run -v ./cmd/main.go -upstream-type http -upstream-address http://user:pass@127.0.0.1:8080
 ```
 
 #### 配置文件使用
