@@ -498,7 +498,7 @@ func TestProxyServer(t *testing.T) {
 
 		// 添加curl1输出
 		if curlOutput1.Len() > 0 {
-			testResults = append(testResults, "--- Curl测试1输出 ---")
+			testResults = append(testResults, "### Curl测试1输出 ###")
 			curl1Lines := strings.Split(curlOutput1.String(), "\n")
 			for _, line := range curl1Lines {
 				if strings.TrimSpace(line) != "" {
@@ -509,7 +509,7 @@ func TestProxyServer(t *testing.T) {
 
 		// 添加curl2输出
 		if curlOutput2.Len() > 0 {
-			testResults = append(testResults, "--- Curl测试2输出 ---")
+			testResults = append(testResults, "### Curl测试2输出 ###")
 			curl2Lines := strings.Split(curlOutput2.String(), "\n")
 			for _, line := range curl2Lines {
 				if strings.TrimSpace(line) != "" {
@@ -520,7 +520,7 @@ func TestProxyServer(t *testing.T) {
 
 		// 添加curl3输出
 		if curlOutput3.Len() > 0 {
-			testResults = append(testResults, "--- Curl测试3输出 ---")
+			testResults = append(testResults, "### Curl测试3输出 ###")
 			curl3Lines := strings.Split(curlOutput3.String(), "\n")
 			for _, line := range curl3Lines {
 				if strings.TrimSpace(line) != "" {
@@ -692,7 +692,7 @@ func writeTestResults(results []string) error {
 	writer := bufio.NewWriter(file)
 
 	// 写入分隔符
-	_, err = writer.WriteString("\n\n---\n\n")
+	_, err = writer.WriteString("\n\n###\n\n")
 	if err != nil {
 		return err
 	}
