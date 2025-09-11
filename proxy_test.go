@@ -170,6 +170,7 @@ func TestProxyServer(t *testing.T) {
 
 	// 将代理服务器进程添加到管理器
 	processManager.AddProcess(cmd)
+	fmt.Printf("代理服务器已启动，PID: %d\n", cmd.Process.Pid)
 
 	// 记录代理服务器PID
 	testResults = append(testResults, fmt.Sprintf("📋 代理服务器进程PID: %d", cmd.Process.Pid))
@@ -336,11 +337,14 @@ func TestProxyServer(t *testing.T) {
 		// 明确终止代理服务器进程
 		testResults = append(testResults, "🛑 正在终止代理服务器进程...")
 		if cmd.Process != nil {
+			fmt.Printf("正在终止代理服务器进程 PID: %d\n", cmd.Process.Pid)
 			if err := cmd.Process.Kill(); err != nil {
 				testResults = append(testResults, fmt.Sprintf("❌ 终止代理服务器进程失败: %v", err))
+				fmt.Printf("终止代理服务器进程失败: %v\n", err)
 			} else {
 				cmd.Wait() // 等待进程完全退出
 				testResults = append(testResults, "✅ 代理服务器进程已终止")
+				fmt.Println("代理服务器进程已终止")
 			}
 		}
 		testResults = append(testResults, "")
@@ -356,6 +360,7 @@ func TestProxyServer(t *testing.T) {
 		time.Sleep(2 * time.Second)
 
 		// 将代理服务器输出添加到测试记录
+		fmt.Println("正在记录代理服务器日志...")
 		if proxyOutput.Len() > 0 {
 			testResults = append(testResults, "### 代理服务器日志输出")
 			testResults = append(testResults, "")
@@ -365,10 +370,17 @@ func TestProxyServer(t *testing.T) {
 			for _, line := range outputLines {
 				if strings.TrimSpace(line) != "" {
 					testResults = append(testResults, line)
+					fmt.Println("[代理日志]", line) // 同时打印到控制台
 				}
 			}
 			testResults = append(testResults, "```")
 			testResults = append(testResults, "")
+		} else {
+			testResults = append(testResults, "### 代理服务器日志输出")
+			testResults = append(testResults, "")
+			testResults = append(testResults, "⚠️ 没有捕获到代理服务器日志")
+			testResults = append(testResults, "")
+			fmt.Println("⚠️ 没有捕获到代理服务器日志")
 		}
 
 		// 将curl进程输出添加到测试记录
@@ -563,11 +575,11 @@ func TestMain(m *testing.M) {
 
 	// 创建通道来接收测试结果
 	resultChan := make(chan int, 1)
-	
+
 	// 保存所有运行中的进程，以便在超时时强制终止
 	var runningProcesses []*os.Process
 	var processMutex sync.Mutex
-	
+
 	// 在goroutine中运行测试
 	go func() {
 		code := m.Run()
