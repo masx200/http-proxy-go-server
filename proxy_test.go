@@ -72,9 +72,66 @@ func TestProxyServer(t *testing.T) {
 	processManager := NewProcessManager()
 	defer processManager.CleanupAll()
 	
+	// 创建缓冲区来捕获代理服务器的输出
+	var proxyOutput bytes.Buffer
+	
 	// 添加测试超时检查
 	timeoutTimer := time.AfterFunc(18*time.Second, func() {
 		fmt.Println("\n⚠️ 测试即将超时，正在清理进程...")
+		// 在超时前记录代理服务器日志
+		var timeoutTestResults []string
+		if proxyOutput.Len() > 0 {
+			timeoutTestResults = []string{
+				"# HTTP代理服务器测试记录（超时）",
+				"",
+				"## 测试时间",
+				time.Now().Format("2006-01-02 15:04:05"),
+				"",
+				"## 代理服务器日志输出（超时前捕获）",
+				"",
+				"```",
+			}
+			// 按行分割输出并添加到测试结果
+			outputLines := strings.Split(proxyOutput.String(), "\n")
+			for _, line := range outputLines {
+				if strings.TrimSpace(line) != "" {
+					timeoutTestResults = append(timeoutTestResults, line)
+				}
+			}
+			timeoutTestResults = append(timeoutTestResults, "```")
+			timeoutTestResults = append(timeoutTestResults, "")
+			timeoutTestResults = append(timeoutTestResults, "❌ 测试超时，但已捕获代理服务器日志")
+		} else {
+			// 即使没有输出，也要记录超时信息
+			timeoutTestResults = []string{
+				"# HTTP代理服务器测试记录（超时）",
+				"",
+				"## 测试时间",
+				time.Now().Format("2006-01-02 15:04:05"),
+				"",
+				"## 代理服务器状态",
+				"",
+				"⚠️ 代理服务器没有产生任何输出",
+				"",
+				"❌ 测试超时",
+			}
+		}
+		
+		// 调试信息：将proxyOutput状态添加到测试记录
+		timeoutTestResults = append(timeoutTestResults, "")
+		timeoutTestResults = append(timeoutTestResults, "## 调试信息")
+		timeoutTestResults = append(timeoutTestResults, "")
+		timeoutTestResults = append(timeoutTestResults, fmt.Sprintf("[DEBUG] proxyOutput长度: %d", proxyOutput.Len()))
+		timeoutTestResults = append(timeoutTestResults, "")
+		timeoutTestResults = append(timeoutTestResults, "[DEBUG] proxyOutput内容:")
+		timeoutTestResults = append(timeoutTestResults, "```")
+		timeoutTestResults = append(timeoutTestResults, proxyOutput.String())
+		timeoutTestResults = append(timeoutTestResults, "```")
+		
+		// 写入超时测试记录
+		if err := writeTestResults(timeoutTestResults); err != nil {
+			fmt.Printf("写入超时测试记录失败: %v\n", err)
+		}
 		processManager.CleanupAll()
 	})
 	defer timeoutTimer.Stop()
@@ -100,8 +157,7 @@ func TestProxyServer(t *testing.T) {
 
 	// 启动代理服务器进程
 	cmd := exec.Command("go", "run", "-v", "./main.go")
-	// 创建缓冲区来捕获代理服务器的输出
-	var proxyOutput bytes.Buffer
+	// 设置代理服务器的输出缓冲区
 	cmd.Stdout = &proxyOutput
 	cmd.Stderr = &proxyOutput
 	err := cmd.Start()
