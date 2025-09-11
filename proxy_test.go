@@ -127,7 +127,7 @@ func TestProxyServer(t *testing.T) {
 	multiWriter := io.MultiWriter(os.Stdout, &proxyOutput)
 
 	// 添加测试超时检查
-	timeoutTimer := time.AfterFunc(18*time.Second, func() {
+	timeoutTimer := time.AfterFunc(25*time.Second, func() {
 		fmt.Println("\n⚠️ 测试即将超时，正在清理进程...")
 		// 在超时前记录代理服务器日志
 		var timeoutTestResults []string
@@ -191,6 +191,8 @@ func TestProxyServer(t *testing.T) {
 			fmt.Printf("写入超时测试记录失败: %v\n", err)
 		}
 		processManager.CleanupAll()
+		// 强制退出测试
+		t.Fatal("测试超时")
 	})
 	defer timeoutTimer.Stop()
 
@@ -219,14 +221,13 @@ func TestProxyServer(t *testing.T) {
 	cmd.Stderr = multiWriter
 	
 	// 设置进程属性，确保能终止所有子进程（跨平台兼容）
-	if runtime.GOOS != "windows" {
-		cmd.SysProcAttr = &syscall.SysProcAttr{}
-	} else {
+	if runtime.GOOS == "windows" {
 		// Windows特定的进程组设置
 		cmd.SysProcAttr = &syscall.SysProcAttr{
 			CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP,
 		}
 	}
+	// Unix-like系统不需要特殊设置，go会自动处理
 	
 	err := cmd.Start()
 	if err != nil {

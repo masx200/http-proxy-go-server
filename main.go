@@ -10,8 +10,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/masx200/http-proxy-go-server/auth"
@@ -457,6 +459,10 @@ func ProxySelector(r *http.Request, UpStreams map[string]UpStream, Rules []struc
 }
 
 func main() {
+	// 设置日志输出到标准错误，确保日志能够被正确捕获
+	log.SetOutput(os.Stderr)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	
 	// 添加配置文件参数
 	configFile := flag.String("config", "", "JSON配置文件路径")
 
@@ -485,6 +491,31 @@ func main() {
 		upstreamPassword = flag.String("upstream-password", "", "upstream proxy password")
 	)
 	flag.Parse()
+	
+	// 设置信号处理
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
+	
+	// 创建上下文，用于优雅关闭
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	
+	// 启动信号处理goroutine
+	go func() {
+		sig := <-sigChan
+		log.Printf("收到信号: %v，正在优雅关闭服务器...\n", sig)
+		cancel()
+		
+		// 给予一些时间来完成清理工作
+		time.Sleep(100 * time.Millisecond)
+		log.Println("代理服务器已关闭")
+		os.Exit(0)
+	}()
+	
+	// 使用ctx变量以避免未使用错误
+	_ = ctx
+	
+	log.Println("代理服务器启动中...")
 
 	// 如果指定了配置文件，则从配置文件读取参数
 	var config *Config
