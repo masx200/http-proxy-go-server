@@ -1,3 +1,5 @@
+github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
+github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/bytedance/sonic v1.11.6 h1:oUp34TzMlL+OY1OUWxHqsdkgC/Zfc85zGqw9siXjrc0=
 github.com/bytedance/sonic v1.11.6/go.mod h1:LysEHSvpvDySVdC2f87zGWf6CIKJcAvqab1ZaiQtds4=
 github.com/bytedance/sonic/loader v0.1.1 h1:c+e5Pt1k/cy5wMveRDyk2X4B9hF4g7an8N3zCYjJFNM=
@@ -64,6 +66,8 @@ github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250907173057-fc0890a74
 github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250907173057-fc0890a74051/go.mod h1:BDV+giO6oNUq7iPrf9D1YOE2FKQb/+bxLlCeBJ5FrUo=
 github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250908135406-382c144ffade h1:Zloa2nBhFsB82TU1vN+ll0UCLBkeggc2abN+q/SMtPU=
 github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250908135406-382c144ffade/go.mod h1:BDV+giO6oNUq7iPrf9D1YOE2FKQb/+bxLlCeBJ5FrUo=
+github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250911114847-9b238e976b16 h1:Kus+W0twW9r+AmEG+F0B5azU5FFGojodsl3EstGR1q0=
+github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250911114847-9b238e976b16/go.mod h1:BDV+giO6oNUq7iPrf9D1YOE2FKQb/+bxLlCeBJ5FrUo=
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/miekg/dns v1.1.68 h1:jsSRkNozw7G/mnmXULynzMNIsgY2dHC8LO6U6Ij2JEA=

@@ -21,6 +21,7 @@ import (
 	tls_auth "github.com/masx200/http-proxy-go-server/tls+auth"
 	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
 	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
+	"github.com/masx200/socks5-websocket-proxy-golang/pkg/socks5"
 )
 
 type multiString []string
@@ -46,6 +47,10 @@ type UpStream struct {
 
 	HTTP_USERNAME string `json:"http_username"` // http代理用户名
 	HTTP_PASSWORD string `json:"http_password"` // http代理密码
+	// 新增SOCKS5支持
+	SOCKS5_PROXY   string `json:"socks5_proxy"`   // SOCKS5代理地址
+	SOCKS5_USERNAME string `json:"socks5_username"` // SOCKS5代理用户名
+	SOCKS5_PASSWORD string `json:"socks5_password"` // SOCKS5代理密码
 }
 
 // func init() {
@@ -194,18 +199,23 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 				if pattern == "*" {
 					var upstream = upstreams[rule.Upstream]
 					// 优先检查WebSocket代理
-					if upstream.TYPE == "websocket" && upstream.WS_PROXY != "" {
-						// 检查是否已经包含协议前缀
-						var wsProxyURL string
-						if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
-							wsProxyURL = upstream.WS_PROXY
-						} else {
-							wsProxyURL = "ws://" + upstream.WS_PROXY
+						if upstream.TYPE == "websocket" && upstream.WS_PROXY != "" {
+							// 检查是否已经包含协议前缀
+							var wsProxyURL string
+							if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
+								wsProxyURL = upstream.WS_PROXY
+							} else {
+								wsProxyURL = "ws://" + upstream.WS_PROXY
+							}
+							// 使用配置中的ws_username和ws_password覆盖URL中的用户名密码
+							return overrideProxyURLCredentials(wsProxyURL, upstream.WS_USERNAME, upstream.WS_PASSWORD)
 						}
-						// 使用配置中的ws_username和ws_password覆盖URL中的用户名密码
-						return overrideProxyURLCredentials(wsProxyURL, upstream.WS_USERNAME, upstream.WS_PASSWORD)
-					}
-					if upstream.HTTPS_PROXY != "" && scheme == "https" {
+						// 检查SOCKS5代理
+						if upstream.TYPE == "socks5" && upstream.SOCKS5_PROXY != "" {
+							// 使用配置中的socks5_username和socks5_password覆盖URL中的用户名密码
+							return overrideProxyURLCredentials(upstream.SOCKS5_PROXY, upstream.SOCKS5_USERNAME, upstream.SOCKS5_PASSWORD)
+						}
+						if upstream.HTTPS_PROXY != "" && scheme == "https" {
 						// 使用配置中的http_username和http_password覆盖URL中的用户名密码
 						return overrideProxyURLCredentials(upstream.HTTPS_PROXY, upstream.HTTP_USERNAME, upstream.HTTP_PASSWORD)
 					}
@@ -221,18 +231,23 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 						// 找到匹配的CIDR，返回对应的代理
 						if upstream, exists := upstreams[rule.Upstream]; exists {
 							// 优先检查WebSocket代理
-							if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
-								// 检查是否已经包含协议前缀
-								var wsProxyURL string
-								if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
-									wsProxyURL = upstream.WS_PROXY
-								} else {
-									wsProxyURL = "ws://" + upstream.WS_PROXY
-								}
-								// 使用配置中的ws_username和ws_password覆盖URL中的用户名密码
-								return overrideProxyURLCredentials(wsProxyURL, upstream.WS_USERNAME, upstream.WS_PASSWORD)
+						if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
+							// 检查是否已经包含协议前缀
+							var wsProxyURL string
+							if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
+								wsProxyURL = upstream.WS_PROXY
+							} else {
+								wsProxyURL = "ws://" + upstream.WS_PROXY
 							}
-							if upstream.HTTPS_PROXY != "" && scheme == "https" {
+							// 使用配置中的ws_username和ws_password覆盖URL中的用户名密码
+							return overrideProxyURLCredentials(wsProxyURL, upstream.WS_USERNAME, upstream.WS_PASSWORD)
+						}
+						// 检查SOCKS5代理
+						if upstream.SOCKS5_PROXY != "" && upstream.TYPE == "socks5" {
+							// 使用配置中的socks5_username和socks5_password覆盖URL中的用户名密码
+							return overrideProxyURLCredentials(upstream.SOCKS5_PROXY, upstream.SOCKS5_USERNAME, upstream.SOCKS5_PASSWORD)
+						}
+						if upstream.HTTPS_PROXY != "" && scheme == "https" {
 								// 使用配置中的http_username和http_password覆盖URL中的用户名密码
 								return overrideProxyURLCredentials(upstream.HTTPS_PROXY, upstream.HTTP_USERNAME, upstream.HTTP_PASSWORD)
 							}
@@ -252,6 +267,10 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 								return upstream.WS_PROXY, nil
 							}
 							return "ws://" + upstream.WS_PROXY, nil
+						}
+						// 检查SOCKS5代理
+						if upstream.TYPE == "socks5" && upstream.SOCKS5_PROXY != "" {
+							return upstream.SOCKS5_PROXY, nil
 						}
 						if upstream.HTTPS_PROXY != "" && scheme == "https" {
 							return upstream.HTTPS_PROXY, nil
@@ -283,18 +302,23 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 				if pattern == "*" {
 					var upstream = upstreams[rule.Upstream]
 					// 优先检查WebSocket代理
-					if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
-						// 检查是否已经包含协议前缀
-						var wsProxyURL string
-						if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
-							wsProxyURL = upstream.WS_PROXY
-						} else {
-							wsProxyURL = "ws://" + upstream.WS_PROXY
+						if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
+							// 检查是否已经包含协议前缀
+							var wsProxyURL string
+							if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
+								wsProxyURL = upstream.WS_PROXY
+							} else {
+								wsProxyURL = "ws://" + upstream.WS_PROXY
+							}
+							// 使用配置中的ws_username和ws_password覆盖URL中的用户名密码
+							return overrideProxyURLCredentials(wsProxyURL, upstream.WS_USERNAME, upstream.WS_PASSWORD)
 						}
-						// 使用配置中的ws_username和ws_password覆盖URL中的用户名密码
-						return overrideProxyURLCredentials(wsProxyURL, upstream.WS_USERNAME, upstream.WS_PASSWORD)
-					}
-					if scheme == "https" && upstream.HTTPS_PROXY != "" {
+						// 检查SOCKS5代理
+						if upstream.SOCKS5_PROXY != "" && upstream.TYPE == "socks5" {
+							// 使用配置中的socks5_username和socks5_password覆盖URL中的用户名密码
+							return overrideProxyURLCredentials(upstream.SOCKS5_PROXY, upstream.SOCKS5_USERNAME, upstream.SOCKS5_PASSWORD)
+						}
+						if scheme == "https" && upstream.HTTPS_PROXY != "" {
 						// 使用配置中的http_username和http_password覆盖URL中的用户名密码
 						return overrideProxyURLCredentials(upstream.HTTPS_PROXY, upstream.HTTP_USERNAME, upstream.HTTP_PASSWORD)
 					}
@@ -309,18 +333,23 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 						// 找到匹配的域名模式，返回对应的代理
 						if upstream, exists := upstreams[rule.Upstream]; exists {
 							// 优先检查WebSocket代理
-							if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
-								// 检查是否已经包含协议前缀
-								var wsProxyURL string
-								if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
-									wsProxyURL = upstream.WS_PROXY
-								} else {
-									wsProxyURL = "ws://" + upstream.WS_PROXY
-								}
-								// 使用配置中的ws_username和ws_password覆盖URL中的用户名密码
-								return overrideProxyURLCredentials(wsProxyURL, upstream.WS_USERNAME, upstream.WS_PASSWORD)
+						if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
+							// 检查是否已经包含协议前缀
+							var wsProxyURL string
+							if strings.HasPrefix(upstream.WS_PROXY, "ws://") || strings.HasPrefix(upstream.WS_PROXY, "wss://") {
+								wsProxyURL = upstream.WS_PROXY
+							} else {
+								wsProxyURL = "ws://" + upstream.WS_PROXY
 							}
-							if scheme == "http" && upstream.HTTP_PROXY != "" {
+							// 使用配置中的ws_username和ws_password覆盖URL中的用户名密码
+							return overrideProxyURLCredentials(wsProxyURL, upstream.WS_USERNAME, upstream.WS_PASSWORD)
+						}
+						// 检查SOCKS5代理
+						if upstream.SOCKS5_PROXY != "" && upstream.TYPE == "socks5" {
+							// 使用配置中的socks5_username和socks5_password覆盖URL中的用户名密码
+							return overrideProxyURLCredentials(upstream.SOCKS5_PROXY, upstream.SOCKS5_USERNAME, upstream.SOCKS5_PASSWORD)
+						}
+						if scheme == "http" && upstream.HTTP_PROXY != "" {
 								// 使用配置中的http_username和http_password覆盖URL中的用户名密码
 								return overrideProxyURLCredentials(upstream.HTTP_PROXY, upstream.HTTP_USERNAME, upstream.HTTP_PASSWORD)
 							}
@@ -450,10 +479,10 @@ func main() {
 		username    = flag.String("username", "", "username")
 		password    = flag.String("password", "", "password")
 		// 新增WebSocket代理相关参数
-		upstreamType     = flag.String("upstream-type", "", "upstream proxy type (websocket)")
-		upstreamAddress  = flag.String("upstream-address", "", "upstream proxy address (e.g., ws://127.0.0.1:1081)")
-		upstreamUsername = flag.String("upstream-username", "", "upstream proxy username")
-		upstreamPassword = flag.String("upstream-password", "", "upstream proxy password")
+	upstreamType     = flag.String("upstream-type", "", "upstream proxy type (websocket, socks5)")
+	upstreamAddress  = flag.String("upstream-address", "", "upstream proxy address (e.g., ws://127.0.0.1:1081 or socks5://127.0.0.1:1080)")
+	upstreamUsername = flag.String("upstream-username", "", "upstream proxy username")
+	upstreamPassword = flag.String("upstream-password", "", "upstream proxy password")
 	)
 	flag.Parse()
 
@@ -579,6 +608,62 @@ func main() {
 		fmt.Println("WebSocket代理配置已添加")
 	}
 
+	// 处理SOCKS5代理参数
+	if *upstreamType == "socks5" && *upstreamAddress != "" {
+		// 如果配置为空，则创建一个默认配置
+		if config == nil {
+			config = &Config{}
+		}
+		// 如果UpStreams为空，则初始化
+		if config.UpStreams == nil {
+			config.UpStreams = make(map[string]UpStream)
+		}
+		// 如果Rules为空，则初始化
+		if config.Rules == nil {
+			config.Rules = []struct {
+				Filter   string `json:"filter"`
+				Upstream string `json:"upstream"`
+			}{}
+		}
+		// 如果Filters为空，则初始化
+		if config.Filters == nil {
+			config.Filters = make(map[string]struct {
+				Patterns []string `json:"patterns"`
+			})
+		}
+
+		// 创建SOCKS5代理配置
+		socks5Upstream := UpStream{
+			TYPE:           "socks5",
+			HTTP_PROXY:     "",
+			HTTPS_PROXY:    "",
+			BypassList:     []string{},
+			SOCKS5_PROXY:   *upstreamAddress,
+			SOCKS5_USERNAME: *upstreamUsername,
+			SOCKS5_PASSWORD: *upstreamPassword,
+		}
+
+		// 添加到UpStreams
+		config.UpStreams["socks5_upstream"] = socks5Upstream
+
+		// 添加规则和过滤器
+		config.Rules = append(config.Rules, struct {
+			Filter   string `json:"filter"`
+			Upstream string `json:"upstream"`
+		}{
+			Filter:   "socks5_filter",
+			Upstream: "socks5_upstream",
+		})
+
+		config.Filters["socks5_filter"] = struct {
+			Patterns []string `json:"patterns"`
+		}{
+			Patterns: []string{"*"},
+		}
+
+		fmt.Println("SOCKS5代理配置已添加")
+	}
+
 	for i, dohurl := range dohurls {
 
 		var dohip string
@@ -636,6 +721,24 @@ func main() {
 
 							// 实现WebSocket代理连接逻辑
 							return websocketDialContext(ctx, network, addr, modifiedUpstream)
+						}
+					}
+					// 检查是否有SOCKS5代理配置
+					if upstream.SOCKS5_PROXY != "" && upstream.TYPE == "socks5" {
+						// 创建自定义的DialContext函数来处理SOCKS5代理
+						t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+							// 使用overrideProxyURLCredentials修改SOCKS5代理URL中的用户名密码
+							modifiedSocks5Proxy, err := overrideProxyURLCredentials(upstream.SOCKS5_PROXY, upstream.SOCKS5_USERNAME, upstream.SOCKS5_PASSWORD)
+							if err != nil {
+								return nil, fmt.Errorf("failed to override SOCKS5 proxy credentials: %v", err)
+							}
+
+							// 创建修改后的upstream副本
+							modifiedUpstream := upstream
+							modifiedUpstream.SOCKS5_PROXY = modifiedSocks5Proxy
+
+							// 实现SOCKS5代理连接逻辑
+							return socks5DialContext(ctx, network, addr, modifiedUpstream)
 						}
 					}
 				}
@@ -741,4 +844,49 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream Up
 
 	// 返回客户端连接
 	return clientConn, nil
+}
+
+// socks5DialContext 实现SOCKS5代理连接
+func socks5DialContext(ctx context.Context, network, addr string, upstream UpStream) (net.Conn, error) {
+	// 解析SOCKS5代理地址
+	proxyURL, err := url.Parse(upstream.SOCKS5_PROXY)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse SOCKS5 proxy URL %s: %v", upstream.SOCKS5_PROXY, err)
+	}
+
+	// 提取代理主机和端口
+	proxyHost := proxyURL.Hostname()
+	proxyPort := proxyURL.Port()
+	if proxyPort == "" {
+		proxyPort = "1080" // SOCKS5默认端口
+	}
+
+	// 详细打印SOCKS5配置信息
+	log.Println("SOCKS5 Config Details:")
+	log.Printf("  Target Address: %s", addr)
+	log.Printf("  Proxy Host: %s", proxyHost)
+	log.Printf("  Proxy Port: %s", proxyPort)
+	log.Printf("  Username: %s", upstream.SOCKS5_USERNAME)
+	log.Printf("  Password: %s", upstream.SOCKS5_PASSWORD)
+
+	// 创建SOCKS5客户端配置
+	socks5Config := interfaces.ClientConfig{
+		Username:   upstream.SOCKS5_USERNAME,
+		Password:   upstream.SOCKS5_PASSWORD,
+		ServerAddr: proxyHost + ":" + proxyPort,
+		Protocol:   "socks5",
+		Timeout:    30 * time.Second,
+	}
+
+	// 创建SOCKS5客户端
+	socks5Client := socks5.NewSOCKS5Client(socks5Config)
+
+	// 使用DialContext连接到目标主机
+	conn, err := socks5Client.DialContext(ctx, network, addr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to %s via SOCKS5 proxy: %v", addr, err)
+	}
+
+	// 返回连接
+	return conn, nil
 }
