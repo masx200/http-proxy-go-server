@@ -1,4 +1,4 @@
-package main
+package tests
 
 import (
 	"bufio"
@@ -88,8 +88,8 @@ func (pm *ProcessManager) GetPIDs() []string {
 	return pids
 }
 
-// TestProxyServer 测试HTTP代理服务器的基本功能
-func TestProxyServer(t *testing.T) {
+// runProxyServer 测试HTTP代理服务器的基本功能
+func runProxyServer(t *testing.T) {
 	// 创建进程管理器
 	processManager := NewProcessManager()
 	defer processManager.CleanupAll()
@@ -195,12 +195,12 @@ func TestProxyServer(t *testing.T) {
 	// 启动代理服务器
 	testResults = append(testResults, "## 1. 启动代理服务器")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `go run -v ./main.go`")
+	testResults = append(testResults, "执行命令: `go run -v ../cmd/main.go`")
 	testResults = append(testResults, "")
 
 	// 先编译代理服务器
 	testResults = append(testResults, "编译代理服务器...")
-	buildCmd := exec.Command("go", "build", "-o", "main.exe", "./main.go")
+	buildCmd := exec.Command("go", "build", "-o", "main.exe", "../cmd/main.go")
 	buildCmd.Stdout = multiWriter
 	buildCmd.Stderr = multiWriter
 
@@ -709,7 +709,7 @@ func writeTestResults(results []string) error {
 }
 
 // TestMain 主测试函数
-func TestMain(m *testing.M) {
+func TestMain1(t *testing.T) {
 	// 创建带有30秒超时的上下文（增加超时时间）
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -723,15 +723,15 @@ func TestMain(m *testing.M) {
 	// 在goroutine中运行测试
 	go func() {
 		// 运行测试
-		code := m.Run()
-		resultChan <- code
+		runProxyServer(t)
+		resultChan <- 0
 	}()
 
 	// 等待测试完成或超时
 	select {
-	case code := <-resultChan:
+	case  <-resultChan:
 		// 测试正常完成
-		os.Exit(code)
+		return//os.Exit(code)
 	case <-ctx.Done():
 		// 超时或取消
 		log.Println("\n⏰ 测试超时（30秒），强制退出...")
@@ -780,6 +780,6 @@ func TestMain(m *testing.M) {
 		}
 
 		// 强制退出
-		os.Exit(1)
+		t.Fatal("测试超时")//os.Exit(1)
 	}
 }
