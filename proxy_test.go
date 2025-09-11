@@ -53,7 +53,7 @@ func (pm *ProcessManager) CleanupAll() {
 				cmd.Process.Kill()
 				// 等待进程退出
 				cmd.Wait()
-				
+
 				// 尝试查找并终止子进程
 				pm.killChildProcesses(cmd.Process.Pid)
 			} else {
@@ -99,10 +99,10 @@ func TestProxyServer(t *testing.T) {
 
 	// 简化日志捕获：直接从进程输出中读取
 	// 不再使用复杂的log重定向机制，避免冲突
-	
+
 	// 创建一个多写入器，同时写入到标准输出和缓冲区
 	multiWriter := io.MultiWriter(os.Stdout, &proxyOutput)
-	
+
 	// 清理可能存在的旧的可执行文件
 	if _, err := os.Stat("main.exe"); err == nil {
 		os.Remove("main.exe")
@@ -113,13 +113,13 @@ func TestProxyServer(t *testing.T) {
 		fmt.Println("\n⚠️ 测试即将超时，正在清理进程...")
 		// 在超时前记录代理服务器日志
 		var timeoutTestResults []string
-		
+
 		// 使用互斥锁保护对proxyOutput的访问
 		proxyOutputMutex.Lock()
 		outputLen := proxyOutput.Len()
 		outputContent := proxyOutput.String()
 		proxyOutputMutex.Unlock()
-		
+
 		if outputLen > 0 {
 			timeoutTestResults = []string{
 				"# HTTP代理服务器测试记录（超时）",
@@ -202,18 +202,18 @@ func TestProxyServer(t *testing.T) {
 	buildCmd := exec.Command("go", "build", "-o", "main.exe", "./main.go")
 	buildCmd.Stdout = multiWriter
 	buildCmd.Stderr = multiWriter
-	
+
 	if err := buildCmd.Run(); err != nil {
 		t.Fatalf("编译代理服务器失败: %v", err)
 	}
 	testResults = append(testResults, "✅ 代理服务器编译成功")
 	testResults = append(testResults, "")
-	
+
 	// 启动代理服务器进程（使用编译后的可执行文件）
 	cmd := exec.Command("./main.exe")
 	cmd.Stdout = multiWriter
 	cmd.Stderr = multiWriter
-	
+
 	// 设置进程属性，确保能终止所有子进程（跨平台兼容）
 	if runtime.GOOS == "windows" {
 		// Windows特定的进程组设置
@@ -222,7 +222,7 @@ func TestProxyServer(t *testing.T) {
 		}
 	}
 	// Unix-like系统不需要特殊设置，go会自动处理
-	
+
 	err := cmd.Start()
 	if err != nil {
 		t.Fatalf("启动代理服务器失败: %v", err)
@@ -231,7 +231,7 @@ func TestProxyServer(t *testing.T) {
 	// 将代理服务器进程添加到管理器
 	processManager.AddProcess(cmd)
 	fmt.Printf("代理服务器已启动，PID: %d\n", cmd.Process.Pid)
-	
+
 	// 确保进程能正确退出
 	go func() {
 		cmd.Wait()
@@ -244,7 +244,7 @@ func TestProxyServer(t *testing.T) {
 
 	// 等待服务器启动
 	testResults = append(testResults, "等待服务器启动...")
-	
+
 	// 等待服务器启动，增加重试机制
 	serverStarted := false
 	for i := 0; i < 10; i++ {
@@ -265,7 +265,7 @@ func TestProxyServer(t *testing.T) {
 
 	// 添加启动成功的日志输出提示
 	fmt.Println("代理服务器启动成功，开始执行测试...")
-	
+
 	// 等待额外的时间确保服务器完全启动
 	time.Sleep(2 * time.Second)
 
@@ -439,25 +439,25 @@ func TestProxyServer(t *testing.T) {
 
 		// 等待进程完全关闭并释放资源
 		time.Sleep(2 * time.Second)
-		
+
 		// 等待进程完全退出
 		time.Sleep(2 * time.Second)
-		
+
 		// 清理编译的可执行文件
 		if _, err := os.Stat("main.exe"); err == nil {
 			os.Remove("main.exe")
 			testResults = append(testResults, "🧹 已清理编译的可执行文件")
 		}
-		
+
 		// 将代理服务器输出添加到测试记录
 		fmt.Println("正在记录代理服务器日志...")
-		
+
 		// 使用互斥锁保护对proxyOutput的访问
 		proxyOutputMutex.Lock()
 		outputLen := proxyOutput.Len()
 		outputContent := proxyOutput.String()
 		proxyOutputMutex.Unlock()
-		
+
 		if outputLen > 0 {
 			testResults = append(testResults, "### 代理服务器日志输出")
 			testResults = append(testResults, "")
@@ -478,7 +478,7 @@ func TestProxyServer(t *testing.T) {
 			testResults = append(testResults, "⚠️ 没有捕获到代理服务器日志")
 			testResults = append(testResults, "")
 			fmt.Println("⚠️ 没有捕获到代理服务器日志")
-			
+
 			// 添加调试信息
 			testResults = append(testResults, "### 调试信息")
 			testResults = append(testResults, "")
@@ -573,24 +573,24 @@ func TestProxyServer(t *testing.T) {
 
 		// 等待进程完全关闭并释放资源
 		time.Sleep(2 * time.Second)
-		
+
 		// 等待进程完全退出
 		time.Sleep(2 * time.Second)
-		
+
 		// 清理编译的可执行文件
 		if _, err := os.Stat("main.exe"); err == nil {
 			os.Remove("main.exe")
 			testResults = append(testResults, "🧹 已清理编译的可执行文件")
 		}
-		
+
 		// 将代理服务器输出添加到测试记录
-		
+
 		// 使用互斥锁保护对proxyOutput的访问
 		proxyOutputMutex.Lock()
 		outputLen := proxyOutput.Len()
 		outputContent := proxyOutput.String()
 		proxyOutputMutex.Unlock()
-		
+
 		if outputLen > 0 {
 			testResults = append(testResults, "### 代理服务器日志输出")
 			testResults = append(testResults, "")
@@ -609,7 +609,7 @@ func TestProxyServer(t *testing.T) {
 			testResults = append(testResults, "")
 			testResults = append(testResults, "⚠️ 没有捕获到代理服务器日志")
 			testResults = append(testResults, "")
-			
+
 			// 添加调试信息
 			testResults = append(testResults, "### 调试信息")
 			testResults = append(testResults, "")
@@ -737,18 +737,18 @@ func TestMain(m *testing.M) {
 
 		// 强制终止所有记录的进程
 		fmt.Println("正在终止所有运行中的进程...")
-		
+
 		// 在Windows上强制终止所有go进程和可能的子进程
 		if runtime.GOOS == "windows" {
 			// 使用taskkill终止所有go进程
 			killCmd := exec.Command("taskkill", "/F", "/IM", "go.exe")
 			killCmd.Run() // 忽略错误
-			
+
 			// 终止可能的代理服务器进程（在8080端口上）
 			findCmd := exec.Command("netstat", "-ano", "|", "findstr", ":8080")
 			findCmd.Run() // 忽略错误
 		}
-		
+
 		// 清理全局进程管理器中的进程
 		if globalProcessManager != nil {
 			globalProcessManager.CleanupAll()
