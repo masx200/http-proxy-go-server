@@ -68,7 +68,14 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 
 	var method, URL, address string
 	// 从客户端数据读入 method，url
-	fmt.Sscanf(string(b[:bytes.IndexByte(b[:], '\n')]), "%s%s", &method, &URL)
+	newVar := bytes.IndexByte(b[:], '\n')
+
+	if newVar == -1 {
+		fmt.Fprint(client, "HTTP/1.1 400 Bad Request\r\n\r\n")
+		log.Println("400 Bad Request,not http request")
+		return
+	}
+	fmt.Sscanf(string(b[:newVar]), "%s%s", &method, &URL)
 	log.Println(string(b[:bytes.IndexByte(b[:], '\n')]))
 	// hostPortURL, err := url.Parse(URL)
 	// if err != nil {
