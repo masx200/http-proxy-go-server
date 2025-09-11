@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"net"
@@ -9,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 	"time"
 )
@@ -36,13 +38,15 @@ func TestProxyServer(t *testing.T) {
 
 	// 启动代理服务器进程
 	cmd := exec.Command("go", "run", "-v", "./main.go")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	// 创建缓冲区来捕获代理服务器的输出
+	var proxyOutput bytes.Buffer
+	cmd.Stdout = &proxyOutput
+	cmd.Stderr = &proxyOutput
 	err := cmd.Start()
 	if err != nil {
 		t.Fatalf("启动代理服务器失败: %v", err)
 	}
-	defer cmd.Process.Kill()
+	// 移除defer语句，改为手动管理进程生命周期
 
 	// 等待服务器启动
 	testResults = append(testResults, "等待服务器启动...")
@@ -152,8 +156,27 @@ func TestProxyServer(t *testing.T) {
 			testResults = append(testResults, "✅ 代理服务器进程已成功关闭")
 		}
 
-		// 等待进程完全关闭
-		time.Sleep(1 * time.Second)
+		// 等待进程完全关闭并释放资源
+		time.Sleep(2 * time.Second)
+
+		// 等待进程完全退出并获取输出
+		cmd.Wait()
+
+		// 将代理服务器输出添加到测试记录
+		if proxyOutput.Len() > 0 {
+			testResults = append(testResults, "### 代理服务器日志输出")
+			testResults = append(testResults, "")
+			testResults = append(testResults, "```")
+			// 按行分割输出并添加到测试结果
+			outputLines := strings.Split(proxyOutput.String(), "\n")
+			for _, line := range outputLines {
+				if strings.TrimSpace(line) != "" {
+					testResults = append(testResults, line)
+				}
+			}
+			testResults = append(testResults, "```")
+			testResults = append(testResults, "")
+		}
 
 		// 验证端口是否已释放
 		if !isPortOccupied(8080) {
@@ -181,6 +204,25 @@ func TestProxyServer(t *testing.T) {
 			testResults = append(testResults, fmt.Sprintf("❌ 关闭代理服务器失败: %v", err))
 		} else {
 			testResults = append(testResults, "✅ 代理服务器进程已成功关闭")
+		}
+
+		// 等待进程完全退出并获取输出
+		cmd.Wait()
+
+		// 将代理服务器输出添加到测试记录
+		if proxyOutput.Len() > 0 {
+			testResults = append(testResults, "### 代理服务器日志输出")
+			testResults = append(testResults, "")
+			testResults = append(testResults, "```")
+			// 按行分割输出并添加到测试结果
+			outputLines := strings.Split(proxyOutput.String(), "\n")
+			for _, line := range outputLines {
+				if strings.TrimSpace(line) != "" {
+					testResults = append(testResults, line)
+				}
+			}
+			testResults = append(testResults, "```")
+			testResults = append(testResults, "")
 		}
 
 		// 重新写入测试记录
