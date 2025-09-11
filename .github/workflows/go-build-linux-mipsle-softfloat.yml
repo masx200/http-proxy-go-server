@@ -24,7 +24,7 @@ jobs:
       - name: Build bundle
         run: |
 
-          CC=mips-linux-gcc GOOS=linux GOARCH=mipsle CGO_ENABLED=0 GOMIPS=softfloat go build -v -ldflags="-w -s" -o ./dist/linux-mipsle-softfloat/http-proxy-go-server ./main.go
+          CC=mips-linux-gcc GOOS=linux GOARCH=mipsle CGO_ENABLED=0 GOMIPS=softfloat go build -v -ldflags="-w -s" -o ./dist/linux-mipsle-softfloat/http-proxy-go-server ./cmd/main.go
           cd ./dist/linux-mipsle-softfloat/
           tar  zcvf ../../dist/http-proxy-go-server-linux-mipsle-softfloat.tgz ./*
           cd ../../

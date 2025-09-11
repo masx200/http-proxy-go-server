@@ -24,7 +24,7 @@ jobs:
       - name: Build bundle
         run: |
 
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=0  go build -v -ldflags="-w -s" -o ./dist/linux-amd64/http-proxy-go-server ./main.go
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0  go build -v -ldflags="-w -s" -o ./dist/linux-amd64/http-proxy-go-server ./cmd/main.go
           cd ./dist/linux-amd64/
           tar  zcvf ../../dist/http-proxy-go-server-linux-amd64.tgz ./*
           cd ../../
