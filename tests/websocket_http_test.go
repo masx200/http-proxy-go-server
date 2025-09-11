@@ -65,10 +65,10 @@ func runWebSockethttpProxy(t *testing.T) {
 	// 编译代理服务器
 	testResults = append(testResults, "## 1. 编译代理服务器")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `go build -o main.exe ../cmd/main.go`")
+	testResults = append(testResults, "执行命令: `go build -o socks5-websocket-proxy-golang.exe github.com/masx200/socks5-websocket-proxy-golang/cmd`")
 	testResults = append(testResults, "")
 
-	buildCmd1 := exec.Command("go", "build", "-o", "http-websocket-proxy-golang.exe", "github.com/masx200/socks5-websocket-proxy-golang/cmd")
+	buildCmd1 := exec.Command("go", "build", "-o", "socks5-websocket-proxy-golang.exe", "github.com/masx200/socks5-websocket-proxy-golang/cmd")
 	buildCmd1.Stdout = websocketWriter
 	buildCmd1.Stderr = websocketWriter
 
@@ -89,10 +89,10 @@ func runWebSockethttpProxy(t *testing.T) {
 	// 启动WebSocket服务器（作为上游）
 	testResults = append(testResults, "## 2. 启动WebSocket服务器（上游）")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `./http-websocket-proxy-golang.exe -mode server -protocol websocket -addr :38800`")
+	testResults = append(testResults, "执行命令: `./socks5-websocket-proxy-golang.exe -mode server -protocol websocket -addr :38800`")
 	testResults = append(testResults, "")
 
-	websocketCmd := exec.Command("./http-websocket-proxy-golang.exe", "-mode", "server", "-protocol", "websocket", "-addr", ":38800")
+	websocketCmd := exec.Command("./socks5-websocket-proxy-golang.exe", "-mode", "server", "-protocol", "websocket", "-addr", ":38800")
 	websocketCmd.Stdout = websocketWriter
 	websocketCmd.Stderr = websocketWriter
 
