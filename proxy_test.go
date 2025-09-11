@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -110,7 +111,7 @@ func TestProxyServer(t *testing.T) {
 
 	// 添加测试超时检查
 	timeoutTimer := time.AfterFunc(25*time.Second, func() {
-		fmt.Println("\n⚠️ 测试即将超时，正在清理进程...")
+		log.Println("\n⚠️ 测试即将超时，正在清理进程...")
 		// 在超时前记录代理服务器日志
 		var timeoutTestResults []string
 
@@ -235,7 +236,7 @@ func TestProxyServer(t *testing.T) {
 	// 确保进程能正确退出
 	go func() {
 		cmd.Wait()
-		fmt.Println("代理服务器进程已退出")
+		log.Println("代理服务器进程已退出")
 	}()
 
 	// 记录代理服务器PID
@@ -264,7 +265,7 @@ func TestProxyServer(t *testing.T) {
 	testResults = append(testResults, "")
 
 	// 添加启动成功的日志输出提示
-	fmt.Println("代理服务器启动成功，开始执行测试...")
+	log.Println("代理服务器启动成功，开始执行测试...")
 
 	// 等待额外的时间确保服务器完全启动
 	time.Sleep(2 * time.Second)
@@ -425,7 +426,7 @@ func TestProxyServer(t *testing.T) {
 			} else {
 				cmd.Wait() // 等待进程完全退出
 				testResults = append(testResults, "✅ 代理服务器进程已终止")
-				fmt.Println("代理服务器进程已终止")
+				log.Println("代理服务器进程已终止")
 			}
 		}
 		testResults = append(testResults, "")
@@ -450,7 +451,7 @@ func TestProxyServer(t *testing.T) {
 		}
 
 		// 将代理服务器输出添加到测试记录
-		fmt.Println("正在记录代理服务器日志...")
+		log.Println("正在记录代理服务器日志...")
 
 		// 使用互斥锁保护对proxyOutput的访问
 		proxyOutputMutex.Lock()
@@ -467,7 +468,7 @@ func TestProxyServer(t *testing.T) {
 			for _, line := range outputLines {
 				if strings.TrimSpace(line) != "" {
 					testResults = append(testResults, line)
-					fmt.Println("[代理日志]", line) // 同时打印到控制台
+					log.Println("[代理日志]", line) // 同时打印到控制台
 				}
 			}
 			testResults = append(testResults, "```")
@@ -477,7 +478,7 @@ func TestProxyServer(t *testing.T) {
 			testResults = append(testResults, "")
 			testResults = append(testResults, "⚠️ 没有捕获到代理服务器日志")
 			testResults = append(testResults, "")
-			fmt.Println("⚠️ 没有捕获到代理服务器日志")
+			log.Println("⚠️ 没有捕获到代理服务器日志")
 
 			// 添加调试信息
 			testResults = append(testResults, "### 调试信息")
@@ -733,10 +734,10 @@ func TestMain(m *testing.M) {
 		os.Exit(code)
 	case <-ctx.Done():
 		// 超时或取消
-		fmt.Println("\n⏰ 测试超时（30秒），强制退出...")
+		log.Println("\n⏰ 测试超时（30秒），强制退出...")
 
 		// 强制终止所有记录的进程
-		fmt.Println("正在终止所有运行中的进程...")
+		log.Println("正在终止所有运行中的进程...")
 
 		// 在Windows上强制终止所有go进程和可能的子进程
 		if runtime.GOOS == "windows" {

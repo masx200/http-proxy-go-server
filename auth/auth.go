@@ -73,7 +73,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 	var method, URL, address string
 	// 从客户端数据读入 method，url
 	fmt.Sscanf(string(b[:bytes.IndexByte(b[:], '\n')]), "%s%s", &method, &URL)
-	fmt.Println(string(b[:bytes.IndexByte(b[:], '\n')]))
+	log.Println(string(b[:bytes.IndexByte(b[:], '\n')]))
 	// hostPortURL, err := url.Parse(URL)
 	// if err != nil {
 	// 	log.Println(err)
@@ -110,10 +110,10 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		}
 		// 将响应写入客户端连接
 		resp.Write(client)
-		fmt.Println("身份验证失败")
+		log.Println("身份验证失败")
 		return
 	}
-	fmt.Println("身份验证成功")
+	log.Println("身份验证成功")
 	// 如果方法是 CONNECT，则为 https 协议
 	if method == "CONNECT" {
 		// address = hostPortURL.Scheme + ":" + hostPortURL.Opaque
@@ -144,7 +144,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 			return
 		}
 	}
-	fmt.Println("address:" + address)
+	log.Println("address:" + address)
 	var upstreamAddress string
 	if method == "CONNECT" {
 		upstreamAddress = address
@@ -293,21 +293,21 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		log.Println("auth Handle", "header:")
 
 		for k, v := range req.Header {
-			// fmt.Println("key:", k)
+			// log.Println("key:", k)
 			log.Println("auth Handle", k, ":", strings.Join(v, ""))
 		}
 		// server.Write(b[:n])
-		fmt.Println(req.RequestURI)
+		log.Println(req.RequestURI)
 		var requestTarget = req.RequestURI
 		u, err := url.Parse(requestTarget)
 		if err != nil {
-			fmt.Println(fmt.Errorf("failed to parse url: %w", err))
+			log.Println(fmt.Errorf("failed to parse url: %w", err))
 			fmt.Fprint(client, "HTTP/1.1 500 Internal Server Error\r\n\r\n")
 			return
 		}
 		/* 有的服务器不支持这种 "GET http://speedtest.cn/ HTTP/1.1" */
 		req.RequestURI = u.RequestURI()
-		fmt.Println(req.RequestURI)
+		log.Println(req.RequestURI)
 		req.Header = req.Header.Clone()
 		err = req.Write(server)
 		if err != nil {

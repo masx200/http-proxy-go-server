@@ -12,7 +12,7 @@ import (
 )
 
 func Doh3nslookup(domain string, dnstype string, dohurl string, dohip ...string) ([]*dns.Msg, []error) {
-	fmt.Println("domain:", domain, "dnstype:", dnstype, "dohurl:", dohurl)
+	log.Println("domain:", domain, "dnstype:", dnstype, "dohurl:", dohurl)
 	//results := make([]*dns.Msg, 0)
 	var errors = make([]error, 0)
 	var results = make([]*dns.Msg, 0)
@@ -24,22 +24,22 @@ func Doh3nslookup(domain string, dnstype string, dohurl string, dohip ...string)
 			wg.Add(1)
 			go func(d string, t string) {
 				defer wg.Done()
-				fmt.Println("domain:", d, "dnstype:", t, "dohurl:", dohurl)
+				log.Println("domain:", d, "dnstype:", t, "dohurl:", dohurl)
 				var msg = &dns.Msg{}
 				msg.SetQuestion(d+".", dns.StringToType[t])
-				// fmt.Println(msg.String())
+				// log.Println(msg.String())
 
 				res, err := h3_experiment.DoHTTP3Client(msg, dohurl, dohip...)
 				mutex.Lock()
 
 				defer mutex.Unlock()
 				if err != nil {
-					fmt.Println(err)
+					log.Println(err)
 					errors = append(errors, err)
 					return
 
 				}
-				// fmt.Println(res.String())
+				// log.Println(res.String())
 
 				results = append(results, res)
 			}(d, t)

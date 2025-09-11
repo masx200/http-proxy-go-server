@@ -20,6 +20,7 @@ import (
 	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
 	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
+
 	// "github.com/masx200/http-proxy-go-server/simple"
 	"github.com/masx200/http-proxy-go-server/utils"
 )
@@ -86,9 +87,9 @@ func parseForwardedHeader(header string) ([]ForwardedBy, error) {
 	return forwardedByList, nil
 }
 func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, proxyoptions options.ProxyOptions, username, password string, tranportConfigurations ...func(*http.Transport) *http.Transport) error {
-	fmt.Println("method:", r.Method)
-	fmt.Println("url:", r.URL)
-	fmt.Println("host:", r.Host)
+	log.Println("method:", r.Method)
+	log.Println("url:", r.URL)
+	log.Println("host:", r.Host)
 	log.Println("proxyHandler", "header:")
 	/*/* 这里删除除了第一次请求的 Proxy-Authorization  删除代理认证信息 */
 
@@ -103,11 +104,11 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 			w.WriteHeader(407)
 			w.Write([]byte(body))
 			//fmt.Fprintln(w, "407 Proxy Authentication Required")
-			fmt.Println("身份验证失败")
+			log.Println("身份验证失败")
 			//w.Close()
 			return nil
 		}
-		fmt.Println("身份验证成功")
+		log.Println("身份验证成功")
 	}
 
 	r.Header.Del("Proxy-Authorization")
@@ -127,7 +128,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	)
 	r.Header.Add("Forwarded", forwarded)
 	for k, v := range r.Header {
-		// fmt.Println("key:", k)
+		// log.Println("key:", k)
 		log.Println("proxyHandler", k, ":", strings.Join(v, ","))
 	}
 	forwardedHeader := strings.Join(r.Header.Values("Forwarded"), ", ")
@@ -151,7 +152,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 		targetUrl = r.URL.String()
 	}
 	// 这里假设目标服务器都是HTTP的，实际情况可能需要处理HTTPS
-	fmt.Println("targetUrl:", targetUrl)
+	log.Println("targetUrl:", targetUrl)
 	// 创建一个使用了代理的客户端
 	defer r.Body.Close()
 	/* 请求body的问题 */
@@ -162,7 +163,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	// 	return
 	// }
 
-	// fmt.Println("body:", string(bodyBytes))
+	// log.Println("body:", string(bodyBytes))
 	transport := &http.Transport{
 		ForceAttemptHTTP2: true,
 		// 自定义 DialContext 函数
@@ -368,7 +369,7 @@ func Http(hostname string, port int, proxyoptions options.ProxyOptions, username
 }
 func GenerateRandomLoopbackIP() string {
 	randomIP := generateRandomIP()
-	fmt.Println("Random IP:", randomIP)
+	log.Println("Random IP:", randomIP)
 	return randomIP.String()
 }
 
@@ -386,7 +387,7 @@ func generateRandomIP() net.IP {
 
 func GenerateRandomIntPort() int {
 	randomInt := generateRandomInt()
-	fmt.Println("Random integer:", randomInt)
+	log.Println("Random integer:", randomInt)
 	return randomInt
 }
 

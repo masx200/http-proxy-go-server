@@ -559,27 +559,27 @@ func main() {
 			}
 		}
 	}
-	fmt.Println("dohalpn:", dohalpns.String())
+	log.Println("dohalpn:", dohalpns.String())
 	//parse cmd flags
-	fmt.Println(
+	log.Println(
 		"hostname:", *hostname)
-	fmt.Println(
+	log.Println(
 		"port:", *port)
-	fmt.Println(
+	log.Println(
 		"server_cert:", *server_cert)
-	fmt.Println(
+	log.Println(
 		"server_key:", *server_key)
-	fmt.Println(
+	log.Println(
 		"username:", *username)
-	fmt.Println(
+	log.Println(
 		"password:", *password)
-	fmt.Println(
+	log.Println(
 		"dohurl:", dohurls.String())
-	fmt.Println("dohip:", dohips.String())
-	fmt.Println("upstream-type:", *upstreamType)
-	fmt.Println("upstream-address:", *upstreamAddress)
-	fmt.Println("upstream-username:", *upstreamUsername)
-	fmt.Println("upstream-password:", *upstreamPassword)
+	log.Println("dohip:", dohips.String())
+	log.Println("upstream-type:", *upstreamType)
+	log.Println("upstream-address:", *upstreamAddress)
+	log.Println("upstream-username:", *upstreamUsername)
+	log.Println("upstream-password:", *upstreamPassword)
 
 	var proxyoptions = options.ProxyOptions{}
 
@@ -636,7 +636,7 @@ func main() {
 			Patterns: []string{"*"},
 		}
 
-		fmt.Println("WebSocket代理配置已添加")
+		log.Println("WebSocket代理配置已添加")
 	}
 
 	// 处理SOCKS5代理参数
@@ -692,7 +692,7 @@ func main() {
 			Patterns: []string{"*"},
 		}
 
-		fmt.Println("SOCKS5代理配置已添加")
+		log.Println("SOCKS5代理配置已添加")
 	}
 
 	// 处理HTTP代理参数
@@ -761,7 +761,7 @@ func main() {
 			Patterns: []string{"*"},
 		}
 
-		fmt.Println("HTTP代理配置已添加")
+		log.Println("HTTP代理配置已添加")
 	}
 
 	for i, dohurl := range dohurls {
@@ -788,7 +788,7 @@ func main() {
 			tranportConfigurations = append(tranportConfigurations, func(t *http.Transport) *http.Transport {
 				t.Proxy = func(r *http.Request) (*url.URL, error) {
 
-					fmt.Println("ProxySelector", r.URL.Host)
+					log.Println("ProxySelector", r.URL.Host)
 					proxyURL, err := ProxySelector(r, config.UpStreams, config.Rules, config.Filters)
 					if err != nil {
 						fmt.Printf("ProxySelector 出错: %v\n", err)
@@ -796,7 +796,7 @@ func main() {
 						if proxyURL != nil {
 							fmt.Printf("选择的代理 URL: %s\n", proxyURL.String())
 						} else {
-							fmt.Println("未选择代理")
+							log.Println("未选择代理")
 						}
 					}
 					return proxyURL, err
@@ -848,10 +848,10 @@ func main() {
 	}
 	by, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
-	fmt.Println(string(by))
+	log.Println(string(by))
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
 		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, proxyoptions, tranportConfigurations...)
 		return

@@ -69,7 +69,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 	var method, URL, address string
 	// 从客户端数据读入 method，url
 	fmt.Sscanf(string(b[:bytes.IndexByte(b[:], '\n')]), "%s%s", &method, &URL)
-	fmt.Println(string(b[:bytes.IndexByte(b[:], '\n')]))
+	log.Println(string(b[:bytes.IndexByte(b[:], '\n')]))
 	// hostPortURL, err := url.Parse(URL)
 	// if err != nil {
 	// 	log.Println(err)
@@ -107,7 +107,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 			return
 		}
 	}
-	fmt.Println("address:" + address)
+	log.Println("address:" + address)
 	//获得了请求的 host 和 port，向服务端发起 tcp 连接
 
 	var upstreamAddress string
@@ -209,7 +209,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 		}
 		log.Println("连接成功：" + upstreamAddress)
 	} else {
-		// fmt.Println("upstreamAddress:" + httpUpstreamAddress)
+		// log.Println("upstreamAddress:" + httpUpstreamAddress)
 		server, err = options.Proxy_net_Dial("tcp", upstreamAddress, proxyoptions, tranportConfigurations...) //net.Dial("tcp", upstreamAddress)
 
 		//	for _, err := range errors {
@@ -270,21 +270,21 @@ func WriteRequestLineAndHeadersWithRequestURI(requestLine string, server net.Con
 	}
 	log.Println("simple Handle", "header:")
 	for k, v := range headers {
-		// fmt.Println("key:", k)
+		// log.Println("key:", k)
 		log.Println("simple Handle", k, ":", v)
 	}
-	fmt.Println(output)
+	log.Println(output)
 	server.Write([]byte(output))
 
 	for k, v := range headers {
 		server.Write([]byte(k + ": " + v + "\r\n"))
-		fmt.Println(string([]byte(k + ": " + v + "\r\n")))
+		log.Println(string([]byte(k + ": " + v + "\r\n")))
 	}
 	// server.Write()
 	// server.Write([]byte("\r\n"))
 	server.Write(b[len(requestLine):n])
 	// server.Write(append([]byte(output), b[len(requestLine):n]...))
-	fmt.Println(string(b[len(requestLine):n]))
+	log.Println(string(b[len(requestLine):n]))
 	return false
 }
 
@@ -292,7 +292,7 @@ func ExtractAddressFromOtherRequestLine(line string) (string, error) {
 	var address string
 	domain, port, err := ExtractDomainAndPort(line)
 	if err != nil {
-		fmt.Println("Error:", err)
+		log.Println("Error:", err)
 		return "", err
 	} else {
 		fmt.Printf("Domain: %s, Port: %s\n", domain, port)

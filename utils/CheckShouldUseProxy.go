@@ -1,13 +1,13 @@
 package utils
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 )
 
 func CheckShouldUseProxy(upstreamAddress string, tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
-	fmt.Println("开始检查CheckShouldUseProxy", upstreamAddress)
+	log.Println("开始检查CheckShouldUseProxy", upstreamAddress)
 	// clienthost, port, err := net.SplitHostPort(upstreamAddress)
 	// if err != nil {
 	// 	return nil, err

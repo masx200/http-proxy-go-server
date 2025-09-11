@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"net"
+
 	// "time"
 	// "crypto/tls"
 	// "fmt"
@@ -130,7 +131,7 @@ func DohClient(msg *dns.Msg, dohServerURL string, dohip string, tranportConfigur
 		}
 		var DialTLSContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 
-			fmt.Println("DialTLSContext", "dialing", network, "to", addr)
+			log.Println("DialTLSContext", "dialing", network, "to", addr)
 			// 解析出原地址中的端口
 			address, port, err := net.SplitHostPort(addr)
 			if err != nil {
@@ -155,12 +156,12 @@ func DohClient(msg *dns.Msg, dohServerURL string, dohip string, tranportConfigur
 			if transport.Proxy != nil && port != originalPort {
 				// 如果经过了proxy，则端口会和原来的不一样，使用原始地址
 				newAddr = addr
-				fmt.Println("DialTLSContext detected proxy, using original addr:", addr)
+				log.Println("DialTLSContext detected proxy, using original addr:", addr)
 			}
 			// 创建 net.Dialer 实例
 			dialer := &net.Dialer{}
 
-			fmt.Println("DialTLSContext", "dialing", network, "to", newAddr)
+			log.Println("DialTLSContext", "dialing", network, "to", newAddr)
 			// 发起连接
 			conn, err := dialer.DialContext(ctx, network, newAddr)
 			if err != nil {
@@ -182,7 +183,7 @@ func DohClient(msg *dns.Msg, dohServerURL string, dohip string, tranportConfigur
 		transport.DialTLSContext = DialTLSContext
 		var DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 
-			fmt.Println("DialContext", "dialing", network, "to", addr)
+			log.Println("DialContext", "dialing", network, "to", addr)
 			// 解析出原地址中的端口
 			_, port, err := net.SplitHostPort(addr)
 			if err != nil {
@@ -208,11 +209,11 @@ func DohClient(msg *dns.Msg, dohServerURL string, dohip string, tranportConfigur
 			// 判断是否经过了代理：比较当前端口和原始端口是否不同
 			if transport.Proxy != nil && port != originalPort {
 				// 如果经过了proxy，则端口会和原来的不一样，使用原始地址
-				fmt.Println("DialContext detected proxy, using original addr:", addr)
+				log.Println("DialContext detected proxy, using original addr:", addr)
 				return dialer.DialContext(ctx, network, addr)
 			}
 
-			fmt.Println("dialContext", "dialing", network, "to", newAddr)
+			log.Println("dialContext", "dialing", network, "to", newAddr)
 			// 发起连接
 			return dialer.DialContext(ctx, network, newAddr)
 		}
@@ -235,7 +236,7 @@ func DohClient(msg *dns.Msg, dohServerURL string, dohip string, tranportConfigur
 		}
 		client.Transport = transport
 	}
-	fmt.Println("开始发起doh请求", dohServerURL)
+	log.Println("开始发起doh请求", dohServerURL)
 	res, err := client.Do(req) //Post(dohServerURL, "application/dns-message", strings.NewReader(string(body)))
 	if err != nil {
 		log.Println(dohServerURL, err)
@@ -283,10 +284,10 @@ func PrintResponse(resp *http.Response) {
 // 返回一个包含DNS应答信息的dns.Msg结构体指针和一个错误信息。
 // 如果成功，错误信息为nil；如果发生错误，则返回相应的错误信息。
 func DoQClient(msg *dns.Msg, doQServerURL string) (qA *dns.Msg, err error) {
-	fmt.Println("doQServerURL", doQServerURL)
+	log.Println("doQServerURL", doQServerURL)
 	urlWithPort, err := setPortIfMissing(doQServerURL)
 	if err != nil {
-		fmt.Println(doQServerURL, "Error:", err)
+		log.Println(doQServerURL, "Error:", err)
 		return nil, err
 	}
 	doQServerURL = urlWithPort
@@ -301,7 +302,7 @@ func DoQClient(msg *dns.Msg, doQServerURL string) (qA *dns.Msg, err error) {
 		return nil, err                // 如果有错误，返回nil和错误信息
 	}
 	var addr = fmt.Sprintf("%s:%s", serverName, port) // 格式化服务器地址
-	fmt.Println("addr", addr)
+	log.Println("addr", addr)
 	// 创建一个DOQ客户端
 	client := doq.NewClient(addr, doq.Options{})
 	// 发送DNS查询并获取应答
@@ -337,10 +338,10 @@ func ExtractDOQServerDetails(doqServer string) (string, string, error) {
 // 返回值 qA: 发送查询后收到的应答消息，为dns.Msg对象。
 // 返回值 err: 如果在进行DNS查询过程中遇到错误，则返回错误信息。
 func DoTClient(msg *dns.Msg, doTServerURL string) (qA *dns.Msg, err error) {
-	fmt.Println("doTServerURL", doTServerURL)
+	log.Println("doTServerURL", doTServerURL)
 	urlWithPort, err := setPortIfMissing(doTServerURL)
 	if err != nil {
-		fmt.Println(doTServerURL, "Error:", err)
+		log.Println(doTServerURL, "Error:", err)
 		return nil, err
 	}
 	doTServerURL = urlWithPort
@@ -355,7 +356,7 @@ func DoTClient(msg *dns.Msg, doTServerURL string) (qA *dns.Msg, err error) {
 		return nil, err                // 如果解析出错，则返回nil和错误信息
 	}
 	var addr = fmt.Sprintf("%s:%s", serverName, port) // 拼接服务器的地址信息
-	fmt.Println("addr", addr)
+	log.Println("addr", addr)
 	// 创建一个支持TCP-TLS的DOQ客户端实例。
 	client := new(dns.Client)
 	client.Net = "tcp-tls"
