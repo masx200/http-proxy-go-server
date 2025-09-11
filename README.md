@@ -28,11 +28,11 @@ http-proxy-go-server
 -server_key string
         tls server key
 -upstream-address string
-        upstream proxy address (e.g., ws://127.0.0.1:1081 or socks5://127.0.0.1:1080)
+        upstream proxy address (e.g., ws://127.0.0.1:1081, socks5://127.0.0.1:1080 or http://127.0.0.1:8080)
 -upstream-password string
         upstream proxy password
 -upstream-type string
-        upstream proxy type (websocket, socks5)
+        upstream proxy type (websocket, socks5, http)
 -upstream-username string
         upstream proxy username
 -username string
@@ -54,24 +54,28 @@ http-proxy-go-server
 6. `-server_key string`：设置 HTTPS 服务所需的 TLS
    私钥文件路径，与服务器证书配套使用。
 
-7. `-upstream-address string`：设置上游代理地址，支持 WebSocket 和 SOCKS5 协议，例如：
+7. `-upstream-address string`：设置上游代理地址，支持 WebSocket、SOCKS5 和 HTTP
+   协议，例如：
    - WebSocket: `ws://127.0.0.1:1081`
    - SOCKS5: `socks5://127.0.0.1:1080`
+   - HTTP: `http://127.0.0.1:8080`
 
 8. `-upstream-password string`：设置上游代理的密码。
 
-9. `-upstream-type string`：设置上游代理类型，支持 `websocket` 和 `socks5` 两种类型。
+9. `-upstream-type string`：设置上游代理类型，支持 `websocket`、`socks5` 和
+   `http` 三种类型。
 
 10. `-upstream-username string`：设置上游代理的用户名。
 
 11. `-username string`：设置访问代理服务器所需的用户名，同样用于基本身份验证。
 
 总结来说，`http-proxy-go-server` 提供了一个功能丰富的代理服务器，支持：
+
 - 基本认证和 TLS 加密
 - DOH (DNS over HTTPS) 支持
-- WebSocket 和 SOCKS5 上游代理
+- WebSocket、SOCKS5 和 HTTP 上游代理
 - 灵活的配置方式（命令行参数和 JSON 配置文件）
-用户可以根据需要调整监听地址、端口、认证凭据、上游代理以及是否启用加密通信等配置项。
+  用户可以根据需要调整监听地址、端口、认证凭据、上游代理以及是否启用加密通信等配置项。
 
 ## JSON 配置文件
 
@@ -280,8 +284,9 @@ go run main.go -upstream-type websocket -upstream-address ws://127.0.0.1:1081 -u
 
 ### 新增命令行参数
 
-- `-upstream-type`: 代理类型 (websocket, socks5)
-- `-upstream-address`: 上游代理地址 (如 ws://127.0.0.1:1081 或 socks5://127.0.0.1:1080)
+- `-upstream-type`: 代理类型 (websocket, socks5, http)
+- `-upstream-address`: 上游代理地址 (如
+  ws://127.0.0.1:1081、socks5://127.0.0.1:1080 或 http://127.0.0.1:8080)
 - `-upstream-username`: 上游代理用户名
 - `-upstream-password`: 上游代理密码
 
@@ -438,8 +443,9 @@ go run main.go -upstream-type socks5 -upstream-address socks5s://127.0.0.1:1080 
 
 ### 新增命令行参数
 
-- `-upstream-type`: 代理类型 (websocket, socks5)
-- `-upstream-address`: 上游代理地址 (如 socks5://127.0.0.1:1080)
+- `-upstream-type`: 代理类型 (websocket, socks5, http)
+- `-upstream-address`: 上游代理地址 (如 socks5://127.0.0.1:1080 或
+  http://127.0.0.1:8080)
 - `-upstream-username`: 上游代理用户名
 - `-upstream-password`: 上游代理密码
 
@@ -490,3 +496,169 @@ SOCKS5 代理支持以下协议前缀：
 - 需要考虑连接复用和池化管理以提高性能
 - 确保 SOCKS5 代理能够正确处理 HTTP/HTTPS 请求的转发
 - 协议前缀验证确保 ServerAddr 字段符合要求格式
+
+## HTTP 代理支持
+
+### 项目目标
+
+为 HTTP 代理服务器添加 HTTP 协议作为上游代理的支持，包括：
+
+1. 命令行参数支持 HTTP 上游代理
+2. 配置文件支持 HTTP 上游代理类型
+3. 集成标准 HTTP 代理客户端功能
+
+### 已完成任务
+
+#### ✅ 1. 理解现有实现
+
+- 分析 main.go 中的现有代理选择逻辑
+- 理解 HTTP 代理客户端的集成方式
+- 验证配置结构对 HTTP 代理的支持
+
+#### ✅ 2. 验证配置结构支持
+
+- 确认 UpStream 结构体支持 HTTP 代理配置
+- 验证 HTTP_PROXY、HTTPS_PROXY 字段
+- 确认配置文件解析逻辑正确处理 HTTP 代理配置
+
+#### ✅ 3. 命令行参数支持
+
+- 添加 `-upstream-type` 参数支持 HTTP 代理类型
+- 添加 `-upstream-address` 参数支持 HTTP 代理地址
+- 添加 `-upstream-username` 参数支持 HTTP 用户名
+- 添加 `-upstream-password` 参数支持 HTTP 密码
+- 集成到 main 函数的参数解析逻辑
+
+#### ✅ 4. 集成 HTTP 客户端
+
+- 使用标准库的 HTTP 代理功能
+- 实现 HTTP 代理客户端配置
+- 创建与标准库兼容的 HTTP 代理函数
+- 实现 HTTP 连接管理
+
+#### ✅ 5. 修改代理选择逻辑
+
+- 更新 ProxySelector 函数以支持 HTTP 类型
+- 修改 transportConfigurations 构建逻辑
+- 实现 HTTP 代理的 URL 解析
+- 添加 HTTP 代理的特殊处理逻辑
+
+#### ✅ 6. 配置示例和文档
+
+- 修改 config.json 添加 HTTP 上游示例
+- 更新 README.md 文档说明 HTTP 功能
+- 添加 HTTP 使用示例和说明
+
+#### ✅ 7. 用户名密码覆盖功能
+
+- 实现 HTTP 代理的用户名密码覆盖功能
+- 支持配置文件中的认证信息覆盖 URL 中的认证信息
+- 集成到现有的覆盖逻辑中
+
+### 技术要点
+
+#### 核心文件修改
+
+1. **main.go** - 添加 HTTP 命令行参数和主要逻辑
+2. **config.json** - 更新配置示例
+3. **README.md** - 更新文档
+4. **simple.go** - 实现 HTTP 代理支持
+5. **auth.go** - 实现 HTTP 代理支持
+
+#### 关键技术实现
+
+1. **代理类型识别** - 在 ProxySelector 中添加 HTTP 类型判断
+2. **HTTP 客户端集成** - 使用标准库的 HTTP 代理功能
+3. **配置扩展** - 保持向后兼容的同时添加 HTTP 功能
+4. **连接管理** - 确保 HTTP 连接的正确建立和关闭
+5. **URL 解析** - 确保 HTTP 代理地址正确解析
+6. **用户名密码覆盖** - 支持配置文件中的认证信息覆盖 URL 中的认证信息
+
+### 使用示例
+
+#### 命令行参数使用
+
+```bash
+# 使用HTTP上游代理
+go run main.go -upstream-type http -upstream-address http://127.0.0.1:8080 -upstream-username user -upstream-password pass
+
+# 使用带认证的HTTP上游代理
+go run main.go -upstream-type http -upstream-address http://user:pass@127.0.0.1:8080
+```
+
+#### 配置文件使用
+
+```json
+{
+  "upstreams": {
+    "http_proxy": {
+      "type": "http",
+      "http_proxy": "http://127.0.0.1:8080",
+      "https_proxy": "http://127.0.0.1:8080",
+      "bypass_list": []
+    }
+  },
+  "rules": [
+    {
+      "filter": "http_filter",
+      "upstream": "http_proxy"
+    }
+  ],
+  "filters": {
+    "http_filter": {
+      "patterns": ["*"]
+    }
+  }
+}
+```
+
+### 新增命令行参数
+
+- `-upstream-type`: 代理类型 (websocket, socks5, http)
+- `-upstream-address`: 上游代理地址 (如 http://127.0.0.1:8080)
+- `-upstream-username`: 上游代理用户名
+- `-upstream-password`: 上游代理密码
+
+### 配置结构扩展
+
+```go
+type UpStream struct {
+    TYPE        string   `json:"type"`
+    HTTP_PROXY  string   `json:"http_proxy"`
+    HTTPS_PROXY string   `json:"https_proxy"`
+    BypassList  []string `json:"bypass_list"`
+    // WebSocket支持
+    WS_PROXY    string   `json:"ws_proxy"      // WebSocket代理地址
+    WS_USERNAME string   `json:"ws_username"   // WebSocket代理用户名
+    WS_PASSWORD string   `json:"ws_password"   // WebSocket代理密码
+    // SOCKS5支持
+    SOCKS5_PROXY    string   `json:"socks5_proxy"      // SOCKS5代理地址
+    SOCKS5_USERNAME string   `json:"socks5_username"   // SOCKS5代理用户名
+    SOCKS5_PASSWORD string   `json:"socks5_password"   // SOCKS5代理密码
+}
+```
+
+### 支持的协议前缀
+
+HTTP 代理支持以下协议前缀：
+
+- `http://`: 标准 HTTP 协议
+- `https://`: HTTPS 协议（如果上游代理支持）
+
+### 成功标准
+
+1. **功能完整性**: 能够通过命令行参数指定 HTTP 上游代理
+2. **配置灵活性**: 能够通过配置文件配置 HTTP 上游代理
+3. **代理转发能力**: HTTP 代理能够正常转发 HTTP/HTTPS 请求
+4. **兼容性保证**: 保持现有功能的完整性和向后兼容性
+5. **文档完备性**: 提供完整的文档和使用示例
+6. **稳定性**: HTTP 连接稳定，错误处理完善
+7. **性能**: 连接建立和转发性能满足基本使用需求
+
+### 注意事项
+
+- HTTP 代理支持标准的 HTTP 协议前缀
+- HTTP 代理需要正确的用户名密码认证（如果需要）
+- 需要考虑连接复用和池化管理以提高性能
+- 确保 HTTP 代理能够正确处理 HTTP/HTTPS 请求的转发
+- 用户名密码可以通过 URL 或命令行参数指定

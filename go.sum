@@ -68,6 +68,8 @@ github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250908135406-382c144ff
 github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250908135406-382c144ffade/go.mod h1:BDV+giO6oNUq7iPrf9D1YOE2FKQb/+bxLlCeBJ5FrUo=
 github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250911114847-9b238e976b16 h1:Kus+W0twW9r+AmEG+F0B5azU5FFGojodsl3EstGR1q0=
 github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250911114847-9b238e976b16/go.mod h1:BDV+giO6oNUq7iPrf9D1YOE2FKQb/+bxLlCeBJ5FrUo=
+github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250911122054-f3f43bfd79d4 h1:pZwwzDzi2dsziS70qF4HHiF1Wg9qeyNpckZu3EVgsXc=
+github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250911122054-f3f43bfd79d4/go.mod h1:BDV+giO6oNUq7iPrf9D1YOE2FKQb/+bxLlCeBJ5FrUo=
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/miekg/dns v1.1.68 h1:jsSRkNozw7G/mnmXULynzMNIsgY2dHC8LO6U6Ij2JEA=
