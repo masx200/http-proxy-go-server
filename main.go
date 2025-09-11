@@ -523,7 +523,7 @@ func main() {
 	if *configFile != "" {
 		config, err = loadConfig(*configFile)
 		if err != nil {
-			fmt.Printf("读取配置文件失败: %v\n", err)
+			log.Printf("读取配置文件失败: %v\n", err)
 			os.Exit(1)
 		}
 		// 使用配置文件的值覆盖命令行参数的默认值
@@ -791,10 +791,10 @@ func main() {
 					log.Println("ProxySelector", r.URL.Host)
 					proxyURL, err := ProxySelector(r, config.UpStreams, config.Rules, config.Filters)
 					if err != nil {
-						fmt.Printf("ProxySelector 出错: %v\n", err)
+						log.Printf("ProxySelector 出错: %v\n", err)
 					} else {
 						if proxyURL != nil {
-							fmt.Printf("选择的代理 URL: %s\n", proxyURL.String())
+							log.Printf("选择的代理 URL: %s\n", proxyURL.String())
 						} else {
 							log.Println("未选择代理")
 						}
@@ -938,7 +938,7 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream Up
 		// 使用ForwardData方法处理WebSocket连接
 		err := websocketClient.ForwardData(serverConn)
 		if err != nil {
-			fmt.Printf("WebSocket ForwardData error: %v\n", err)
+			log.Printf("WebSocket ForwardData error: %v\n", err)
 		}
 	}()
 

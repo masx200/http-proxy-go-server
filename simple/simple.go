@@ -194,7 +194,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 			// 使用ForwardData方法处理WebSocket连接
 			err := websocketClient.ForwardData(serverConn)
 			if err != nil {
-				fmt.Printf("WebSocket ForwardData error: %v\n", err)
+				log.Printf("WebSocket ForwardData error: %v\n", err)
 			}
 		}()
 
@@ -295,7 +295,7 @@ func ExtractAddressFromOtherRequestLine(line string) (string, error) {
 		log.Println("Error:", err)
 		return "", err
 	} else {
-		fmt.Printf("Domain: %s, Port: %s\n", domain, port)
+		log.Printf("Domain: %s, Port: %s\n", domain, port)
 		address = domain + ":" + port
 	}
 	return address, nil

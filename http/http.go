@@ -490,7 +490,7 @@ func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *u
 		// 使用ForwardData方法处理WebSocket连接
 		err := websocketClient.ForwardData(serverConn)
 		if err != nil {
-			fmt.Printf("WebSocket ForwardData error: %v\n", err)
+			log.Printf("WebSocket ForwardData error: %v\n", err)
 		}
 	}()
 

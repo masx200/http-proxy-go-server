@@ -229,7 +229,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 			// 使用ForwardData方法处理WebSocket连接
 			err := websocketClient.ForwardData(serverConn)
 			if err != nil {
-				fmt.Printf("WebSocket ForwardData error: %v\n", err)
+				log.Printf("WebSocket ForwardData error: %v\n", err)
 			}
 		}()
 

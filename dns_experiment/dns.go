@@ -66,7 +66,7 @@ func DNSQueryHTTPS(domain string, port string, DOHServer string) ([]dns.SVCB, er
 	for _, answer := range resp.Answer {
 		log.Println(answer)
 		if a, ok := answer.(*dns.HTTPS); ok {
-			fmt.Printf(DOHServer+"-https record for %s: \n", domain)
+			log.Printf(DOHServer+"-https record for %s: \n", domain)
 			result = append(result, a.SVCB)
 
 		}

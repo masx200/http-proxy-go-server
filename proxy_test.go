@@ -171,7 +171,7 @@ func TestProxyServer(t *testing.T) {
 
 		// 写入超时测试记录
 		if err := writeTestResults(timeoutTestResults); err != nil {
-			fmt.Printf("写入超时测试记录失败: %v\n", err)
+			log.Printf("写入超时测试记录失败: %v\n", err)
 		}
 		processManager.CleanupAll()
 		// 强制退出测试
@@ -231,7 +231,7 @@ func TestProxyServer(t *testing.T) {
 
 	// 将代理服务器进程添加到管理器
 	processManager.AddProcess(cmd)
-	fmt.Printf("代理服务器已启动，PID: %d\n", cmd.Process.Pid)
+	log.Printf("代理服务器已启动，PID: %d\n", cmd.Process.Pid)
 
 	// 确保进程能正确退出
 	go func() {
@@ -254,7 +254,7 @@ func TestProxyServer(t *testing.T) {
 			break
 		}
 		time.Sleep(1 * time.Second)
-		fmt.Printf("等待服务器启动... %d/10\n", i+1)
+		log.Printf("等待服务器启动... %d/10\n", i+1)
 	}
 
 	if !serverStarted {
@@ -419,10 +419,10 @@ func TestProxyServer(t *testing.T) {
 		// 明确终止代理服务器进程
 		testResults = append(testResults, "🛑 正在终止代理服务器进程...")
 		if cmd.Process != nil {
-			fmt.Printf("正在终止代理服务器进程 PID: %d\n", cmd.Process.Pid)
+			log.Printf("正在终止代理服务器进程 PID: %d\n", cmd.Process.Pid)
 			if err := cmd.Process.Kill(); err != nil {
 				testResults = append(testResults, fmt.Sprintf("❌ 终止代理服务器进程失败: %v", err))
-				fmt.Printf("终止代理服务器进程失败: %v\n", err)
+				log.Printf("终止代理服务器进程失败: %v\n", err)
 			} else {
 				cmd.Wait() // 等待进程完全退出
 				testResults = append(testResults, "✅ 代理服务器进程已终止")
@@ -776,7 +776,7 @@ func TestMain(m *testing.M) {
 
 		// 写入超时记录
 		if err := writeTestResults(timeoutMessage); err != nil {
-			fmt.Printf("写入超时记录失败: %v\n", err)
+			log.Printf("写入超时记录失败: %v\n", err)
 		}
 
 		// 强制退出
