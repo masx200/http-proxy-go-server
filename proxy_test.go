@@ -313,11 +313,11 @@ func TestProxyServer(t *testing.T) {
 	// 第二个curl测试（重复测试）
 	testResults = append(testResults, "### 测试2: HTTP代理www.so.com")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `curl -v -I http://www.so.com -x http://localhost:8080`")
+	testResults = append(testResults, "执行命令: `curl -v -I http://www.so.com -x http://localhost:8080 -L`")
 	testResults = append(testResults, "")
 
 	// 创建curl进程
-	curlCmd2 := exec.Command("curl", "-v", "-I", "http://www.so.com", "-x", "http://localhost:8080")
+	curlCmd2 := exec.Command("curl", "-v", "-I","-L", "http://www.so.com", "-x", "http://localhost:8080")
 	// 创建缓冲区来捕获curl输出
 	var curlOutput2 bytes.Buffer
 	curlCmd2.Stdout = &curlOutput2
