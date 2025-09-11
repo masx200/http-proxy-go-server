@@ -870,10 +870,17 @@ func socks5DialContext(ctx context.Context, network, addr string, upstream UpStr
 	log.Printf("  Password: %s", upstream.SOCKS5_PASSWORD)
 
 	// 创建SOCKS5客户端配置
+	// 确保ServerAddr必须以socks5://、tcp://、tls://或socks5s://开头
+	serverAddr := proxyHost + ":" + proxyPort
+	if !strings.HasPrefix(serverAddr, "socks5://") && !strings.HasPrefix(serverAddr, "tcp://") && !strings.HasPrefix(serverAddr, "tls://") && !strings.HasPrefix(serverAddr, "socks5s://") {
+		// 默认使用tcp://协议
+		serverAddr = "tcp://" + serverAddr
+	}
+	
 	socks5Config := interfaces.ClientConfig{
 		Username:   upstream.SOCKS5_USERNAME,
 		Password:   upstream.SOCKS5_PASSWORD,
-		ServerAddr: proxyHost + ":" + proxyPort,
+		ServerAddr: serverAddr,
 		Protocol:   "socks5",
 		Timeout:    30 * time.Second,
 	}
