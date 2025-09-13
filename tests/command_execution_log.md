@@ -2211,3 +2211,280 @@ Pragma: no-cache
 Server: bfe/1.0.8.18
 Tr_id: bfe_8709760409625575372
 ---
+[2025-09-14 01:48:05.035] [BUILD] C:\Program Files\Go\bin\go.exe go build -o main.exe ../cmd/main.go
+执行结果: 成功
+进程PID: 35688
+执行时间: 1.265625s
+---
+[2025-09-14 01:48:09.567] [CURL] D:\迅雷下载\curl-8.12.1_4-win64-mingw\bin\curl.exe curl -v -I http://www.baidu.com -x http://localhost:8080
+执行结果: 成功
+进程PID: 41060
+执行时间: 15.625ms
+输出: Note: Using embedded CA bundle, for proxies (233263 bytes)
+* Host localhost:8080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:8080...
+* Connected to localhost (::1) port 8080
+* using HTTP/1.x
+> HEAD http://www.baidu.com/ HTTP/1.1
+> Host: www.baidu.com
+> User-Agent: curl/8.12.1
+> Accept: */*
+> Proxy-Connection: Keep-Alive
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Accept-Ranges: bytes
+< Cache-Control: private, no-cache, no-store, proxy-revalidate, no-transform
+< Connection: keep-alive
+< Content-Length: 277
+< Content-Type: text/html
+< Date: Sat, 13 Sep 2025 17:47:53 GMT
+< Etag: "575e1f60-115"
+< Last-Modified: Mon, 13 Jun 2016 02:50:08 GMT
+< Pragma: no-cache
+< Server: bfe/1.0.8.18
+< Tr_id: bfe_12505682812067172896
+< 
+  0   277    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #0 to host localhost left intact
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Cache-Control: private, no-cache, no-store, proxy-revalidate, no-transform
+Connection: keep-alive
+Content-Length: 277
+Content-Type: text/html
+Date: Sat, 13 Sep 2025 17:47:53 GMT
+Etag: "575e1f60-115"
+Last-Modified: Mon, 13 Jun 2016 02:50:08 GMT
+Pragma: no-cache
+Server: bfe/1.0.8.18
+Tr_id: bfe_12505682812067172896
+---
+[2025-09-14 01:48:09.614] [CURL] D:\迅雷下载\curl-8.12.1_4-win64-mingw\bin\curl.exe curl -v -I -L http://www.so.com -x http://localhost:8080
+执行结果: 成功
+进程PID: 43000
+执行时间: 15.625ms
+输出: Note: Using embedded CA bundle, for proxies (233263 bytes)
+* Host localhost:8080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:8080...
+* Connected to localhost (::1) port 8080
+* using HTTP/1.x
+> HEAD http://www.so.com/ HTTP/1.1
+> Host: www.so.com
+> User-Agent: curl/8.12.1
+> Accept: */*
+> Proxy-Connection: Keep-Alive
+> 
+* Request completely sent off
+< HTTP/1.1 302 Found
+< Connection: keep-alive
+< Content-Type: text/html
+< Date: Sat, 13 Sep 2025 17:47:53 GMT
+< Location: https://www.so.com/
+< Server: openresty
+< Set-Cookie: QiHooGUID=; Max-Age=63072000; Domain=so.com; Path=/
+* Ignoring the response-body
+< 
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #0 to host localhost left intact
+* Clear auth, redirects to port from 80 to 443
+* Issue another request to this URL: 'https://www.so.com/'
+* Hostname localhost was found in DNS cache
+*   Trying [::1]:8080...
+* CONNECT tunnel: HTTP/1.1 negotiated
+* allocate connect buffer
+* Establish HTTP proxy tunnel to www.so.com:443
+> CONNECT www.so.com:443 HTTP/1.1
+> Host: www.so.com:443
+> User-Agent: curl/8.12.1
+> Proxy-Connection: Keep-Alive
+> 
+< HTTP/1.1 200 Connection established
+< 
+* CONNECT phase completed
+* CONNECT tunnel established, response 200
+* ALPN: curl offers h2,http/1.1
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [305 bytes data]
+*  CAfile: D:\迅雷下载\curl-8.12.1_4-win64-mingw\bin\curl-ca-bundle.crt
+*  CApath: none
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [93 bytes data]
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+{ [5077 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+{ [333 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+{ [4 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+} [70 bytes data]
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+} [16 bytes data]
+* TLSv1.2 (IN), TLS change cipher, Change cipher spec (1):
+{ [1 bytes data]
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+{ [16 bytes data]
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES128-GCM-SHA256 / [blank] / UNDEF
+* ALPN: server did not agree on a protocol. Uses default.
+* Server certificate:
+*  subject: CN=*.so.com
+*  start date: Aug 28 00:00:00 2025 GMT
+*  expire date: Sep 28 23:59:59 2026 GMT
+*  subjectAltName: host "www.so.com" matched cert's "*.so.com"
+*  issuer: C=CN; O=WoTrus CA Limited; CN=WoTrus DV Server CA  [Run by the Issuer]
+*  SSL certificate verify ok.
+*   Certificate level 0: Public key type ? (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 1: Public key type ? (2048/112 Bits/secBits), signed using sha384WithRSAEncryption
+*   Certificate level 2: Public key type ? (4096/128 Bits/secBits), signed using sha384WithRSAEncryption
+* Connected to localhost (::1) port 8080
+* using HTTP/1.x
+> HEAD / HTTP/1.1
+> Host: www.so.com
+> User-Agent: curl/8.12.1
+> Accept: */*
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Server: openresty
+< Date: Sat, 13 Sep 2025 17:47:53 GMT
+< Content-Type: text/html; charset=UTF-8
+< Connection: keep-alive
+< Vary: Accept-Encoding
+< Set-Cookie: _S=vhitpfdcq1b6ttvlu4n2bbea17; expires=Sat, 13-Sep-2025 17:57:53 GMT; Max-Age=600; path=/
+< Expires: Thu, 19 Nov 1981 08:52:00 GMT
+< Cache-Control: no-store, no-cache, must-revalidate
+< Pragma: no-cache
+< php-waf-rep: -
+< Set-Cookie: QiHooGUID=39036690505BF072E6C471E9B22F21C2.1757785673632; Max-Age=63072000; Domain=so.com; Path=/
+< 
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #1 to host localhost left intact
+HTTP/1.1 302 Found
+Connection: keep-alive
+Content-Type: text/html
+Date: Sat, 13 Sep 2025 17:47:53 GMT
+Location: https://www.so.com/
+Server: openresty
+Set-Cookie: QiHooGUID=; Max-Age=63072000; Domain=so.com; Path=/
+
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Server: openresty
+Date: Sat, 13 Sep 2025 17:47:53 GMT
+Content-Type: text/html; charset=UTF-8
+Connection: keep-alive
+Vary: Accept-Encoding
+Set-Cookie: _S=vhitpfdcq1b6ttvlu4n2bbea17; expires=Sat, 13-Sep-2025 17:57:53 GMT; Max-Age=600; path=/
+Expires: Thu, 19 Nov 1981 08:52:00 GMT
+Cache-Control: no-store, no-cache, must-revalidate
+Pragma: no-cache
+php-waf-rep: -
+Set-Cookie: QiHooGUID=39036690505BF072E6C471E9B22F21C2.1757785673632; Max-Age=63072000; Domain=so.com; Path=/
+---
+[2025-09-14 01:48:09.765] [CURL] D:\迅雷下载\curl-8.12.1_4-win64-mingw\bin\curl.exe curl -v -I https://www.baidu.com -x http://localhost:8080
+执行结果: 成功
+进程PID: 42148
+执行时间: 46.875ms
+输出: Note: Using embedded CA bundle, for proxies (233263 bytes)
+* Host localhost:8080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:8080...
+* CONNECT tunnel: HTTP/1.1 negotiated
+* allocate connect buffer
+* Establish HTTP proxy tunnel to www.baidu.com:443
+> CONNECT www.baidu.com:443 HTTP/1.1
+> Host: www.baidu.com:443
+> User-Agent: curl/8.12.1
+> Proxy-Connection: Keep-Alive
+> 
+< HTTP/1.1 200 Connection established
+< 
+* CONNECT phase completed
+* CONNECT tunnel established, response 200
+* ALPN: curl offers h2,http/1.1
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [308 bytes data]
+*  CAfile: D:\迅雷下载\curl-8.12.1_4-win64-mingw\bin\curl-ca-bundle.crt
+*  CApath: none
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [102 bytes data]
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+{ [4771 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+{ [333 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+{ [4 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+} [70 bytes data]
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+} [16 bytes data]
+* TLSv1.2 (IN), TLS change cipher, Change cipher spec (1):
+{ [1 bytes data]
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+{ [16 bytes data]
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES128-GCM-SHA256 / [blank] / UNDEF
+* ALPN: server accepted http/1.1
+* Server certificate:
+*  subject: C=CN; ST=beijing; L=beijing; O=Beijing Baidu Netcom Science Technology Co., Ltd; CN=baidu.com
+*  start date: Jul  9 07:01:02 2025 GMT
+*  expire date: Aug 10 07:01:01 2026 GMT
+*  subjectAltName: host "www.baidu.com" matched cert's "*.baidu.com"
+*  issuer: C=BE; O=GlobalSign nv-sa; CN=GlobalSign RSA OV SSL CA 2018
+*  SSL certificate verify ok.
+*   Certificate level 0: Public key type ? (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 1: Public key type ? (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 2: Public key type ? (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+* Connected to localhost (::1) port 8080
+* using HTTP/1.x
+> HEAD / HTTP/1.1
+> Host: www.baidu.com
+> User-Agent: curl/8.12.1
+> Accept: */*
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Accept-Ranges: bytes
+< Cache-Control: private, no-cache, no-store, proxy-revalidate, no-transform
+< Connection: keep-alive
+< Content-Length: 277
+< Content-Type: text/html
+< Date: Sat, 13 Sep 2025 17:47:53 GMT
+< Etag: "575e1f60-115"
+< Last-Modified: Mon, 13 Jun 2016 02:50:08 GMT
+< Pragma: no-cache
+< Server: bfe/1.0.8.18
+< Tr_id: bfe_12274553630881881398
+< 
+  0   277    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #0 to host localhost left intact
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Cache-Control: private, no-cache, no-store, proxy-revalidate, no-transform
+Connection: keep-alive
+Content-Length: 277
+Content-Type: text/html
+Date: Sat, 13 Sep 2025 17:47:53 GMT
+Etag: "575e1f60-115"
+Last-Modified: Mon, 13 Jun 2016 02:50:08 GMT
+Pragma: no-cache
+Server: bfe/1.0.8.18
+Tr_id: bfe_12274553630881881398
+---
