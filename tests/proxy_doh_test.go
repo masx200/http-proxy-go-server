@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net"
-	"net/http"
-	"net/url"
+	// "net"
+	// "net/http"
+	// "net/url"
 	"os"
 	"os/exec"
 	"runtime"
@@ -30,9 +30,8 @@ func logCommand(cmd *exec.Cmd, cmdType string) error {
 	return appendToFile("command_execution_log.md", entry)
 }
 
-// logCommandResult 记录命令执行结果
+// writeTestResult 记录命令执行结果
 func logCommandResult(cmd *exec.Cmd, err error, output string) error {
-	cmdStr := strings.Join(cmd.Args, " ")
 	result := "成功"
 	if err != nil {
 		result = "失败"
@@ -68,82 +67,8 @@ func appendToFile(filename, content string) error {
 	return err
 }
 
-// writeTestResults 写入测试结果到文件
-func writeTestResults3(results []string) error {
-	// 写入到测试记录.md
-	file, err := os.OpenFile("测试记录.md", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
 
-	// 移动到文件末尾
-	_, err = file.Seek(0, io.SeekEnd)
-	if err != nil {
-		return err
-	}
 
-	writer := bufio.NewWriter(file)
-
-	// 写入分隔符
-	_, err = writer.WriteString("\n\n###\n\n")
-	if err != nil {
-		return err
-	}
-
-	// 写入测试结果
-	for _, line := range results {
-		_, err := writer.WriteString(line + "\n")
-		if err != nil {
-			return err
-		}
-	}
-	return writer.Flush()
-}
-
-// isPortOccupied 检查端口是否被占用
-func isPortOccupied(port int) bool {
-	addr := fmt.Sprintf(":%d", port)
-	listener, err := net.Listen("tcp", addr)
-	if err != nil {
-		return true
-	}
-	listener.Close()
-	return false
-}
-
-// isProxyServerRunning 检查代理服务器是否正在运行
-func isProxyServerRunning() bool {
-	client := &http.Client{
-		Timeout: 5 * time.Second,
-	}
-
-	// 创建一个测试请求
-	req, err := http.NewRequest("GET", "http://www.baidu.com", nil)
-	if err != nil {
-		return false
-	}
-
-	// 设置代理
-	proxyURL, err := url.Parse("http://localhost:8080")
-	if err != nil {
-		return false
-	}
-
-	transport := &http.Transport{
-		Proxy: http.ProxyURL(proxyURL),
-	}
-	client.Transport = transport
-
-	// 发送测试请求
-	resp, err := client.Do(req)
-	if err != nil {
-		return false
-	}
-	defer resp.Body.Close()
-
-	return resp.StatusCode == 200
-}
 
 // runProxyServerDOH 测试带DoH的HTTP代理服务器的基本功能
 func runProxyServerDOH(t *testing.T) {
@@ -408,11 +333,43 @@ func TestMainDOH(t *testing.T) {
 		}
 
 		// 写入超时记录
-		if err := writeTestResults(timeoutMessage); err != nil {
+		if err := writeTestResults3(timeoutMessage); err != nil {
 			log.Printf("写入超时记录失败: %v\n", err)
 		}
 
 		// 强制退出
 		t.Fatal("测试超时") //os.Exit(1)
 	}
+}
+// writeTestResults 写入测试结果到文件
+func writeTestResults3(results []string) error {
+	// 写入到测试记录.md
+	file, err := os.OpenFile("测试记录.md", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// 移动到文件末尾
+	_, err = file.Seek(0, io.SeekEnd)
+	if err != nil {
+		return err
+	}
+
+	writer := bufio.NewWriter(file)
+
+	// 写入分隔符
+	_, err = writer.WriteString("\n\n###\n\n")
+	if err != nil {
+		return err
+	}
+
+	// 写入测试结果
+	for _, line := range results {
+		_, err := writer.WriteString(line + "\n")
+		if err != nil {
+			return err
+		}
+	}
+	return writer.Flush()
 }
