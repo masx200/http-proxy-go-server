@@ -3,46 +3,23 @@ package connect
 import (
 	"context"
 	"fmt"
+	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
+	"log"
 	"net"
 	"net/url"
 	"strconv"
-	"time"
 )
-
-// CreateClientFunc 客户端创建函数类型
-type CreateClientFunc func(config ClientConfig) (ProxyClient, error)
-
-// ProxyClient 代理客户端接口
-type ProxyClient interface {
-	Connect(host string, port int) error
-	// Authenticate(username, password string) error
-	ForwardData(conn net.Conn) error
-	Close() error
-	SetConnectionClosedCallback(callback func()) error
-	NetConn() net.Conn
-
-	DialContext(ctx context.Context, network, addr string) (net.Conn, error)
-}
-
-// ClientConfig 客户端配置
-type ClientConfig struct {
-	Username   string        `json:"username"`    // 用户名
-	Password   string        `json:"password"`    // 密码
-	ServerAddr string        `json:"server_addr"` // 服务器地址
-	Protocol   string        `json:"protocol"`    // 协议类型
-	Timeout    time.Duration `json:"timeout"`     // 超时时间
-}
 
 // HttpProxyClient HTTP代理客户端实现
 type HttpProxyClient struct {
-	config        ClientConfig
+	config        interfaces.ClientConfig
 	conn          net.Conn
 	closed        bool
 	closeCallback func()
 }
 
 // NewHttpProxyClient 创建HTTP代理客户端
-func NewHttpProxyClient(config ClientConfig) (ProxyClient, error) {
+func NewHttpProxyClient(config interfaces.ClientConfig) (interfaces.ProxyClient, error) {
 	return &HttpProxyClient{
 		config: config,
 		closed: false,
@@ -51,6 +28,9 @@ func NewHttpProxyClient(config ClientConfig) (ProxyClient, error) {
 
 // Connect 连接到目标主机
 func (c *HttpProxyClient) Connect(host string, port int) error {
+
+	log.Println("Connecting to", host, port, "via HTTP proxy", c.config.ServerAddr)
+
 	if c.conn != nil {
 		c.conn.Close()
 	}
@@ -182,6 +162,6 @@ func (c *HttpProxyClient) DialContext(ctx context.Context, network, addr string)
 }
 
 // CreateHttpProxyClient 创建HTTP代理客户端的工厂函数
-var CreateHttpProxyClient CreateClientFunc = func(config ClientConfig) (ProxyClient, error) {
+var CreateHttpProxyClient interfaces.CreateClientFunc = func(config interfaces.ClientConfig) (interfaces.ProxyClient, error) {
 	return NewHttpProxyClient(config)
 }

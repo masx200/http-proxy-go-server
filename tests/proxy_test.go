@@ -317,7 +317,7 @@ func runProxyServer(t *testing.T) {
 	testResults = append(testResults, "")
 
 	// 创建curl进程
-	curlCmd2 := exec.Command("curl", "-v", "-I","-L", "http://www.so.com", "-x", "http://localhost:8080")
+	curlCmd2 := exec.Command("curl", "-v", "-I", "-L", "http://www.so.com", "-x", "http://localhost:8080")
 	// 创建缓冲区来捕获curl输出
 	var curlOutput2 bytes.Buffer
 	curlCmd2.Stdout = &curlOutput2
@@ -729,9 +729,9 @@ func TestMain1(t *testing.T) {
 
 	// 等待测试完成或超时
 	select {
-	case  <-resultChan:
+	case <-resultChan:
 		// 测试正常完成
-		return//os.Exit(code)
+		return //os.Exit(code)
 	case <-ctx.Done():
 		// 超时或取消
 		log.Println("\n⏰ 测试超时（30秒），强制退出...")
@@ -780,6 +780,6 @@ func TestMain1(t *testing.T) {
 		}
 
 		// 强制退出
-		t.Fatal("测试超时")//os.Exit(1)
+		t.Fatal("测试超时") //os.Exit(1)
 	}
 }

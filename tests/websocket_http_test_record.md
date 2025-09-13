@@ -1,10 +1,9 @@
-
-
-###
+### 
 
 # WebSocket和http级联代理测试记录
 
 ## 测试时间
+
 2025-09-12 01:06:46
 
 ## 1. 编译代理服务器
@@ -15,21 +14,21 @@
 
 ## 2. 启动WebSocket服务器（上游）
 
-执行命令: `./http-websocket-proxy-golang.exe -mode server -protocol websocket -addr :38800`
+执行命令:
+`./http-websocket-proxy-golang.exe -mode server -protocol websocket -addr :38800`
 
 📋 WebSocket服务器进程PID: 44364
 
-等待WebSocket服务器启动...
-✅ WebSocket服务器启动成功
+等待WebSocket服务器启动... ✅ WebSocket服务器启动成功
 
 ## 3. 启动http服务器（下游）
 
-执行命令: `./main.exe  -port 10810 -upstream-type websocket -upstream-address ws://localhost:38800`
+执行命令:
+`./main.exe  -port 10810 -upstream-type websocket -upstream-address ws://localhost:38800`
 
 📋 http服务器进程PID: 11848
 
-等待http服务器启动...
-✅ http服务器启动成功
+等待http服务器启动... ✅ http服务器启动成功
 
 ## 4. 测试级联代理功能
 
@@ -42,6 +41,7 @@
 ✅ 测试成功
 
 输出结果:
+
 ```
 Note: Using embedded CA bundle, for proxies (233263 bytes)
 * Host localhost:10810 was resolved.
@@ -52,26 +52,26 @@ Note: Using embedded CA bundle, for proxies (233263 bytes)
   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:10810...
 * Connected to localhost (::1) port 10810
 * using HTTP/1.x
-> HEAD http://www.baidu.com/ HTTP/1.1
-> Host: www.baidu.com
-> User-Agent: curl/8.12.1
-> Accept: */*
-> Proxy-Connection: Keep-Alive
-> 
+> HEAD http://www.baidu.com/ HTTP/1.1
+> Host: www.baidu.com
+> User-Agent: curl/8.12.1
+> Accept: */*
+> Proxy-Connection: Keep-Alive
+> 
 * Request completely sent off
-< HTTP/1.1 200 OK
-< Accept-Ranges: bytes
-< Cache-Control: private, no-cache, no-store, proxy-revalidate, no-transform
-< Connection: keep-alive
-< Content-Length: 277
-< Content-Type: text/html
-< Date: Thu, 11 Sep 2025 17:06:40 GMT
-< Etag: "575e1f60-115"
-< Last-Modified: Mon, 13 Jun 2016 02:50:08 GMT
-< Pragma: no-cache
-< Server: bfe/1.0.8.18
-< Tr_id: bfe_11390912182963063807
-< 
+< HTTP/1.1 200 OK
+< Accept-Ranges: bytes
+< Cache-Control: private, no-cache, no-store, proxy-revalidate, no-transform
+< Connection: keep-alive
+< Content-Length: 277
+< Content-Type: text/html
+< Date: Thu, 11 Sep 2025 17:06:40 GMT
+< Etag: "575e1f60-115"
+< Last-Modified: Mon, 13 Jun 2016 02:50:08 GMT
+< Pragma: no-cache
+< Server: bfe/1.0.8.18
+< Tr_id: bfe_11390912182963063807
+< 
   0   277    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
 * Connection #0 to host localhost left intact
 HTTP/1.1 200 OK
@@ -86,8 +86,6 @@ Last-Modified: Mon, 13 Jun 2016 02:50:08 GMT
 Pragma: no-cache
 Server: bfe/1.0.8.18
 Tr_id: bfe_11390912182963063807
-
-
 ```
 
 ### 测试2: HTTPS代理通过级联
@@ -99,6 +97,7 @@ Tr_id: bfe_11390912182963063807
 ✅ 测试成功
 
 输出结果:
+
 ```
 Note: Using embedded CA bundle, for proxies (233263 bytes)
 * Host localhost:10810 was resolved.
@@ -110,13 +109,13 @@ Note: Using embedded CA bundle, for proxies (233263 bytes)
 * CONNECT tunnel: HTTP/1.1 negotiated
 * allocate connect buffer
 * Establish HTTP proxy tunnel to www.baidu.com:443
-> CONNECT www.baidu.com:443 HTTP/1.1
-> Host: www.baidu.com:443
-> User-Agent: curl/8.12.1
-> Proxy-Connection: Keep-Alive
-> 
-< HTTP/1.1 200 Connection established
-< 
+> CONNECT www.baidu.com:443 HTTP/1.1
+> Host: www.baidu.com:443
+> User-Agent: curl/8.12.1
+> Proxy-Connection: Keep-Alive
+> 
+< HTTP/1.1 200 Connection established
+< 
 * CONNECT phase completed
 * CONNECT tunnel established, response 200
 * ALPN: curl offers h2,http/1.1
@@ -156,25 +155,25 @@ Note: Using embedded CA bundle, for proxies (233263 bytes)
 *   Certificate level 2: Public key type ? (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
 * Connected to localhost (::1) port 10810
 * using HTTP/1.x
-> HEAD / HTTP/1.1
-> Host: www.baidu.com
-> User-Agent: curl/8.12.1
-> Accept: */*
-> 
+> HEAD / HTTP/1.1
+> Host: www.baidu.com
+> User-Agent: curl/8.12.1
+> Accept: */*
+> 
 * Request completely sent off
-< HTTP/1.1 200 OK
-< Accept-Ranges: bytes
-< Cache-Control: private, no-cache, no-store, proxy-revalidate, no-transform
-< Connection: keep-alive
-< Content-Length: 277
-< Content-Type: text/html
-< Date: Thu, 11 Sep 2025 17:06:40 GMT
-< Etag: "575e1f60-115"
-< Last-Modified: Mon, 13 Jun 2016 02:50:08 GMT
-< Pragma: no-cache
-< Server: bfe/1.0.8.18
-< Tr_id: bfe_10799265538454071569
-< 
+< HTTP/1.1 200 OK
+< Accept-Ranges: bytes
+< Cache-Control: private, no-cache, no-store, proxy-revalidate, no-transform
+< Connection: keep-alive
+< Content-Length: 277
+< Content-Type: text/html
+< Date: Thu, 11 Sep 2025 17:06:40 GMT
+< Etag: "575e1f60-115"
+< Last-Modified: Mon, 13 Jun 2016 02:50:08 GMT
+< Pragma: no-cache
+< Server: bfe/1.0.8.18
+< Tr_id: bfe_10799265538454071569
+< 
   0   277    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
 * Connection #0 to host localhost left intact
 HTTP/1.1 200 Connection established
@@ -191,21 +190,18 @@ Last-Modified: Mon, 13 Jun 2016 02:50:08 GMT
 Pragma: no-cache
 Server: bfe/1.0.8.18
 Tr_id: bfe_10799265538454071569
-
-
 ```
 
 ### 📋 所有进程PID记录
 
 所有进程PID: 44364, 11848, 28820, 53320
 
-
-
-###
+### 
 
 # WebSocket和http级联代理测试记录
 
 ## 测试时间
+
 2025-09-12 01:06:46
 
 ## 1. 编译代理服务器
@@ -216,21 +212,21 @@ Tr_id: bfe_10799265538454071569
 
 ## 2. 启动WebSocket服务器（上游）
 
-执行命令: `./http-websocket-proxy-golang.exe -mode server -protocol websocket -addr :38800`
+执行命令:
+`./http-websocket-proxy-golang.exe -mode server -protocol websocket -addr :38800`
 
 📋 WebSocket服务器进程PID: 44364
 
-等待WebSocket服务器启动...
-✅ WebSocket服务器启动成功
+等待WebSocket服务器启动... ✅ WebSocket服务器启动成功
 
 ## 3. 启动http服务器（下游）
 
-执行命令: `./main.exe  -port 10810 -upstream-type websocket -upstream-address ws://localhost:38800`
+执行命令:
+`./main.exe  -port 10810 -upstream-type websocket -upstream-address ws://localhost:38800`
 
 📋 http服务器进程PID: 11848
 
-等待http服务器启动...
-✅ http服务器启动成功
+等待http服务器启动... ✅ http服务器启动成功
 
 ## 4. 测试级联代理功能
 
@@ -243,6 +239,7 @@ Tr_id: bfe_10799265538454071569
 ✅ 测试成功
 
 输出结果:
+
 ```
 Note: Using embedded CA bundle, for proxies (233263 bytes)
 * Host localhost:10810 was resolved.
@@ -253,26 +250,26 @@ Note: Using embedded CA bundle, for proxies (233263 bytes)
   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:10810...
 * Connected to localhost (::1) port 10810
 * using HTTP/1.x
-> HEAD http://www.baidu.com/ HTTP/1.1
-> Host: www.baidu.com
-> User-Agent: curl/8.12.1
-> Accept: */*
-> Proxy-Connection: Keep-Alive
-> 
+> HEAD http://www.baidu.com/ HTTP/1.1
+> Host: www.baidu.com
+> User-Agent: curl/8.12.1
+> Accept: */*
+> Proxy-Connection: Keep-Alive
+> 
 * Request completely sent off
-< HTTP/1.1 200 OK
-< Accept-Ranges: bytes
-< Cache-Control: private, no-cache, no-store, proxy-revalidate, no-transform
-< Connection: keep-alive
-< Content-Length: 277
-< Content-Type: text/html
-< Date: Thu, 11 Sep 2025 17:06:40 GMT
-< Etag: "575e1f60-115"
-< Last-Modified: Mon, 13 Jun 2016 02:50:08 GMT
-< Pragma: no-cache
-< Server: bfe/1.0.8.18
-< Tr_id: bfe_11390912182963063807
-< 
+< HTTP/1.1 200 OK
+< Accept-Ranges: bytes
+< Cache-Control: private, no-cache, no-store, proxy-revalidate, no-transform
+< Connection: keep-alive
+< Content-Length: 277
+< Content-Type: text/html
+< Date: Thu, 11 Sep 2025 17:06:40 GMT
+< Etag: "575e1f60-115"
+< Last-Modified: Mon, 13 Jun 2016 02:50:08 GMT
+< Pragma: no-cache
+< Server: bfe/1.0.8.18
+< Tr_id: bfe_11390912182963063807
+< 
   0   277    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
 * Connection #0 to host localhost left intact
 HTTP/1.1 200 OK
@@ -287,8 +284,6 @@ Last-Modified: Mon, 13 Jun 2016 02:50:08 GMT
 Pragma: no-cache
 Server: bfe/1.0.8.18
 Tr_id: bfe_11390912182963063807
-
-
 ```
 
 ### 测试2: HTTPS代理通过级联
@@ -300,6 +295,7 @@ Tr_id: bfe_11390912182963063807
 ✅ 测试成功
 
 输出结果:
+
 ```
 Note: Using embedded CA bundle, for proxies (233263 bytes)
 * Host localhost:10810 was resolved.
@@ -311,13 +307,13 @@ Note: Using embedded CA bundle, for proxies (233263 bytes)
 * CONNECT tunnel: HTTP/1.1 negotiated
 * allocate connect buffer
 * Establish HTTP proxy tunnel to www.baidu.com:443
-> CONNECT www.baidu.com:443 HTTP/1.1
-> Host: www.baidu.com:443
-> User-Agent: curl/8.12.1
-> Proxy-Connection: Keep-Alive
-> 
-< HTTP/1.1 200 Connection established
-< 
+> CONNECT www.baidu.com:443 HTTP/1.1
+> Host: www.baidu.com:443
+> User-Agent: curl/8.12.1
+> Proxy-Connection: Keep-Alive
+> 
+< HTTP/1.1 200 Connection established
+< 
 * CONNECT phase completed
 * CONNECT tunnel established, response 200
 * ALPN: curl offers h2,http/1.1
@@ -357,25 +353,25 @@ Note: Using embedded CA bundle, for proxies (233263 bytes)
 *   Certificate level 2: Public key type ? (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
 * Connected to localhost (::1) port 10810
 * using HTTP/1.x
-> HEAD / HTTP/1.1
-> Host: www.baidu.com
-> User-Agent: curl/8.12.1
-> Accept: */*
-> 
+> HEAD / HTTP/1.1
+> Host: www.baidu.com
+> User-Agent: curl/8.12.1
+> Accept: */*
+> 
 * Request completely sent off
-< HTTP/1.1 200 OK
-< Accept-Ranges: bytes
-< Cache-Control: private, no-cache, no-store, proxy-revalidate, no-transform
-< Connection: keep-alive
-< Content-Length: 277
-< Content-Type: text/html
-< Date: Thu, 11 Sep 2025 17:06:40 GMT
-< Etag: "575e1f60-115"
-< Last-Modified: Mon, 13 Jun 2016 02:50:08 GMT
-< Pragma: no-cache
-< Server: bfe/1.0.8.18
-< Tr_id: bfe_10799265538454071569
-< 
+< HTTP/1.1 200 OK
+< Accept-Ranges: bytes
+< Cache-Control: private, no-cache, no-store, proxy-revalidate, no-transform
+< Connection: keep-alive
+< Content-Length: 277
+< Content-Type: text/html
+< Date: Thu, 11 Sep 2025 17:06:40 GMT
+< Etag: "575e1f60-115"
+< Last-Modified: Mon, 13 Jun 2016 02:50:08 GMT
+< Pragma: no-cache
+< Server: bfe/1.0.8.18
+< Tr_id: bfe_10799265538454071569
+< 
   0   277    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
 * Connection #0 to host localhost left intact
 HTTP/1.1 200 Connection established
@@ -392,8 +388,6 @@ Last-Modified: Mon, 13 Jun 2016 02:50:08 GMT
 Pragma: no-cache
 Server: bfe/1.0.8.18
 Tr_id: bfe_10799265538454071569
-
-
 ```
 
 ### 📋 所有进程PID记录
@@ -404,16 +398,14 @@ Tr_id: bfe_10799265538454071569
 
 ✅ 所有测试成功，正在关闭服务器进程...
 
-🛑 正在终止WebSocket服务器进程...
-✅ WebSocket服务器进程已终止
+🛑 正在终止WebSocket服务器进程... ✅ WebSocket服务器进程已终止
 
-🛑 正在终止http服务器进程...
-✅ http服务器进程已终止
+🛑 正在终止http服务器进程... ✅ http服务器进程已终止
 
-🧹 正在清理所有子进程...
-✅ 所有子进程已清理完成
+🧹 正在清理所有子进程... ✅ 所有子进程已清理完成
 
 🧹 已清理编译的可执行文件
+
 ### WebSocket服务器日志输出
 
 ```
@@ -661,5 +653,4 @@ Proxy-Connection: Keep-Alive
 2025/09/12 01:06:52 simple.go:204: WebSocket ForwardData error: read tcp [::1]:63607->[::1]:38800: wsarecv: An existing connection was forcibly closed by the remote host.
 ```
 
-✅ 端口38800已成功释放
-✅ 端口10810已成功释放
+✅ 端口38800已成功释放 ✅ 端口10810已成功释放
