@@ -6,7 +6,7 @@ require github.com/gin-gonic/gin v1.10.1
 
 require (
 	github.com/masx200/http3-reverse-proxy-server-experiment v0.0.0-20250913045712-abf331005d5d
-	github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250911210352-684585991f3f
+	github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250913044213-be2447ea5843
 	github.com/tantalor93/doq-go v0.12.0
 )
 
@@ -14,7 +14,6 @@ require github.com/bytedance/gopkg v0.1.3 // indirect
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
-	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 // indirect
 	github.com/ebi-yade/altsvc-go v0.1.1 // indirect
 	github.com/fanjindong/go-cache v0.0.6 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
@@ -33,6 +32,7 @@ require (
 )
 
 require (
+	gitee.com/masx200/go-socks5 v0.0.0-20250912150125-12b401692290
 	github.com/bytedance/sonic v1.14.1 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
