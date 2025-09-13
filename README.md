@@ -4,40 +4,24 @@
 代理服务器。这个服务器允许你通过指定的 IP 地址和端口作为 HTTP
 代理来转发网络请求。从提供的命令行参数来看，它的主要功能和配置选项如下：
 
-## usage
+## 命令行参数
 
-http-proxy-go-server
-
-```text
--config string
-        JSON配置文件路径
--dohalpn value
-        DOH alpn (可重复),支持h2协议和h3协议
--dohip value
-        DOH IP (可重复),支持ipv4地址和ipv6地址
--dohurl value
-        DOH URL (可重复),支持http协议和https协议
--hostname string
-        an String value for hostname (default "0.0.0.0")
--password string
-        password
--port int
-        TCP port to listen on (default 8080)
--server_cert string
-        tls server cert
--server_key string
-        tls server key
--upstream-address string
-        upstream proxy address (e.g., ws://127.0.0.1:1081, socks5://127.0.0.1:1080 or http://127.0.0.1:8080)
--upstream-password string
-        upstream proxy password
--upstream-type string
-        upstream proxy type (websocket, socks5, http)
--upstream-username string
-        upstream proxy username
--username string
-        username
-```
+| 参数                 | 类型   | 默认值    | 描述                                    |
+| -------------------- | ------ | --------- | --------------------------------------- |
+| `-config`            | string | -         | JSON配置文件路径                        |
+| `-hostname`          | string | `0.0.0.0` | 服务器绑定的主机名                      |
+| `-port`              | int    | `8080`    | TCP监听端口                             |
+| `-username`          | string | -         | 代理服务器用户名                        |
+| `-password`          | string | -         | 代理服务器密码                          |
+| `-server_cert`       | string | -         | TLS服务器证书文件路径                   |
+| `-server_key`        | string | -         | TLS服务器私钥文件路径                   |
+| `-dohurl`            | value  | -         | DOH服务器URL（可重复）                  |
+| `-dohip`             | value  | -         | DOH服务器IP地址（可重复）               |
+| `-dohalpn`           | value  | -         | DOH ALPN协议（可重复，支持h2和h3）      |
+| `-upstream-type`     | string | -         | 上游代理类型（websocket、socks5、http） |
+| `-upstream-address`  | string | -         | 上游代理地址                            |
+| `-upstream-username` | string | -         | 上游代理用户名                          |
+| `-upstream-password` | string | -         | 上游代理密码                            |
 
 1. `-config string`：指定 JSON 配置文件路径，可以通过配置文件设置所有参数。
 
