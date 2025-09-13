@@ -14,8 +14,6 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
-	"sync"
-	"syscall"
 	"testing"
 	"time"
 )
@@ -70,6 +68,39 @@ func appendToFile(filename, content string) error {
 	return err
 }
 
+// writeTestResults 写入测试结果到文件
+func writeTestResults3(results []string) error {
+	// 写入到测试记录.md
+	file, err := os.OpenFile("测试记录.md", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// 移动到文件末尾
+	_, err = file.Seek(0, io.SeekEnd)
+	if err != nil {
+		return err
+	}
+
+	writer := bufio.NewWriter(file)
+
+	// 写入分隔符
+	_, err = writer.WriteString("\n\n###\n\n")
+	if err != nil {
+		return err
+	}
+
+	// 写入测试结果
+	for _, line := range results {
+		_, err := writer.WriteString(line + "\n")
+		if err != nil {
+			return err
+		}
+	}
+	return writer.Flush()
+}
+
 // isPortOccupied 检查端口是否被占用
 func isPortOccupied(port int) bool {
 	addr := fmt.Sprintf(":%d", port)
@@ -112,39 +143,6 @@ func isProxyServerRunning() bool {
 	defer resp.Body.Close()
 
 	return resp.StatusCode == 200
-}
-
-// writeTestResults 写入测试结果到文件
-func writeTestResults(results []string) error {
-	// 写入到测试记录.md
-	file, err := os.OpenFile("测试记录.md", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	// 移动到文件末尾
-	_, err = file.Seek(0, io.SeekEnd)
-	if err != nil {
-		return err
-	}
-
-	writer := bufio.NewWriter(file)
-
-	// 写入分隔符
-	_, err = writer.WriteString("\n\n###\n\n")
-	if err != nil {
-		return err
-	}
-
-	// 写入测试结果
-	for _, line := range results {
-		_, err := writer.WriteString(line + "\n")
-		if err != nil {
-			return err
-		}
-	}
-	return writer.Flush()
 }
 
 // runProxyServerDOH 测试带DoH的HTTP代理服务器的基本功能
@@ -323,7 +321,7 @@ func runProxyServerDOH(t *testing.T) {
 	testResults = append(testResults, "")
 
 	// 将测试结果写入文件
-	if err := writeTestResults(testResults); err != nil {
+	if err := writeTestResults3(testResults); err != nil {
 		log.Printf("写入测试结果失败: %v\n", err)
 	}
 

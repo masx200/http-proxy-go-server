@@ -102,7 +102,7 @@ func runProxyServer(t *testing.T) {
 		timeoutTestResults = append(timeoutTestResults, "```")
 
 		// 写入超时测试记录
-		if err := writeTestResults(timeoutTestResults); err != nil {
+		if err := writeTestResults1(timeoutTestResults); err != nil {
 			log.Printf("写入超时测试记录失败: %v\n", err)
 		}
 		processManager.CleanupAll()
@@ -338,7 +338,7 @@ func runProxyServer(t *testing.T) {
 	testResults = append(testResults, "")
 
 	// 写入测试记录到文件
-	err = writeTestResults(testResults)
+	err = writeTestResults1(testResults)
 	if err != nil {
 		t.Errorf("写入测试记录失败: %v", err)
 	}
@@ -489,7 +489,7 @@ func runProxyServer(t *testing.T) {
 		}
 
 		// 重新写入测试记录
-		err = writeTestResults(testResults)
+		err = writeTestResults1(testResults)
 		if err != nil {
 			t.Errorf("更新测试记录失败: %v", err)
 		}
@@ -572,7 +572,7 @@ func runProxyServer(t *testing.T) {
 		}
 
 		// 重新写入测试记录
-		err = writeTestResults(testResults)
+		err = writeTestResults1(testResults)
 		if err != nil {
 			t.Errorf("更新测试记录失败: %v", err)
 		}
@@ -623,8 +623,8 @@ func isProxyServerRunning() bool {
 	return resp.StatusCode == 200
 }
 
-// writeTestResults 写入测试结果到文件
-func writeTestResults(results []string) error {
+// writeTestResults1 写入测试结果到文件
+func writeTestResults1(results []string) error {
 	// 写入到测试记录.md
 	file, err := os.OpenFile("测试记录.md", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
@@ -727,7 +727,7 @@ func TestMain1(t *testing.T) {
 		}
 
 		// 写入超时记录
-		if err := writeTestResults(timeoutMessage); err != nil {
+		if err := writeTestResults1(timeoutMessage); err != nil {
 			log.Printf("写入超时记录失败: %v\n", err)
 		}
 
