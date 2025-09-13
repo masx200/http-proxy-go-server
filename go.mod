@@ -5,7 +5,7 @@ go 1.24.1
 require github.com/gin-gonic/gin v1.10.1
 
 require (
-	github.com/masx200/http3-reverse-proxy-server-experiment v0.0.0-20250913045712-abf331005d5d
+	github.com/masx200/http3-reverse-proxy-server-experiment v0.0.0-20250913161719-e129640db3f5
 	github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250913044213-be2447ea5843
 	github.com/tantalor93/doq-go v0.12.0
 )
@@ -19,6 +19,7 @@ require (
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/google/pprof v0.0.0-20250903194437-c28834ac2320 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
+	github.com/moznion/go-optional v0.13.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.25.3 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/quic-go/quic-go v0.44.0 // indirect
@@ -46,7 +47,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/miekg/dns v1.1.62
+	github.com/miekg/dns v1.1.68
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect

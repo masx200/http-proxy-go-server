@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -136,18 +137,19 @@ func runProxyServer(t *testing.T) {
 	buildCmd.Stdout = multiWriter
 	buildCmd.Stderr = multiWriter
 
-	// 记录命令执行
-	processManager.LogCommand(buildCmd, "BUILD")
 	if err := buildCmd.Run(); err != nil {
-		processManager.LogCommandResult(buildCmd, err, "")
 		t.Fatalf("编译代理服务器失败: %v", err)
 	}
-	processManager.LogCommandResult(buildCmd, nil, "")
 	testResults = append(testResults, "✅ 代理服务器编译成功")
 	testResults = append(testResults, "")
 
 	// 启动代理服务器进程（使用编译后的可执行文件）
-	cmd := exec.Command("./main.exe")
+	cmd := exec.Command("./main.exe"	,"-dohurl", "https://dns.alidns.com/dns-query",
+		"-dohip", "223.5.5.5",
+		"-dohip", "223.6.6.6",
+		"-dohurl", "https://dns.alidns.com/dns-query",
+		"-dohalpn", "h2",
+		"-dohalpn", "h3")
 	cmd.Stdout = multiWriter
 	cmd.Stderr = multiWriter
 
@@ -645,7 +647,7 @@ func writeTestResults(results []string) error {
 }
 
 // TestMain 主测试函数
-func TestMain1(t *testing.T) {
+func TestMainDOHj(t *testing.T) {
 	// 创建带有30秒超时的上下文（增加超时时间）
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
