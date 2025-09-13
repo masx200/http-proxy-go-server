@@ -67,11 +67,12 @@ func appendToFile(filename, content string) error {
 	return err
 }
 
-
-
-
 // runProxyServerDOH 测试带DoH的HTTP代理服务器的基本功能
 func runProxyServerDOH(t *testing.T) {
+	var proxyOutput bytes.Buffer
+
+	multiWriter := io.MultiWriter(os.Stdout, &proxyOutput)
+
 	// 创建进程管理器
 	processManager := NewProcessManager()
 	defer processManager.CleanupAll()
@@ -109,8 +110,8 @@ func runProxyServerDOH(t *testing.T) {
 	testResults = append(testResults, "")
 
 	cmd := exec.Command("./main.exe", "-dohurl", "https://dns.alidns.com/dns-query", "-dohip", "223.5.5.5", "-dohip", "223.6.6.6", "-dohurl", "https://dns.alidns.com/dns-query", "-dohalpn", "h2", "-dohalpn", "h3")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdout = multiWriter
+	cmd.Stderr = multiWriter
 
 	// 记录命令执行
 	if err := logCommand(cmd, "SERVER"); err != nil {
@@ -252,6 +253,47 @@ func runProxyServerDOH(t *testing.T) {
 
 	// 等待一秒，确保所有输出都被捕获
 	time.Sleep(1 * time.Second)
+
+	outputLen := proxyOutput.Len()
+	outputContent := proxyOutput.String()
+
+	if outputLen > 0 {
+		testResults = append(testResults, "### 代理服务器日志输出")
+		testResults = append(testResults, "")
+		testResults = append(testResults, "```")
+		// 按行分割输出并添加到测试结果
+		outputLines := strings.Split(outputContent, "\n")
+		for _, line := range outputLines {
+			if strings.TrimSpace(line) != "" {
+				testResults = append(testResults, line)
+			}
+		}
+		testResults = append(testResults, "```")
+		testResults = append(testResults, "")
+	} else {
+		testResults = append(testResults, "### 代理服务器日志输出")
+		testResults = append(testResults, "")
+		testResults = append(testResults, "⚠️ 没有捕获到代理服务器日志")
+		testResults = append(testResults, "")
+
+		// 添加调试信息
+		testResults = append(testResults, "### 调试信息")
+		testResults = append(testResults, "")
+		testResults = append(testResults, fmt.Sprintf("代理服务器输出缓冲区长度: %d", outputLen))
+		testResults = append(testResults, "")
+		testResults = append(testResults, "可能的原因:")
+		testResults = append(testResults, "- 代理服务器程序没有输出日志")
+		testResults = append(testResults, "- 日志输出被重定向到其他地方")
+		testResults = append(testResults, "- 缓冲区没有正确捕获输出")
+		testResults = append(testResults, "")
+	}
+	var err error
+	// 重新写入测试记录
+	err = writeTestResults3(testResults)
+	if err != nil {
+		t.Errorf("更新测试记录失败: %v", err)
+	}
+
 }
 
 // TestMainDOH 主测试函数
@@ -341,6 +383,7 @@ func TestMainDOH(t *testing.T) {
 		t.Fatal("测试超时") //os.Exit(1)
 	}
 }
+
 // writeTestResults 写入测试结果到文件
 func writeTestResults3(results []string) error {
 	// 写入到测试记录.md
