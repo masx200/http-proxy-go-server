@@ -16,10 +16,10 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/ebi-yade/altsvc-go v0.1.1 // indirect
 	github.com/fanjindong/go-cache v0.0.6 // indirect
+	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/google/pprof v0.0.0-20250903194437-c28834ac2320 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
-	github.com/moznion/go-optional v0.13.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.25.3 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/quic-go/quic-go v0.44.0 // indirect
