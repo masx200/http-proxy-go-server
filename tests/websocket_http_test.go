@@ -458,8 +458,8 @@ func IsPortOccupied2(port int) bool {
 
 // WriteTestResults2 写入测试结果到文件
 func WriteTestResults2(results []string) error {
-	// 写入到websocket_http_test_record.md
-	file, err := os.OpenFile("websocket_http_test_record.md", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	// 写入到测试记录.md
+	file, err := os.OpenFile("测试记录.md", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		return err
 	}
