@@ -263,9 +263,13 @@ func runProxyServer(t *testing.T) {
 	curlCmd2.Stdout = &curlOutput2
 	curlCmd2.Stderr = &curlOutput2
 
+	// 记录命令执行
+	processManager.LogCommand(curlCmd2, "CURL")
 	// 启动curl进程
 	err2 := curlCmd2.Run()
 	output2 := curlOutput2.Bytes()
+	// 记录命令执行结果
+	processManager.LogCommandResult(curlCmd2, err2, string(output2))
 
 	// 将curl进程添加到管理器
 	processManager.AddProcess(curlCmd2)
@@ -299,9 +303,13 @@ func runProxyServer(t *testing.T) {
 	curlCmd3.Stdout = &curlOutput3
 	curlCmd3.Stderr = &curlOutput3
 
+	// 记录命令执行
+	processManager.LogCommand(curlCmd3, "CURL")
 	// 启动curl进程
 	err3 := curlCmd3.Run()
 	output3 := curlOutput3.Bytes()
+	// 记录命令执行结果
+	processManager.LogCommandResult(curlCmd3, err3, string(output3))
 
 	// 将curl进程添加到管理器
 	processManager.AddProcess(curlCmd3)
@@ -657,8 +665,8 @@ func TestMain1(t *testing.T) {
 	// 创建通道来接收测试结果
 	resultChan := make(chan int, 1)
 
-	// 设置全局变量，让测试函数能够访问进程管理器
-	var globalProcessManager *ProcessManager
+	// 创建进程管理器
+	var processManager *ProcessManager
 
 	// 在goroutine中运行测试
 	go func() {
@@ -683,16 +691,20 @@ func TestMain1(t *testing.T) {
 		if runtime.GOOS == "windows" {
 			// 使用taskkill终止所有go进程
 			killCmd := exec.Command("taskkill", "/F", "/IM", "go.exe")
+			processManager.LogCommand(killCmd, "CLEANUP")
 			killCmd.Run() // 忽略错误
+			processManager.LogCommandResult(killCmd, nil, "")
 
 			// 终止可能的代理服务器进程（在8080端口上）
 			findCmd := exec.Command("netstat", "-ano", "|", "findstr", ":8080")
+			processManager.LogCommand(findCmd, "CLEANUP")
 			findCmd.Run() // 忽略错误
+			processManager.LogCommandResult(findCmd, nil, "")
 		}
 
 		// 清理全局进程管理器中的进程
-		if globalProcessManager != nil {
-			globalProcessManager.CleanupAll()
+		if processManager != nil {
+			processManager.CleanupAll()
 		}
 
 		// 记录超时信息到测试记录

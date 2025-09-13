@@ -20,10 +20,13 @@ import (
 )
 
 // runWebSockethttpProxy 测试WebSocket和http级联代理服务器
-func runWebSockethttpProxy(t *testing.T) {
-	// 创建进程管理器
-	processManager := NewProcessManager()
-	defer processManager.CleanupAll()
+func runWebSockethttpProxy(t *testing.T, pm *ProcessManager) {
+	// 使用传入的进程管理器
+	processManager := pm
+	if processManager == nil {
+		processManager = NewProcessManager()
+		defer processManager.CleanupAll()
+	}
 
 	// 创建缓冲区来捕获服务器输出
 	var websocketOutput bytes.Buffer
@@ -72,17 +75,25 @@ func runWebSockethttpProxy(t *testing.T) {
 	buildCmd1.Stdout = websocketWriter
 	buildCmd1.Stderr = websocketWriter
 
+	// 记录命令执行
+	processManager.LogCommand(buildCmd1, "BUILD")
 	if err := buildCmd1.Run(); err != nil {
+		processManager.LogCommandResult(buildCmd1, err, "")
 		t.Fatalf("编译代理服务器失败: %v", err)
 	}
+	processManager.LogCommandResult(buildCmd1, nil, "")
 
 	buildCmd := exec.Command("go", "build", "-o", "main.exe", "../cmd/main.go")
 	buildCmd.Stdout = websocketWriter
 	buildCmd.Stderr = websocketWriter
 
+	// 记录命令执行
+	processManager.LogCommand(buildCmd, "BUILD")
 	if err := buildCmd.Run(); err != nil {
+		processManager.LogCommandResult(buildCmd, err, "")
 		t.Fatalf("编译代理服务器失败: %v", err)
 	}
+	processManager.LogCommandResult(buildCmd, nil, "")
 	testResults = append(testResults, "✅ 代理服务器编译成功")
 	testResults = append(testResults, "")
 
@@ -96,6 +107,9 @@ func runWebSockethttpProxy(t *testing.T) {
 	websocketCmd.Stdout = websocketWriter
 	websocketCmd.Stderr = websocketWriter
 
+	// 记录命令执行
+	processManager.LogCommand(websocketCmd, "WEBSOCKET")
+
 	// 设置进程属性
 	if runtime.GOOS == "windows" {
 		websocketCmd.SysProcAttr = &syscall.SysProcAttr{
@@ -105,8 +119,10 @@ func runWebSockethttpProxy(t *testing.T) {
 
 	err := websocketCmd.Start()
 	if err != nil {
+		processManager.LogCommandResult(websocketCmd, err, "")
 		t.Fatalf("启动WebSocket服务器失败: %v", err)
 	}
+	processManager.LogCommandResult(websocketCmd, nil, "")
 
 	processManager.AddProcess(websocketCmd)
 	log.Printf("WebSocket服务器已启动，PID: %d\n", websocketCmd.Process.Pid)
@@ -143,6 +159,9 @@ func runWebSockethttpProxy(t *testing.T) {
 	httpCmd.Stdout = httpWriter
 	httpCmd.Stderr = httpWriter
 
+	// 记录命令执行
+	processManager.LogCommand(httpCmd, "HTTP")
+
 	// 设置进程属性
 	if runtime.GOOS == "windows" {
 		httpCmd.SysProcAttr = &syscall.SysProcAttr{
@@ -152,8 +171,10 @@ func runWebSockethttpProxy(t *testing.T) {
 
 	err = httpCmd.Start()
 	if err != nil {
+		processManager.LogCommandResult(httpCmd, err, "")
 		t.Fatalf("启动http服务器失败: %v", err)
 	}
+	processManager.LogCommandResult(httpCmd, nil, "")
 
 	processManager.AddProcess(httpCmd)
 	log.Printf("http服务器已启动，PID: %d\n", httpCmd.Process.Pid)
@@ -197,6 +218,8 @@ func runWebSockethttpProxy(t *testing.T) {
 	curlCmd1.Stdout = &curlOutput1
 	curlCmd1.Stderr = &curlOutput1
 
+	// 记录命令执行
+	processManager.LogCommand(curlCmd1, "CURL")
 	err1 := curlCmd1.Run()
 	output1 := curlOutput1.Bytes()
 
@@ -205,6 +228,9 @@ func runWebSockethttpProxy(t *testing.T) {
 	if curlCmd1.ProcessState != nil {
 		exitCode1 = curlCmd1.ProcessState.ExitCode()
 	}
+
+	// 记录命令执行结果
+	processManager.LogCommandResult(curlCmd1, err1, string(output1))
 
 	processManager.AddProcess(curlCmd1)
 	testResults = append(testResults, fmt.Sprintf("📋 Curl测试1进程PID: %d, 退出状态码: %d", curlCmd1.Process.Pid, exitCode1))
@@ -235,6 +261,8 @@ func runWebSockethttpProxy(t *testing.T) {
 	curlCmd2.Stdout = &curlOutput2
 	curlCmd2.Stderr = &curlOutput2
 
+	// 记录命令执行
+	processManager.LogCommand(curlCmd2, "CURL")
 	err2 := curlCmd2.Run()
 	output2 := curlOutput2.Bytes()
 
@@ -243,6 +271,9 @@ func runWebSockethttpProxy(t *testing.T) {
 	if curlCmd2.ProcessState != nil {
 		exitCode2 = curlCmd2.ProcessState.ExitCode()
 	}
+
+	// 记录命令执行结果
+	processManager.LogCommandResult(curlCmd2, err2, string(output2))
 
 	processManager.AddProcess(curlCmd2)
 	testResults = append(testResults, fmt.Sprintf("📋 Curl测试2进程PID: %d, 退出状态码: %d", curlCmd2.Process.Pid, exitCode2))
@@ -498,10 +529,14 @@ func TestMain2(t *testing.T) {
 	// 创建通道来接收测试结果
 	resultChan := make(chan bool, 1)
 
+	// 创建进程管理器
+	var processManager *ProcessManager
+	processManager = NewProcessManager()
+
 	// 在goroutine中运行测试
 	go func() {
-		// 运行测试
-		runWebSockethttpProxy(t)
+		// 运行测试，并传递进程管理器
+		runWebSockethttpProxy(t, processManager)
 		resultChan <- true
 	}()
 
@@ -518,7 +553,9 @@ func TestMain2(t *testing.T) {
 		// 在Windows上强制终止所有go进程
 		if runtime.GOOS == "windows" {
 			killCmd := exec.Command("taskkill", "/F", "/IM", "go.exe")
+			processManager.LogCommand(killCmd, "CLEANUP")
 			killCmd.Run()
+			processManager.LogCommandResult(killCmd, nil, "")
 		}
 
 		// 记录超时信息
