@@ -5,12 +5,13 @@ go 1.24.1
 require github.com/gin-gonic/gin v1.10.1
 
 require (
-	github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250911161225-30ead27f4ef3
+	github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250911210352-684585991f3f
 	github.com/tantalor93/doq-go v0.10.0
 )
 
 require (
-	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 // indirect
+	gitee.com/masx200/go-socks5 v0.0.0-20250912150125-12b401692290 // indirect
+	
 	github.com/ebi-yade/altsvc-go v0.1.1 // indirect
 	github.com/fanjindong/go-cache v0.0.5 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
