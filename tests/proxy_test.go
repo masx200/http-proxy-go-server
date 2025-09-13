@@ -223,9 +223,13 @@ func runProxyServer(t *testing.T) {
 	curlCmd1.Stdout = &curlOutput1
 	curlCmd1.Stderr = &curlOutput1
 
+	// 记录命令执行
+	processManager.LogCommand(curlCmd1, "CURL")
 	// 启动curl进程
 	err1 := curlCmd1.Run()
 	output1 := curlOutput1.Bytes()
+	// 记录命令执行结果
+	processManager.LogCommandResult(curlCmd1, err1, string(output1))
 
 	// 将curl进程添加到管理器
 	processManager.AddProcess(curlCmd1)
