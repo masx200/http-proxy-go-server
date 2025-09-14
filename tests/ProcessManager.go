@@ -141,7 +141,7 @@ func (pm *ProcessManager) LogCommandResult(cmd *exec.Cmd, err error, output stri
 		logEntry += fmt.Sprintf("错误: %s\n", err.Error())
 	}
 
-	logEntry += "---\n"
+	logEntry += "###\n"
 	pm.writeLog("\n```\n\n" + logEntry + "\n```\n")
 }
 

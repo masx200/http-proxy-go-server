@@ -40,7 +40,7 @@ func logCommandResult(cmd *exec.Cmd, err error, output string) error {
 		result = "失败"
 	}
 
-	entry := fmt.Sprintf("执行结果: %s\n进程PID: %d\n执行时间: %s\n输出: %s\n错误: %s\n---\n",
+	entry := fmt.Sprintf("执行结果: %s\n进程PID: %d\n执行时间: %s\n输出: %s\n错误: %s\n###\n",
 		result,
 		cmd.Process.Pid,
 		time.Now().Format("2006-01-02 15:04:05"),
