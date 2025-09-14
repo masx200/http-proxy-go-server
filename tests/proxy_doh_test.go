@@ -30,7 +30,7 @@ func logCommand(cmd *exec.Cmd, cmdType string) error {
 		cmdType,
 		cmdStr)
 
-	return appendToFile("command_execution_log.md", entry)
+	return appendToFile("command_execution_log.txt", entry)
 }
 
 // writeTestResult 记录命令执行结果
@@ -47,7 +47,7 @@ func logCommandResult(cmd *exec.Cmd, err error, output string) error {
 		output,
 		errToString(err))
 
-	return appendToFile("command_execution_log.md", entry)
+	return appendToFile("command_execution_log.txt", entry)
 }
 
 // errToString 将错误转换为字符串

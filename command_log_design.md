@@ -45,7 +45,7 @@ exec.Command 命令添加统一的日志记录功能。
 
 ### 1. 日志文件设计
 
-- **文件名**: `command_execution_log.md`
+- **文件名**: `command_execution_log.txt`
 - **位置**: 与测试文件同目录
 - **格式**: UTF-8 编码
 
