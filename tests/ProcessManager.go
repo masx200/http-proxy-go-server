@@ -3,6 +3,7 @@ package tests
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"runtime"
@@ -30,6 +31,16 @@ func NewProcessManager() *ProcessManager {
 	pm.initLogFile()
 
 	return pm
+}
+func (pm *ProcessManager) Command(name string, arg ...string) *exec.Cmd {
+
+	cmd := exec.Command(name, arg...)
+
+	pm.AddProcess(cmd)
+
+	log.Printf("执行命令: %s %s", name, strings.Join(arg, " "))
+	pm.LogCommand(cmd, "执行命令")
+	return cmd
 }
 
 // initLogFile 初始化日志文件
@@ -88,7 +99,7 @@ func (pm *ProcessManager) LogCommand(cmd *exec.Cmd, cmdType string) error {
 		cmdType,
 		cmdStr)
 
-	pm.writeLog(logEntry)
+	pm.writeLog("开始运行命令...\n" + logEntry + "\n\n")
 	return nil
 }
 
@@ -131,7 +142,7 @@ func (pm *ProcessManager) LogCommandResult(cmd *exec.Cmd, err error, output stri
 	}
 
 	logEntry += "---\n"
-	pm.writeLog(logEntry)
+	pm.writeLog("```\n" + logEntry + "```\n")
 }
 
 // AddProcess 添加进程到管理器

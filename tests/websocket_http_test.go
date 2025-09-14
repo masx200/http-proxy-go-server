@@ -11,7 +11,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
+
+	// "os/exec"
 	"runtime"
 	"strings"
 	"syscall"
@@ -20,14 +21,15 @@ import (
 )
 
 // runWebSockethttpProxy 测试WebSocket和http级联代理服务器
-func runWebSockethttpProxy(t *testing.T, pm *ProcessManager) {
+func runWebSockethttpProxy(t *testing.T) {
 	// 使用传入的进程管理器
-	processManager := pm
-	if processManager == nil {
-		processManager = NewProcessManager()
-		defer processManager.CleanupAll()
-	}
+	var processManager *ProcessManager = NewProcessManager()
+	defer func() {
 
+		// 清理所有进程
+		processManager.CleanupAll()
+		processManager.Close()
+	}()
 	// 创建缓冲区来捕获服务器输出
 	var websocketOutput bytes.Buffer
 	var httpOutput bytes.Buffer
@@ -58,8 +60,8 @@ func runWebSockethttpProxy(t *testing.T, pm *ProcessManager) {
 	testResults = append(testResults, "")
 
 	// 检查端口是否被占用
-	if IsPortOccupied2(38800) {
-		t.Fatal("端口38800已被占用，请先停止占用该端口的进程")
+	if IsPortOccupied2(18080) {
+		t.Fatal("端口18080已被占用，请先停止占用该端口的进程")
 	}
 	if IsPortOccupied2(10810) {
 		t.Fatal("端口10810已被占用，请先停止占用该端口的进程")
@@ -71,7 +73,7 @@ func runWebSockethttpProxy(t *testing.T, pm *ProcessManager) {
 	testResults = append(testResults, "执行命令: `go build -o socks5-websocket-proxy-golang.exe github.com/masx200/socks5-websocket-proxy-golang/cmd`")
 	testResults = append(testResults, "")
 
-	buildCmd1 := exec.Command("go", "build", "-o", "socks5-websocket-proxy-golang.exe", "github.com/masx200/socks5-websocket-proxy-golang/cmd")
+	buildCmd1 := processManager.Command("go", "build", "-o", "socks5-websocket-proxy-golang.exe", "github.com/masx200/socks5-websocket-proxy-golang/cmd")
 	buildCmd1.Stdout = websocketWriter
 	buildCmd1.Stderr = websocketWriter
 
@@ -83,7 +85,7 @@ func runWebSockethttpProxy(t *testing.T, pm *ProcessManager) {
 	}
 	processManager.LogCommandResult(buildCmd1, nil, "")
 
-	buildCmd := exec.Command("go", "build", "-o", "main.exe", "../cmd/main.go")
+	buildCmd := processManager.Command("go", "build", "-o", "main.exe", "../cmd/main.go")
 	buildCmd.Stdout = websocketWriter
 	buildCmd.Stderr = websocketWriter
 
@@ -100,10 +102,10 @@ func runWebSockethttpProxy(t *testing.T, pm *ProcessManager) {
 	// 启动WebSocket服务器（作为上游）
 	testResults = append(testResults, "## 2. 启动WebSocket服务器（上游）")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `./socks5-websocket-proxy-golang.exe -mode server -protocol websocket -addr :38800`")
+	testResults = append(testResults, "执行命令: `./socks5-websocket-proxy-golang.exe -mode server -protocol websocket -addr :18080`")
 	testResults = append(testResults, "")
 
-	websocketCmd := exec.Command("./socks5-websocket-proxy-golang.exe", "-mode", "server", "-protocol", "websocket", "-addr", ":38800")
+	websocketCmd := processManager.Command("./socks5-websocket-proxy-golang.exe", "-mode", "server", "-protocol", "websocket", "-addr", ":18080")
 	websocketCmd.Stdout = websocketWriter
 	websocketCmd.Stderr = websocketWriter
 
@@ -133,7 +135,7 @@ func runWebSockethttpProxy(t *testing.T, pm *ProcessManager) {
 	testResults = append(testResults, "等待WebSocket服务器启动...")
 	websocketStarted := false
 	for i := 0; i < 10; i++ {
-		if IsPortOccupied2(38800) {
+		if IsPortOccupied2(18080) {
 			websocketStarted = true
 			break
 		}
@@ -151,11 +153,11 @@ func runWebSockethttpProxy(t *testing.T, pm *ProcessManager) {
 	// 启动http服务器（设置upstream为WebSocket服务器）
 	testResults = append(testResults, "## 3. 启动http服务器（下游）")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `./main.exe  -port 10810 -upstream-type websocket -upstream-address ws://localhost:38800`")
+	testResults = append(testResults, "执行命令: `./main.exe  -port 10810 -upstream-type websocket -upstream-address ws://localhost:18080`")
 	testResults = append(testResults, "")
 
-	httpCmd := exec.Command("./main.exe", "-port", "10810",
-		"-upstream-type", "websocket", "-upstream-address", "ws://localhost:38800")
+	httpCmd := processManager.Command("./main.exe", "-port", "10810",
+		"-upstream-type", "websocket", "-upstream-address", "ws://localhost:18080")
 	httpCmd.Stdout = httpWriter
 	httpCmd.Stderr = httpWriter
 
@@ -213,7 +215,7 @@ func runWebSockethttpProxy(t *testing.T, pm *ProcessManager) {
 	testResults = append(testResults, "执行命令: `curl -v -I http://www.baidu.com -x http://localhost:10810`")
 	testResults = append(testResults, "")
 
-	curlCmd1 := exec.Command("curl", "-v", "-I", "http://www.baidu.com", "-x", "http://localhost:10810")
+	curlCmd1 := processManager.Command("curl", "-v", "-I", "http://www.baidu.com", "-x", "http://localhost:10810")
 	var curlOutput1 bytes.Buffer
 	curlCmd1.Stdout = &curlOutput1
 	curlCmd1.Stderr = &curlOutput1
@@ -256,7 +258,7 @@ func runWebSockethttpProxy(t *testing.T, pm *ProcessManager) {
 	testResults = append(testResults, "执行命令: `curl -v -I https://www.baidu.com -x http://localhost:10810`")
 	testResults = append(testResults, "")
 
-	curlCmd2 := exec.Command("curl", "-v", "-I", "https://www.baidu.com", "-x", "http://localhost:10810")
+	curlCmd2 := processManager.Command("curl", "-v", "-I", "https://www.baidu.com", "-x", "http://localhost:10810")
 	var curlOutput2 bytes.Buffer
 	curlCmd2.Stdout = &curlOutput2
 	curlCmd2.Stderr = &curlOutput2
@@ -389,10 +391,10 @@ func runWebSockethttpProxy(t *testing.T, pm *ProcessManager) {
 		testResults = append(testResults, "")
 
 		// 验证端口是否已释放
-		if !IsPortOccupied2(38800) {
-			testResults = append(testResults, "✅ 端口38800已成功释放")
+		if !IsPortOccupied2(18080) {
+			testResults = append(testResults, "✅ 端口18080已成功释放")
 		} else {
-			testResults = append(testResults, "❌ 端口38800仍被占用")
+			testResults = append(testResults, "❌ 端口18080仍被占用")
 		}
 		if !IsPortOccupied2(10810) {
 			testResults = append(testResults, "✅ 端口10810已成功释放")
@@ -520,8 +522,16 @@ func WriteTestResults2(results []string) error {
 	return writer.Flush()
 }
 
-// TestMain2 主测试函数
-func TestMain2(t *testing.T) {
+// RunMainWebSocket 主测试函数
+func RunMainWebSocket(t *testing.T) {
+
+	var processManager *ProcessManager = NewProcessManager()
+	defer func() {
+
+		// 清理所有进程
+		processManager.CleanupAll()
+		processManager.Close()
+	}()
 	// 创建带有35秒超时的上下文
 	ctx, cancel := context.WithTimeout(context.Background(), 35*time.Second)
 	defer cancel()
@@ -529,14 +539,10 @@ func TestMain2(t *testing.T) {
 	// 创建通道来接收测试结果
 	resultChan := make(chan bool, 1)
 
-	// 创建进程管理器
-	var processManager *ProcessManager
-	processManager = NewProcessManager()
-
 	// 在goroutine中运行测试
 	go func() {
 		// 运行测试，并传递进程管理器
-		runWebSockethttpProxy(t, processManager)
+		runWebSockethttpProxy(t)
 		resultChan <- true
 	}()
 
@@ -552,7 +558,7 @@ func TestMain2(t *testing.T) {
 
 		// 在Windows上强制终止所有go进程
 		if runtime.GOOS == "windows" {
-			killCmd := exec.Command("taskkill", "/F", "/IM", "go.exe")
+			killCmd := processManager.Command("taskkill", "/F", "/IM", "go.exe")
 			processManager.LogCommand(killCmd, "CLEANUP")
 			killCmd.Run()
 			processManager.LogCommandResult(killCmd, nil, "")

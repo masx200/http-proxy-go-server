@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+
 	// "net"
 	// "net/http"
 	// "net/url"
@@ -69,13 +70,18 @@ func appendToFile(filename, content string) error {
 
 // runProxyServerDOH 测试带DoH的HTTP代理服务器的基本功能
 func runProxyServerDOH(t *testing.T) {
+	var processManager *ProcessManager = NewProcessManager()
+	defer func() {
+
+		// 清理所有进程
+		processManager.CleanupAll()
+		processManager.Close()
+	}()
 	var proxyOutput bytes.Buffer
 
 	multiWriter := io.MultiWriter(os.Stdout, &proxyOutput)
 
 	// 创建进程管理器
-	processManager := NewProcessManager()
-	defer processManager.CleanupAll()
 
 	// 先编译代理服务器
 	var testResults []string
@@ -86,7 +92,7 @@ func runProxyServerDOH(t *testing.T) {
 
 	// 先编译代理服务器
 	testResults = append(testResults, "编译代理服务器...")
-	buildCmd := exec.Command("go", "build", "-o", "main.exe", "../cmd/main.go")
+	buildCmd := processManager.Command("go", "build", "-o", "main.exe", "../cmd/main.go")
 	buildCmd.Stdout = os.Stdout
 	buildCmd.Stderr = os.Stderr
 
@@ -109,7 +115,10 @@ func runProxyServerDOH(t *testing.T) {
 	testResults = append(testResults, "执行命令: `./main.exe -dohurl https://dns.alidns.com/dns-query -dohip 223.5.5.5 -dohip 223.6.6.6 -dohalpn h2 -dohalpn h3`")
 	testResults = append(testResults, "")
 
-	cmd := exec.Command("./main.exe", "-dohurl", "https://dns.alidns.com/dns-query", "-dohip", "223.5.5.5", "-dohip", "223.6.6.6", "-dohurl", "https://dns.alidns.com/dns-query", "-dohalpn", "h2", "-dohalpn", "h3")
+	cmd := processManager.Command("./main.exe",
+
+		"--port", "18080",
+		"-dohurl", "https://dns.alidns.com/dns-query", "-dohip", "223.5.5.5", "-dohip", "223.6.6.6", "-dohurl", "https://dns.alidns.com/dns-query", "-dohalpn", "h2", "-dohalpn", "h3")
 	cmd.Stdout = multiWriter
 	cmd.Stderr = multiWriter
 
@@ -143,16 +152,16 @@ func runProxyServerDOH(t *testing.T) {
 	testResults = append(testResults, "开始测试代理功能...")
 	testResults = append(testResults, "")
 
-	// 检查8080端口是否被占用
-	if !isPortOccupied(8080) {
-		testResults = append(testResults, "❌ 8080端口未被占用，代理服务器可能未正确启动")
+	// 检查18080端口是否被占用
+	if !isPortOccupied(18080) {
+		testResults = append(testResults, "❌ 18080端口未被占用，代理服务器可能未正确启动")
 	} else {
-		testResults = append(testResults, "✅ 8080端口被占用，代理服务器运行正常")
+		testResults = append(testResults, "✅ 18080端口被占用，代理服务器运行正常")
 	}
 
 	// 测试1：通过代理访问HTTP网站
 	testResults = append(testResults, "测试1: 通过代理访问HTTP网站 (baidu.com)")
-	curlCmd1 := exec.Command("curl", "-v", "-I", "http://www.baidu.com", "-x", "http://localhost:8080")
+	curlCmd1 := processManager.Command("curl", "-v", "-I", "http://www.baidu.com", "-x", "http://localhost:18080")
 
 	var curlOutput1 bytes.Buffer
 	curlCmd1.Stdout = &curlOutput1
@@ -184,7 +193,7 @@ func runProxyServerDOH(t *testing.T) {
 
 	// 测试2：通过代理访问HTTP网站（跟随重定向）
 	testResults = append(testResults, "测试2: 通过代理访问HTTP网站 (so.com，跟随重定向)")
-	curlCmd2 := exec.Command("curl", "-v", "-I", "-L", "http://www.so.com", "-x", "http://localhost:8080")
+	curlCmd2 := processManager.Command("curl", "-v", "-I", "-L", "http://www.so.com", "-x", "http://localhost:18080")
 
 	var curlOutput2 bytes.Buffer
 	curlCmd2.Stdout = &curlOutput2
@@ -216,7 +225,7 @@ func runProxyServerDOH(t *testing.T) {
 
 	// 测试3：通过代理访问HTTPS网站
 	testResults = append(testResults, "测试3: 通过代理访问HTTPS网站 (baidu.com)")
-	curlCmd3 := exec.Command("curl", "-v", "-I", "https://www.baidu.com", "-x", "http://localhost:8080")
+	curlCmd3 := processManager.Command("curl", "-v", "-I", "https://www.baidu.com", "-x", "http://localhost:18080")
 
 	var curlOutput3 bytes.Buffer
 	curlCmd3.Stdout = &curlOutput3
@@ -296,17 +305,21 @@ func runProxyServerDOH(t *testing.T) {
 
 }
 
-// TestMainDOH 主测试函数
-func TestMainDOH(t *testing.T) {
+// RunMainDOH 主测试函数
+func RunMainDOH(t *testing.T) {
+	var processManager *ProcessManager = NewProcessManager()
+	defer func() {
+
+		// 清理所有进程
+		processManager.CleanupAll()
+		processManager.Close()
+	}()
 	// 创建带有30秒超时的上下文（增加超时时间）
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	// 创建通道来接收测试结果
 	resultChan := make(chan int, 1)
-
-	// 设置全局变量，让测试函数能够访问进程管理器
-	var globalProcessManager *ProcessManager
 
 	// 在goroutine中运行测试
 	go func() {
@@ -330,7 +343,7 @@ func TestMainDOH(t *testing.T) {
 		// 在Windows上强制终止所有go进程和可能的子进程
 		if runtime.GOOS == "windows" {
 			// 使用taskkill终止所有go进程
-			killCmd := exec.Command("taskkill", "/F", "/IM", "go.exe")
+			killCmd := processManager.Command("taskkill", "/F", "/IM", "go.exe")
 			if err := logCommand(killCmd, "SYSTEM"); err != nil {
 				log.Printf("记录命令失败: %v", err)
 			}
@@ -339,8 +352,8 @@ func TestMainDOH(t *testing.T) {
 				log.Printf("记录命令结果失败: %v", err)
 			}
 
-			// 终止可能的代理服务器进程（在8080端口上）
-			findCmd := exec.Command("netstat", "-ano", "|", "findstr", ":8080")
+			// 终止可能的代理服务器进程（在18080端口上）
+			findCmd := processManager.Command("netstat", "-ano", "|", "findstr", ":18080")
 			if err := logCommand(findCmd, "SYSTEM"); err != nil {
 				log.Printf("记录命令失败: %v", err)
 			}
@@ -351,8 +364,8 @@ func TestMainDOH(t *testing.T) {
 		}
 
 		// 清理全局进程管理器中的进程
-		if globalProcessManager != nil {
-			globalProcessManager.CleanupAll()
+		if processManager != nil {
+			processManager.CleanupAll()
 		}
 
 		// 记录超时信息到测试记录
