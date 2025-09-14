@@ -827,6 +827,16 @@ func main() {
 				t.Proxy = func(r *http.Request) (*url.URL, error) {
 
 					log.Println("ProxySelector", r.URL.Host)
+					var addr = r.URL.Host
+
+					var host, _, err = net.SplitHostPort(addr)
+					if err != nil {
+						return nil, err
+					}
+					if utils.IsLoopbackIP(host) {
+
+						return nil, nil
+					}
 					proxyURL, err := ProxySelector(r, config.UpStreams, config.Rules, config.Filters)
 					if err != nil {
 						log.Printf("ProxySelector 出错: %v\n", err)

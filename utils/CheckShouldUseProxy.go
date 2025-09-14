@@ -2,11 +2,22 @@ package utils
 
 import (
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 )
 
 func CheckShouldUseProxy(upstreamAddress string, tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
+
+	var addr = upstreamAddress
+	var host, _, err = net.SplitHostPort(addr)
+	if err != nil {
+		return nil, err
+	}
+	if IsLoopbackIP(host) {
+		return nil, nil
+	}
+
 	log.Println("开始检查CheckShouldUseProxy", upstreamAddress)
 	// clienthost, port, err := net.SplitHostPort(upstreamAddress)
 	// if err != nil {

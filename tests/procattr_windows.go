@@ -1,7 +1,7 @@
 //go:build windows
 // +build windows
 
-package tests   // 换成你实际包名
+package tests // 换成你实际包名
 
 import "syscall"
 

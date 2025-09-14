@@ -15,7 +15,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-//	"syscall"
+	//	"syscall"
 	"testing"
 	"time"
 )
@@ -159,12 +159,11 @@ func runProxyServer(t *testing.T) {
 	// 设置进程属性，确保能终止所有子进程（跨平台兼容）
 	if runtime.GOOS == "windows" {
 		// Windows特定的进程组设置
-		cmd.SysProcAttr =NewSysProcAttr()
+		cmd.SysProcAttr = NewSysProcAttr()
 
-
- //&syscall.SysProcAttr{
-	//		CreationFlags: //syscall.CREATE_NEW_PROCESS_GROUP,
-	//	}
+		//&syscall.SysProcAttr{
+		//		CreationFlags: //syscall.CREATE_NEW_PROCESS_GROUP,
+		//	}
 	}
 	// Unix-like系统不需要特殊设置，go会自动处理
 
