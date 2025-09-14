@@ -30,7 +30,7 @@ func TestRun(t *testing.T) {
 		t1 := time.Now()
 		var millisecond = t1.Nanosecond() / 1e6
 
-		now := time.Now().Format("2006_01_02_15_0_05")
+		now := time.Now().Format("2006_01_02_15_04_05")
 		logfilename := name + "_" + now + "_" + fmt.Sprintf("%d", millisecond) + ".log"
 
 		log.Println("日志文件", logfilename)
