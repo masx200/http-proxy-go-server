@@ -99,7 +99,7 @@ func (pm *ProcessManager) LogCommand(cmd *exec.Cmd, cmdType string) error {
 		cmdType,
 		cmdStr)
 
-	pm.writeLog("开始运行命令...\n" + logEntry + "\n\n")
+	pm.writeLog("```\n开始运行命令...\n\n" + logEntry + "\n\n```\n\n")
 	return nil
 }
 
