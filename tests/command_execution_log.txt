@@ -213,3 +213,1088 @@
 ###
 
 ```
+
+```
+开始运行命令...
+
+[2025-09-14 11:54:46.431] [执行命令] /data/data/com.termux/files/usr/lib/go/bin/go go build -o socks5-websocket-proxy-golang.exe github.com/masx200/socks5-websocket-proxy-golang/cmd
+
+
+```
+
+
+```
+开始运行命令...
+
+[2025-09-14 11:54:46.431] [BUILD] /data/data/com.termux/files/usr/lib/go/bin/go go build -o socks5-websocket-proxy-golang.exe github.com/masx200/socks5-websocket-proxy-golang/cmd
+
+
+```
+
+
+```
+
+执行结果: 成功
+进程PID: 15827
+执行时间: 1.542409s
+###
+
+```
+
+```
+开始运行命令...
+
+[2025-09-14 11:54:47.911] [执行命令] /data/data/com.termux/files/usr/lib/go/bin/go go build -o main.exe ../cmd/main.go
+
+
+```
+
+
+```
+开始运行命令...
+
+[2025-09-14 11:54:47.911] [BUILD] /data/data/com.termux/files/usr/lib/go/bin/go go build -o main.exe ../cmd/main.go
+
+
+```
+
+
+```
+
+执行结果: 成功
+进程PID: 16088
+执行时间: 2.093521s
+###
+
+```
+
+```
+开始运行命令...
+
+[2025-09-14 11:54:49.541] [执行命令] ./socks5-websocket-proxy-golang.exe -mode server -protocol websocket -addr :28081
+
+
+```
+
+
+```
+开始运行命令...
+
+[2025-09-14 11:54:49.541] [WEBSOCKET] ./socks5-websocket-proxy-golang.exe -mode server -protocol websocket -addr :28081
+
+
+```
+
+
+```
+
+执行结果: 成功
+进程PID: 16218
+###
+
+```
+
+```
+开始运行命令...
+
+[2025-09-14 11:54:50.543] [执行命令] ./main.exe -port 18080 -upstream-type websocket -upstream-address ws://localhost:28081
+
+
+```
+
+
+```
+开始运行命令...
+
+[2025-09-14 11:54:50.543] [HTTP] ./main.exe -port 18080 -upstream-type websocket -upstream-address ws://localhost:28081
+
+
+```
+
+
+```
+
+执行结果: 成功
+进程PID: 16251
+###
+
+```
+
+```
+开始运行命令...
+
+[2025-09-14 11:54:53.771] [执行命令] /data/data/com.termux/files/usr/bin/curl curl -v -I http://www.baidu.com -x http://localhost:18080
+
+
+```
+
+
+```
+开始运行命令...
+
+[2025-09-14 11:54:53.771] [CURL] /data/data/com.termux/files/usr/bin/curl curl -v -I http://www.baidu.com -x http://localhost:18080
+
+
+```
+
+
+```
+
+执行结果: 成功
+进程PID: 16438
+执行时间: 12.969ms
+输出: * Host localhost:18080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:18080...
+* Connected to localhost (::1) port 18080
+* using HTTP/1.x
+> HEAD http://www.baidu.com/ HTTP/1.1
+> Host: www.baidu.com
+> User-Agent: curl/8.15.0
+> Accept: */*
+> Proxy-Connection: Keep-Alive
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Bdpagetype: 1
+< Bdqid: 0xf2b93a2400968c4c
+< Connection: keep-alive
+< Content-Length: 654094
+< Content-Type: text/html; charset=utf-8
+< Date: Sun, 14 Sep 2025 11:54:53 GMT
+< Server: BWS/1.1
+< Set-Cookie: BIDUPSID=F3BD1FDC4A27A84616FE632A1BF7B778; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+< Set-Cookie: PSTM=1757850893; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+< Set-Cookie: BDSVRTM=1; path=/
+< Set-Cookie: BD_HOME=1; path=/
+< Set-Cookie: BAIDUID=F3BD1FDC4A27A84616FE632A1BF7B778:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000
+< Set-Cookie: BAIDUID_BFESS=F3BD1FDC4A27A84616FE632A1BF7B778:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000; Secure; SameSite=None
+< Tr_id: super_0xf2b93a2400968c4c
+< Traceid: 1757850893029787495417490074554173131852
+< Vary: Accept-Encoding
+< X-Ua-Compatible: IE=Edge,chrome=1
+< X-Xss-Protection: 1;mode=block
+< 
+  0  638k    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #0 to host localhost left intact
+HTTP/1.1 200 OK
+Bdpagetype: 1
+Bdqid: 0xf2b93a2400968c4c
+Connection: keep-alive
+Content-Length: 654094
+Content-Type: text/html; charset=utf-8
+Date: Sun, 14 Sep 2025 11:54:53 GMT
+Server: BWS/1.1
+Set-Cookie: BIDUPSID=F3BD1FDC4A27A84616FE632A1BF7B778; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+Set-Cookie: PSTM=1757850893; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+Set-Cookie: BDSVRTM=1; path=/
+Set-Cookie: BD_HOME=1; path=/
+Set-Cookie: BAIDUID=F3BD1FDC4A27A84616FE632A1BF7B778:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000
+Set-Cookie: BAIDUID_BFESS=F3BD1FDC4A27A84616FE632A1BF7B778:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000; Secure; SameSite=None
+Tr_id: super_0xf2b93a2400968c4c
+Traceid: 1757850893029787495417490074554173131852
+Vary: Accept-Encoding
+X-Ua-Compatible: IE=Edge,chrome=1
+X-Xss-Protection: 1;mode=block
+###
+
+```
+
+```
+开始运行命令...
+
+[2025-09-14 11:54:53.851] [执行命令] /data/data/com.termux/files/usr/bin/curl curl -v -I https://www.baidu.com -x http://localhost:18080
+
+
+```
+
+
+```
+开始运行命令...
+
+[2025-09-14 11:54:53.851] [CURL] /data/data/com.termux/files/usr/bin/curl curl -v -I https://www.baidu.com -x http://localhost:18080
+
+
+```
+
+
+```
+
+执行结果: 成功
+进程PID: 16441
+执行时间: 24.672ms
+输出: * Host localhost:18080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:18080...
+* CONNECT tunnel: HTTP/1.1 negotiated
+* allocate connect buffer
+* Establish HTTP proxy tunnel to www.baidu.com:443
+> CONNECT www.baidu.com:443 HTTP/1.1
+> Host: www.baidu.com:443
+> User-Agent: curl/8.15.0
+> Proxy-Connection: Keep-Alive
+> 
+< HTTP/1.1 200 Connection established
+< 
+* CONNECT phase completed
+* CONNECT tunnel established, response 200
+* ALPN: curl offers h2,http/1.1
+} [5 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [1566 bytes data]
+*  CAfile: /data/data/com.termux/files/usr/etc/tls/cert.pem
+*  CApath: /data/data/com.termux/files/usr/etc/tls/certs
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [102 bytes data]
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+{ [4771 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+{ [333 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+{ [4 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+} [70 bytes data]
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+} [16 bytes data]
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+{ [16 bytes data]
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES128-GCM-SHA256 / secp256r1 / RSASSA-PSS
+* ALPN: server accepted http/1.1
+* Server certificate:
+*  subject: C=CN; ST=beijing; L=beijing; O=Beijing Baidu Netcom Science Technology Co., Ltd; CN=baidu.com
+*  start date: Jul  9 07:01:02 2025 GMT
+*  expire date: Aug 10 07:01:01 2026 GMT
+*  subjectAltName: host "www.baidu.com" matched cert's "*.baidu.com"
+*  issuer: C=BE; O=GlobalSign nv-sa; CN=GlobalSign RSA OV SSL CA 2018
+*  SSL certificate verify ok.
+*   Certificate level 0: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 1: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 2: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+* Connected to localhost (::1) port 18080
+* using HTTP/1.x
+} [5 bytes data]
+> HEAD / HTTP/1.1
+> Host: www.baidu.com
+> User-Agent: curl/8.15.0
+> Accept: */*
+> 
+* Request completely sent off
+{ [5 bytes data]
+< HTTP/1.1 200 OK
+< Accept-Ranges: bytes
+< Cache-Control: no-cache
+< Connection: keep-alive
+< Content-Length: 227
+< Content-Security-Policy: frame-ancestors 'self' https://chat.baidu.com http://mirror-chat.baidu.com https://fj-chat.baidu.com https://hba-chat.baidu.com https://hbe-chat.baidu.com https://njjs-chat.baidu.com https://nj-chat.baidu.com https://hna-chat.baidu.com https://hnb-chat.baidu.com http://debug.baidu-int.com https://sai.baidu.com https://mcpstore.baidu.com https://mcpserver.baidu.com https://www.mcpworld.com https://platform-openai.now.baidu.com;
+< Content-Type: text/html
+< Date: Sun, 14 Sep 2025 11:54:54 GMT
+< Pragma: no-cache
+< Server: BWS/1.1
+< Set-Cookie: BD_NOT_HTTPS=1; path=/; Max-Age=300
+< Set-Cookie: PSTM=1757850894; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+< Set-Cookie: BAIDUID=3053D47221E6BFDCB603F379196AA5D3:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000
+< Set-Cookie: BAIDUID_BFESS=3053D47221E6BFDCB603F379196AA5D3:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000; Secure; SameSite=None
+< Traceid: 1757850894247891303416267503639396507546
+< X-Ua-Compatible: IE=Edge,chrome=1
+< X-Xss-Protection: 1;mode=block
+{ [5 bytes data]
+< 
+  0   227    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #0 to host localhost left intact
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Cache-Control: no-cache
+Connection: keep-alive
+Content-Length: 227
+Content-Security-Policy: frame-ancestors 'self' https://chat.baidu.com http://mirror-chat.baidu.com https://fj-chat.baidu.com https://hba-chat.baidu.com https://hbe-chat.baidu.com https://njjs-chat.baidu.com https://nj-chat.baidu.com https://hna-chat.baidu.com https://hnb-chat.baidu.com http://debug.baidu-int.com https://sai.baidu.com https://mcpstore.baidu.com https://mcpserver.baidu.com https://www.mcpworld.com https://platform-openai.now.baidu.com;
+Content-Type: text/html
+Date: Sun, 14 Sep 2025 11:54:54 GMT
+Pragma: no-cache
+Server: BWS/1.1
+Set-Cookie: BD_NOT_HTTPS=1; path=/; Max-Age=300
+Set-Cookie: PSTM=1757850894; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+Set-Cookie: BAIDUID=3053D47221E6BFDCB603F379196AA5D3:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000
+Set-Cookie: BAIDUID_BFESS=3053D47221E6BFDCB603F379196AA5D3:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000; Secure; SameSite=None
+Traceid: 1757850894247891303416267503639396507546
+X-Ua-Compatible: IE=Edge,chrome=1
+X-Xss-Protection: 1;mode=block
+###
+
+```
+
+```
+开始运行命令...
+
+[2025-09-14 11:54:56.364] [执行命令] /data/data/com.termux/files/usr/lib/go/bin/go go build -o main.exe ../cmd/main.go
+
+
+```
+
+[2025-09-14 11:54:56] [BUILD] go build -o main.exe ../cmd/main.go
+执行结果: 成功
+进程PID: 16555
+执行时间: 2025-09-14 11:54:58
+输出: 
+错误: 无
+###
+
+```
+开始运行命令...
+
+[2025-09-14 11:54:58.710] [执行命令] ./main.exe --port 18080 -dohurl https://dns.alidns.com/dns-query -dohip 223.5.5.5 -dohip 223.6.6.6 -dohurl https://dns.alidns.com/dns-query -dohalpn h2 -dohalpn h3
+
+
+```
+
+[2025-09-14 11:54:58] [SERVER] ./main.exe --port 18080 -dohurl https://dns.alidns.com/dns-query -dohip 223.5.5.5 -dohip 223.6.6.6 -dohurl https://dns.alidns.com/dns-query -dohalpn h2 -dohalpn h3
+执行结果: 成功
+进程PID: 16661
+执行时间: 2025-09-14 11:54:58
+输出: 
+错误: 无
+###
+
+```
+开始运行命令...
+
+[2025-09-14 11:55:01.008] [执行命令] /data/data/com.termux/files/usr/bin/curl curl -v -I http://www.baidu.com -x http://localhost:18080
+
+
+```
+
+[2025-09-14 11:55:01] [TEST] curl -v -I http://www.baidu.com -x http://localhost:18080
+执行结果: 成功
+进程PID: 16680
+执行时间: 2025-09-14 11:55:01
+输出: * Host localhost:18080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:18080...
+* Connected to localhost (::1) port 18080
+* using HTTP/1.x
+> HEAD http://www.baidu.com/ HTTP/1.1
+> Host: www.baidu.com
+> User-Agent: curl/8.15.0
+> Accept: */*
+> Proxy-Connection: Keep-Alive
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Bdpagetype: 1
+< Bdqid: 0xbce2e0c600931a3b
+< Connection: keep-alive
+< Content-Length: 654094
+< Content-Type: text/html; charset=utf-8
+< Date: Sun, 14 Sep 2025 11:55:01 GMT
+< Server: BWS/1.1
+< Set-Cookie: BIDUPSID=8480F220DD2B332DBD9A6976C420D9CE; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+< Set-Cookie: PSTM=1757850901; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+< Set-Cookie: BDSVRTM=0; path=/
+< Set-Cookie: BD_HOME=1; path=/
+< Set-Cookie: BAIDUID=8480F220DD2B332DBD9A6976C420D9CE:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000
+< Set-Cookie: BAIDUID_BFESS=8480F220DD2B332DBD9A6976C420D9CE:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000; Secure; SameSite=None
+< Tr_id: super_0xbce2e0c600931a3b
+< Traceid: 1757850901377069313013610688164884847163
+< Vary: Accept-Encoding
+< X-Ua-Compatible: IE=Edge,chrome=1
+< X-Xss-Protection: 1;mode=block
+< 
+  0  638k    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #0 to host localhost left intact
+HTTP/1.1 200 OK
+Bdpagetype: 1
+Bdqid: 0xbce2e0c600931a3b
+Connection: keep-alive
+Content-Length: 654094
+Content-Type: text/html; charset=utf-8
+Date: Sun, 14 Sep 2025 11:55:01 GMT
+Server: BWS/1.1
+Set-Cookie: BIDUPSID=8480F220DD2B332DBD9A6976C420D9CE; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+Set-Cookie: PSTM=1757850901; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+Set-Cookie: BDSVRTM=0; path=/
+Set-Cookie: BD_HOME=1; path=/
+Set-Cookie: BAIDUID=8480F220DD2B332DBD9A6976C420D9CE:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000
+Set-Cookie: BAIDUID_BFESS=8480F220DD2B332DBD9A6976C420D9CE:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000; Secure; SameSite=None
+Tr_id: super_0xbce2e0c600931a3b
+Traceid: 1757850901377069313013610688164884847163
+Vary: Accept-Encoding
+X-Ua-Compatible: IE=Edge,chrome=1
+X-Xss-Protection: 1;mode=block
+
+
+错误: 无
+###
+
+```
+开始运行命令...
+
+[2025-09-14 11:55:01.175] [执行命令] /data/data/com.termux/files/usr/bin/curl curl -v -I -L http://www.so.com -x http://localhost:18080
+
+
+```
+
+[2025-09-14 11:55:01] [TEST] curl -v -I -L http://www.so.com -x http://localhost:18080
+执行结果: 成功
+进程PID: 16681
+执行时间: 2025-09-14 11:55:01
+输出: * Host localhost:18080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:18080...
+* Connected to localhost (::1) port 18080
+* using HTTP/1.x
+> HEAD http://www.so.com/ HTTP/1.1
+> Host: www.so.com
+> User-Agent: curl/8.15.0
+> Accept: */*
+> Proxy-Connection: Keep-Alive
+> 
+* Request completely sent off
+< HTTP/1.1 302 Found
+< Connection: keep-alive
+< Content-Type: text/html
+< Date: Sun, 14 Sep 2025 11:55:01 GMT
+< Location: https://www.so.com/
+< Server: openresty
+< Set-Cookie: QiHooGUID=; Max-Age=63072000; Domain=so.com; Path=/
+* Ignoring the response-body
+< 
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #0 to host localhost left intact
+* Clear auth, redirects to port from 80 to 443
+* Issue another request to this URL: 'https://www.so.com/'
+* Hostname localhost was found in DNS cache
+*   Trying [::1]:18080...
+* CONNECT tunnel: HTTP/1.1 negotiated
+* allocate connect buffer
+* Establish HTTP proxy tunnel to www.so.com:443
+> CONNECT www.so.com:443 HTTP/1.1
+> Host: www.so.com:443
+> User-Agent: curl/8.15.0
+> Proxy-Connection: Keep-Alive
+> 
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0< HTTP/1.1 200 Connection established
+< 
+* CONNECT phase completed
+* CONNECT tunnel established, response 200
+* ALPN: curl offers h2,http/1.1
+} [5 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [1563 bytes data]
+*  CAfile: /data/data/com.termux/files/usr/etc/tls/cert.pem
+*  CApath: /data/data/com.termux/files/usr/etc/tls/certs
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [93 bytes data]
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+{ [5077 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+{ [333 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+{ [4 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+} [70 bytes data]
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+} [16 bytes data]
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+{ [16 bytes data]
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES128-GCM-SHA256 / secp256r1 / rsaEncryption
+* ALPN: server did not agree on a protocol. Uses default.
+* Server certificate:
+*  subject: CN=*.so.com
+*  start date: Aug 28 00:00:00 2025 GMT
+*  expire date: Sep 28 23:59:59 2026 GMT
+*  subjectAltName: host "www.so.com" matched cert's "*.so.com"
+*  issuer: C=CN; O=WoTrus CA Limited; CN=WoTrus DV Server CA  [Run by the Issuer]
+*  SSL certificate verify ok.
+*   Certificate level 0: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 1: Public key type RSA (2048/112 Bits/secBits), signed using sha384WithRSAEncryption
+*   Certificate level 2: Public key type RSA (4096/152 Bits/secBits), signed using sha384WithRSAEncryption
+* Connected to localhost (::1) port 18080
+* using HTTP/1.x
+} [5 bytes data]
+> HEAD / HTTP/1.1
+> Host: www.so.com
+> User-Agent: curl/8.15.0
+> Accept: */*
+> 
+* Request completely sent off
+{ [5 bytes data]
+< HTTP/1.1 200 OK
+< Server: openresty
+< Date: Sun, 14 Sep 2025 11:55:01 GMT
+< Content-Type: text/html; charset=UTF-8
+< Connection: keep-alive
+< Vary: Accept-Encoding
+< Set-Cookie: _S=vdgp98cpp4213s1vsvj2e0ccs1; expires=Sun, 14-Sep-2025 12:05:01 GMT; Max-Age=600; path=/
+< Expires: Thu, 19 Nov 1981 08:52:00 GMT
+< Cache-Control: no-store, no-cache, must-revalidate
+< Pragma: no-cache
+< php-waf-rep: -
+< Set-Cookie: QiHooGUID=078A51512EF9888A88EC31DDF54F4EF5.1757850901871; Max-Age=63072000; Domain=so.com; Path=/
+< 
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #1 to host localhost left intact
+HTTP/1.1 302 Found
+Connection: keep-alive
+Content-Type: text/html
+Date: Sun, 14 Sep 2025 11:55:01 GMT
+Location: https://www.so.com/
+Server: openresty
+Set-Cookie: QiHooGUID=; Max-Age=63072000; Domain=so.com; Path=/
+
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Server: openresty
+Date: Sun, 14 Sep 2025 11:55:01 GMT
+Content-Type: text/html; charset=UTF-8
+Connection: keep-alive
+Vary: Accept-Encoding
+Set-Cookie: _S=vdgp98cpp4213s1vsvj2e0ccs1; expires=Sun, 14-Sep-2025 12:05:01 GMT; Max-Age=600; path=/
+Expires: Thu, 19 Nov 1981 08:52:00 GMT
+Cache-Control: no-store, no-cache, must-revalidate
+Pragma: no-cache
+php-waf-rep: -
+Set-Cookie: QiHooGUID=078A51512EF9888A88EC31DDF54F4EF5.1757850901871; Max-Age=63072000; Domain=so.com; Path=/
+
+
+错误: 无
+###
+
+```
+开始运行命令...
+
+[2025-09-14 11:55:01.918] [执行命令] /data/data/com.termux/files/usr/bin/curl curl -v -I https://www.baidu.com -x http://localhost:18080
+
+
+```
+
+[2025-09-14 11:55:01] [TEST] curl -v -I https://www.baidu.com -x http://localhost:18080
+执行结果: 成功
+进程PID: 16717
+执行时间: 2025-09-14 11:55:02
+输出: * Host localhost:18080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:18080...
+* CONNECT tunnel: HTTP/1.1 negotiated
+* allocate connect buffer
+* Establish HTTP proxy tunnel to www.baidu.com:443
+> CONNECT www.baidu.com:443 HTTP/1.1
+> Host: www.baidu.com:443
+> User-Agent: curl/8.15.0
+> Proxy-Connection: Keep-Alive
+> 
+< HTTP/1.1 200 Connection established
+< 
+* CONNECT phase completed
+* CONNECT tunnel established, response 200
+* ALPN: curl offers h2,http/1.1
+} [5 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [1566 bytes data]
+*  CAfile: /data/data/com.termux/files/usr/etc/tls/cert.pem
+*  CApath: /data/data/com.termux/files/usr/etc/tls/certs
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [102 bytes data]
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+{ [4771 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+{ [333 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+{ [4 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+} [70 bytes data]
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+} [16 bytes data]
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+{ [16 bytes data]
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES128-GCM-SHA256 / secp256r1 / RSASSA-PSS
+* ALPN: server accepted http/1.1
+* Server certificate:
+*  subject: C=CN; ST=beijing; L=beijing; O=Beijing Baidu Netcom Science Technology Co., Ltd; CN=baidu.com
+*  start date: Jul  9 07:01:02 2025 GMT
+*  expire date: Aug 10 07:01:01 2026 GMT
+*  subjectAltName: host "www.baidu.com" matched cert's "*.baidu.com"
+*  issuer: C=BE; O=GlobalSign nv-sa; CN=GlobalSign RSA OV SSL CA 2018
+*  SSL certificate verify ok.
+*   Certificate level 0: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 1: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 2: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+* Connected to localhost (::1) port 18080
+* using HTTP/1.x
+} [5 bytes data]
+> HEAD / HTTP/1.1
+> Host: www.baidu.com
+> User-Agent: curl/8.15.0
+> Accept: */*
+> 
+* Request completely sent off
+{ [5 bytes data]
+< HTTP/1.1 200 OK
+< Accept-Ranges: bytes
+< Cache-Control: no-cache
+< Connection: keep-alive
+< Content-Length: 227
+< Content-Security-Policy: frame-ancestors 'self' https://chat.baidu.com http://mirror-chat.baidu.com https://fj-chat.baidu.com https://hba-chat.baidu.com https://hbe-chat.baidu.com https://njjs-chat.baidu.com https://nj-chat.baidu.com https://hna-chat.baidu.com https://hnb-chat.baidu.com http://debug.baidu-int.com https://sai.baidu.com https://mcpstore.baidu.com https://mcpserver.baidu.com https://www.mcpworld.com https://platform-openai.now.baidu.com;
+< Content-Type: text/html
+< Date: Sun, 14 Sep 2025 11:55:02 GMT
+< Pragma: no-cache
+< Server: BWS/1.1
+< Set-Cookie: BD_NOT_HTTPS=1; path=/; Max-Age=300
+< Set-Cookie: PSTM=1757850902; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+< Set-Cookie: BAIDUID=2382C2717CAF08617BCE98FA09CB2978:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000
+< Set-Cookie: BAIDUID_BFESS=2382C2717CAF08617BCE98FA09CB2978:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000; Secure; SameSite=None
+< Traceid: 1757850902189171047413782516139802363584
+< X-Ua-Compatible: IE=Edge,chrome=1
+< X-Xss-Protection: 1;mode=block
+{ [5 bytes data]
+< 
+  0   227    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #0 to host localhost left intact
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Cache-Control: no-cache
+Connection: keep-alive
+Content-Length: 227
+Content-Security-Policy: frame-ancestors 'self' https://chat.baidu.com http://mirror-chat.baidu.com https://fj-chat.baidu.com https://hba-chat.baidu.com https://hbe-chat.baidu.com https://njjs-chat.baidu.com https://nj-chat.baidu.com https://hna-chat.baidu.com https://hnb-chat.baidu.com http://debug.baidu-int.com https://sai.baidu.com https://mcpstore.baidu.com https://mcpserver.baidu.com https://www.mcpworld.com https://platform-openai.now.baidu.com;
+Content-Type: text/html
+Date: Sun, 14 Sep 2025 11:55:02 GMT
+Pragma: no-cache
+Server: BWS/1.1
+Set-Cookie: BD_NOT_HTTPS=1; path=/; Max-Age=300
+Set-Cookie: PSTM=1757850902; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+Set-Cookie: BAIDUID=2382C2717CAF08617BCE98FA09CB2978:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000
+Set-Cookie: BAIDUID_BFESS=2382C2717CAF08617BCE98FA09CB2978:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000; Secure; SameSite=None
+Traceid: 1757850902189171047413782516139802363584
+X-Ua-Compatible: IE=Edge,chrome=1
+X-Xss-Protection: 1;mode=block
+
+
+错误: 无
+###
+
+```
+开始运行命令...
+
+[2025-09-14 11:55:03.308] [执行命令] /data/data/com.termux/files/usr/lib/go/bin/go go build -o main.exe ../cmd/main.go
+
+
+```
+
+
+```
+开始运行命令...
+
+[2025-09-14 11:55:03.308] [BUILD] /data/data/com.termux/files/usr/lib/go/bin/go go build -o main.exe ../cmd/main.go
+
+
+```
+
+
+```
+
+执行结果: 成功
+进程PID: 16732
+执行时间: 2.927049s
+###
+
+```
+
+```
+开始运行命令...
+
+[2025-09-14 11:55:05.393] [执行命令] ./main.exe --port 18080
+
+
+```
+
+
+```
+开始运行命令...
+
+[2025-09-14 11:55:08.605] [执行命令] /data/data/com.termux/files/usr/bin/curl curl -v -I http://www.baidu.com -x http://localhost:18080
+
+
+```
+
+
+```
+开始运行命令...
+
+[2025-09-14 11:55:08.605] [CURL] /data/data/com.termux/files/usr/bin/curl curl -v -I http://www.baidu.com -x http://localhost:18080
+
+
+```
+
+
+```
+
+执行结果: 成功
+进程PID: 16846
+执行时间: 11.674ms
+输出: * Host localhost:18080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:18080...
+* Connected to localhost (::1) port 18080
+* using HTTP/1.x
+> HEAD http://www.baidu.com/ HTTP/1.1
+> Host: www.baidu.com
+> User-Agent: curl/8.15.0
+> Accept: */*
+> Proxy-Connection: Keep-Alive
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Bdpagetype: 1
+< Bdqid: 0xe51851aa009bb2da
+< Connection: keep-alive
+< Content-Length: 654148
+< Content-Type: text/html; charset=utf-8
+< Date: Sun, 14 Sep 2025 11:55:08 GMT
+< Server: BWS/1.1
+< Set-Cookie: BIDUPSID=4DAEDA5DCFBE032B74DD0F5BB15FB44F; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+< Set-Cookie: PSTM=1757850908; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+< Set-Cookie: BDSVRTM=0; path=/
+< Set-Cookie: BD_HOME=1; path=/
+< Set-Cookie: BAIDUID=4DAEDA5DCFBE032B74DD0F5BB15FB44F:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000
+< Set-Cookie: BAIDUID_BFESS=4DAEDA5DCFBE032B74DD0F5BB15FB44F:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000; Secure; SameSite=None
+< Tr_id: super_0xe51851aa009bb2da
+< Traceid: 1757850908269695130616508034224723047130
+< Vary: Accept-Encoding
+< X-Ua-Compatible: IE=Edge,chrome=1
+< X-Xss-Protection: 1;mode=block
+< 
+  0  638k    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #0 to host localhost left intact
+HTTP/1.1 200 OK
+Bdpagetype: 1
+Bdqid: 0xe51851aa009bb2da
+Connection: keep-alive
+Content-Length: 654148
+Content-Type: text/html; charset=utf-8
+Date: Sun, 14 Sep 2025 11:55:08 GMT
+Server: BWS/1.1
+Set-Cookie: BIDUPSID=4DAEDA5DCFBE032B74DD0F5BB15FB44F; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+Set-Cookie: PSTM=1757850908; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+Set-Cookie: BDSVRTM=0; path=/
+Set-Cookie: BD_HOME=1; path=/
+Set-Cookie: BAIDUID=4DAEDA5DCFBE032B74DD0F5BB15FB44F:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000
+Set-Cookie: BAIDUID_BFESS=4DAEDA5DCFBE032B74DD0F5BB15FB44F:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000; Secure; SameSite=None
+Tr_id: super_0xe51851aa009bb2da
+Traceid: 1757850908269695130616508034224723047130
+Vary: Accept-Encoding
+X-Ua-Compatible: IE=Edge,chrome=1
+X-Xss-Protection: 1;mode=block
+###
+
+```
+
+```
+开始运行命令...
+
+[2025-09-14 11:55:08.657] [执行命令] /data/data/com.termux/files/usr/bin/curl curl -v -I -L http://www.so.com -x http://localhost:18080
+
+
+```
+
+
+```
+开始运行命令...
+
+[2025-09-14 11:55:08.658] [CURL] /data/data/com.termux/files/usr/bin/curl curl -v -I -L http://www.so.com -x http://localhost:18080
+
+
+```
+
+
+```
+
+执行结果: 成功
+进程PID: 16851
+执行时间: 34.73ms
+输出: * Host localhost:18080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:18080...
+* Connected to localhost (::1) port 18080
+* using HTTP/1.x
+> HEAD http://www.so.com/ HTTP/1.1
+> Host: www.so.com
+> User-Agent: curl/8.15.0
+> Accept: */*
+> Proxy-Connection: Keep-Alive
+> 
+* Request completely sent off
+< HTTP/1.1 302 Found
+< Connection: keep-alive
+< Content-Type: text/html
+< Date: Sun, 14 Sep 2025 11:55:08 GMT
+< Location: https://www.so.com/
+< Server: openresty
+< Set-Cookie: QiHooGUID=; Max-Age=63072000; Domain=so.com; Path=/
+* Ignoring the response-body
+< 
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #0 to host localhost left intact
+* Clear auth, redirects to port from 80 to 443
+* Issue another request to this URL: 'https://www.so.com/'
+* Hostname localhost was found in DNS cache
+*   Trying [::1]:18080...
+* CONNECT tunnel: HTTP/1.1 negotiated
+* allocate connect buffer
+* Establish HTTP proxy tunnel to www.so.com:443
+> CONNECT www.so.com:443 HTTP/1.1
+> Host: www.so.com:443
+> User-Agent: curl/8.15.0
+> Proxy-Connection: Keep-Alive
+> 
+< HTTP/1.1 200 Connection established
+< 
+* CONNECT phase completed
+* CONNECT tunnel established, response 200
+* ALPN: curl offers h2,http/1.1
+} [5 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [1563 bytes data]
+*  CAfile: /data/data/com.termux/files/usr/etc/tls/cert.pem
+*  CApath: /data/data/com.termux/files/usr/etc/tls/certs
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [93 bytes data]
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+{ [5077 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+{ [333 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+{ [4 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+} [70 bytes data]
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+} [16 bytes data]
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+{ [16 bytes data]
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES128-GCM-SHA256 / secp256r1 / rsaEncryption
+* ALPN: server did not agree on a protocol. Uses default.
+* Server certificate:
+*  subject: CN=*.so.com
+*  start date: Aug 28 00:00:00 2025 GMT
+*  expire date: Sep 28 23:59:59 2026 GMT
+*  subjectAltName: host "www.so.com" matched cert's "*.so.com"
+*  issuer: C=CN; O=WoTrus CA Limited; CN=WoTrus DV Server CA  [Run by the Issuer]
+*  SSL certificate verify ok.
+*   Certificate level 0: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 1: Public key type RSA (2048/112 Bits/secBits), signed using sha384WithRSAEncryption
+*   Certificate level 2: Public key type RSA (4096/152 Bits/secBits), signed using sha384WithRSAEncryption
+* Connected to localhost (::1) port 18080
+* using HTTP/1.x
+} [5 bytes data]
+> HEAD / HTTP/1.1
+> Host: www.so.com
+> User-Agent: curl/8.15.0
+> Accept: */*
+> 
+* Request completely sent off
+{ [5 bytes data]
+< HTTP/1.1 200 OK
+< Server: openresty
+< Date: Sun, 14 Sep 2025 11:55:09 GMT
+< Content-Type: text/html; charset=UTF-8
+< Connection: keep-alive
+< Vary: Accept-Encoding
+< Set-Cookie: _S=23vrda48mouuqc0t3vaq5oev44; expires=Sun, 14-Sep-2025 12:05:09 GMT; Max-Age=600; path=/
+< Expires: Thu, 19 Nov 1981 08:52:00 GMT
+< Cache-Control: no-store, no-cache, must-revalidate
+< Pragma: no-cache
+< php-waf-rep: -
+< Set-Cookie: QiHooGUID=1D093C3DBD1219A7E799D1A4EA18379F.1757850909226; Max-Age=63072000; Domain=so.com; Path=/
+< 
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #1 to host localhost left intact
+HTTP/1.1 302 Found
+Connection: keep-alive
+Content-Type: text/html
+Date: Sun, 14 Sep 2025 11:55:08 GMT
+Location: https://www.so.com/
+Server: openresty
+Set-Cookie: QiHooGUID=; Max-Age=63072000; Domain=so.com; Path=/
+
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Server: openresty
+Date: Sun, 14 Sep 2025 11:55:09 GMT
+Content-Type: text/html; charset=UTF-8
+Connection: keep-alive
+Vary: Accept-Encoding
+Set-Cookie: _S=23vrda48mouuqc0t3vaq5oev44; expires=Sun, 14-Sep-2025 12:05:09 GMT; Max-Age=600; path=/
+Expires: Thu, 19 Nov 1981 08:52:00 GMT
+Cache-Control: no-store, no-cache, must-revalidate
+Pragma: no-cache
+php-waf-rep: -
+Set-Cookie: QiHooGUID=1D093C3DBD1219A7E799D1A4EA18379F.1757850909226; Max-Age=63072000; Domain=so.com; Path=/
+###
+
+```
+
+```
+开始运行命令...
+
+[2025-09-14 11:55:09.262] [执行命令] /data/data/com.termux/files/usr/bin/curl curl -v -I https://www.baidu.com -x http://localhost:18080
+
+
+```
+
+
+```
+开始运行命令...
+
+[2025-09-14 11:55:09.262] [CURL] /data/data/com.termux/files/usr/bin/curl curl -v -I https://www.baidu.com -x http://localhost:18080
+
+
+```
+
+
+```
+
+执行结果: 成功
+进程PID: 16863
+执行时间: 34.78ms
+输出: * Host localhost:18080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:18080...
+* CONNECT tunnel: HTTP/1.1 negotiated
+* allocate connect buffer
+* Establish HTTP proxy tunnel to www.baidu.com:443
+> CONNECT www.baidu.com:443 HTTP/1.1
+> Host: www.baidu.com:443
+> User-Agent: curl/8.15.0
+> Proxy-Connection: Keep-Alive
+> 
+< HTTP/1.1 200 Connection established
+< 
+* CONNECT phase completed
+* CONNECT tunnel established, response 200
+* ALPN: curl offers h2,http/1.1
+} [5 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [1566 bytes data]
+*  CAfile: /data/data/com.termux/files/usr/etc/tls/cert.pem
+*  CApath: /data/data/com.termux/files/usr/etc/tls/certs
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [102 bytes data]
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+{ [4771 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+{ [333 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+{ [4 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+} [70 bytes data]
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+} [16 bytes data]
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+{ [16 bytes data]
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES128-GCM-SHA256 / secp256r1 / RSASSA-PSS
+* ALPN: server accepted http/1.1
+* Server certificate:
+*  subject: C=CN; ST=beijing; L=beijing; O=Beijing Baidu Netcom Science Technology Co., Ltd; CN=baidu.com
+*  start date: Jul  9 07:01:02 2025 GMT
+*  expire date: Aug 10 07:01:01 2026 GMT
+*  subjectAltName: host "www.baidu.com" matched cert's "*.baidu.com"
+*  issuer: C=BE; O=GlobalSign nv-sa; CN=GlobalSign RSA OV SSL CA 2018
+*  SSL certificate verify ok.
+*   Certificate level 0: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 1: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 2: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+* Connected to localhost (::1) port 18080
+* using HTTP/1.x
+} [5 bytes data]
+> HEAD / HTTP/1.1
+> Host: www.baidu.com
+> User-Agent: curl/8.15.0
+> Accept: */*
+> 
+* Request completely sent off
+{ [5 bytes data]
+< HTTP/1.1 200 OK
+< Accept-Ranges: bytes
+< Cache-Control: no-cache
+< Connection: keep-alive
+< Content-Length: 227
+< Content-Security-Policy: frame-ancestors 'self' https://chat.baidu.com http://mirror-chat.baidu.com https://fj-chat.baidu.com https://hba-chat.baidu.com https://hbe-chat.baidu.com https://njjs-chat.baidu.com https://nj-chat.baidu.com https://hna-chat.baidu.com https://hnb-chat.baidu.com http://debug.baidu-int.com https://sai.baidu.com https://mcpstore.baidu.com https://mcpserver.baidu.com https://www.mcpworld.com https://platform-openai.now.baidu.com;
+< Content-Type: text/html
+< Date: Sun, 14 Sep 2025 11:55:09 GMT
+< Pragma: no-cache
+< Server: BWS/1.1
+< Set-Cookie: BD_NOT_HTTPS=1; path=/; Max-Age=300
+< Set-Cookie: PSTM=1757850909; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+< Set-Cookie: BAIDUID=E28D9FA7C7D06C9D0953A98746C49212:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000
+< Set-Cookie: BAIDUID_BFESS=E28D9FA7C7D06C9D0953A98746C49212:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000; Secure; SameSite=None
+< Traceid: 1757850909051604429810958628456115363323
+< X-Ua-Compatible: IE=Edge,chrome=1
+< X-Xss-Protection: 1;mode=block
+{ [5 bytes data]
+< 
+  0   227    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #0 to host localhost left intact
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Cache-Control: no-cache
+Connection: keep-alive
+Content-Length: 227
+Content-Security-Policy: frame-ancestors 'self' https://chat.baidu.com http://mirror-chat.baidu.com https://fj-chat.baidu.com https://hba-chat.baidu.com https://hbe-chat.baidu.com https://njjs-chat.baidu.com https://nj-chat.baidu.com https://hna-chat.baidu.com https://hnb-chat.baidu.com http://debug.baidu-int.com https://sai.baidu.com https://mcpstore.baidu.com https://mcpserver.baidu.com https://www.mcpworld.com https://platform-openai.now.baidu.com;
+Content-Type: text/html
+Date: Sun, 14 Sep 2025 11:55:09 GMT
+Pragma: no-cache
+Server: BWS/1.1
+Set-Cookie: BD_NOT_HTTPS=1; path=/; Max-Age=300
+Set-Cookie: PSTM=1757850909; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com
+Set-Cookie: BAIDUID=E28D9FA7C7D06C9D0953A98746C49212:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000
+Set-Cookie: BAIDUID_BFESS=E28D9FA7C7D06C9D0953A98746C49212:FG=1; Path=/; Domain=baidu.com; Max-Age=31536000; Secure; SameSite=None
+Traceid: 1757850909051604429810958628456115363323
+X-Ua-Compatible: IE=Edge,chrome=1
+X-Xss-Protection: 1;mode=block
+###
+
+```

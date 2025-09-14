@@ -831,7 +831,13 @@ func main() {
 
 					var host, _, err = net.SplitHostPort(addr)
 					if err != nil {
-						return nil, err
+
+						if addrErr, ok := err.(*net.AddrError); ok && addrErr.Err == "missing port in address" {
+							host = addr // 整个字符串就是 host
+						} else {
+							return nil, err
+						}
+
 					}
 					if utils.IsLoopbackIP(host) {
 
