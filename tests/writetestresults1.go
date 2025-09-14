@@ -6,8 +6,8 @@ import (
 	"os"
 )
 
-// writeTestResults1 写入测试结果到文件
-func writeTestResults1(results []string, file *os.File) error {
+// WriteTestResultsToFile 写入测试结果到文件
+func WriteTestResultsToFile(results []string, file *os.File) error {
 	// 写入到测试记录.log
 
 	var err error

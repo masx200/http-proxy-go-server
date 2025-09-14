@@ -11,9 +11,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+
 	// "os/exec"
 	"runtime"
 	"strings"
+
 	//	"syscall"
 	"testing"
 	"time"
@@ -310,7 +312,7 @@ func runWebSockethttpProxy(t *testing.T, logfilename string) {
 	testResults = append(testResults, "")
 
 	// 写入测试记录到文件
-	err = writeTestResults1(testResults, processManager.GetFile())
+	err = WriteTestResultsToFile(testResults, processManager.GetFile())
 	if err != nil {
 		t.Errorf("写入测试记录失败: %v", err)
 	}
@@ -410,7 +412,7 @@ func runWebSockethttpProxy(t *testing.T, logfilename string) {
 		}
 
 		// 重新写入测试记录
-		err = writeTestResults1(testResults, processManager.GetFile())
+		err = WriteTestResultsToFile(testResults, processManager.GetFile())
 		if err != nil {
 			t.Errorf("更新测试记录失败: %v", err)
 		}
@@ -445,7 +447,7 @@ func runWebSockethttpProxy(t *testing.T, logfilename string) {
 		}
 
 		// 重新写入测试记录
-		err = writeTestResults1(testResults, processManager.GetFile())
+		err = WriteTestResultsToFile(testResults, processManager.GetFile())
 		if err != nil {
 			t.Errorf("更新测试记录失败: %v", err)
 		}
@@ -558,7 +560,7 @@ func RunMainWebSocket(t *testing.T, logfilename string) {
 		}
 
 		// 写入超时记录
-		if err := writeTestResults1(timeoutMessage, processManager.GetFile()); err != nil {
+		if err := WriteTestResultsToFile(timeoutMessage, processManager.GetFile()); err != nil {
 			log.Printf("写入超时记录失败: %v\n", err)
 		}
 
