@@ -785,6 +785,43 @@ func main() {
 	var tranportConfigurations = []func(*http.Transport) *http.Transport{}
 	if config != nil {
 		if config.UpStreams != nil && config.Rules != nil && len(config.Rules) > 0 && len(config.UpStreams) > 0 {
+
+			for name, upstream := range config.UpStreams {
+				var proxyURL string
+				if upstream.TYPE == "http" {
+					proxyURL = upstream.HTTP_PROXY
+				} else if upstream.TYPE == "socks5" {
+					proxyURL = upstream.SOCKS5_PROXY
+				} else if upstream.TYPE == "websocket" {
+					proxyURL = upstream.WS_PROXY
+				}
+
+				var username, password string
+				if upstream.TYPE == "http" {
+					username = upstream.HTTP_USERNAME
+					password = upstream.HTTP_PASSWORD
+				} else if upstream.TYPE == "socks5" {
+					username = upstream.SOCKS5_USERNAME
+					password = upstream.SOCKS5_PASSWORD
+				} else if upstream.TYPE == "websocket" {
+					username = upstream.WS_USERNAME
+					password = upstream.WS_PASSWORD
+				}
+
+				modifedUpstreamurl, err := overrideProxyURLCredentials(proxyURL, username, password)
+				if err != nil {
+					log.Fatalf("overrideProxyURLCredentials 出错: %v\n", err)
+					return
+				}
+				modifedUpstream := UpStream{
+					TYPE:         upstream.TYPE,
+					HTTP_PROXY:   modifedUpstreamurl,
+					HTTPS_PROXY:  modifedUpstreamurl,
+					SOCKS5_PROXY: modifedUpstreamurl,
+					WS_PROXY:     modifedUpstreamurl,
+				}
+				config.UpStreams[name] = modifedUpstream
+			}
 			tranportConfigurations = append(tranportConfigurations, func(t *http.Transport) *http.Transport {
 				t.Proxy = func(r *http.Request) (*url.URL, error) {
 
@@ -801,48 +838,84 @@ func main() {
 					}
 					return proxyURL, err
 				}
+				t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 
-				// 检查是否有WebSocket代理配置
-				for _, upstream := range config.UpStreams {
-					if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
-						// 创建自定义的DialContext函数来处理WebSocket代理
-						t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
-
-							//overrideProxyURLCredentials
-							// 使用overrideProxyURLCredentials修改WebSocket代理URL中的用户名密码
-							modifiedWSProxy, err := overrideProxyURLCredentials(upstream.WS_PROXY, upstream.WS_USERNAME, upstream.WS_PASSWORD)
-							if err != nil {
-								return nil, fmt.Errorf("failed to override WebSocket proxy credentials: %v", err)
-							}
-
-							// 创建修改后的upstream副本
-							modifiedUpstream := upstream
-							modifiedUpstream.WS_PROXY = modifiedWSProxy
-
-							// 实现WebSocket代理连接逻辑
-							return websocketDialContext(ctx, network, addr, modifiedUpstream)
-						}
+					var r, err = http.NewRequest("GET", "https://"+addr, nil)
+					if err != nil {
+						return nil, err
 					}
-					// 检查是否有SOCKS5代理配置
-					if upstream.SOCKS5_PROXY != "" && upstream.TYPE == "socks5" {
-						// 创建自定义的DialContext函数来处理SOCKS5代理
-						t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
-							// 使用overrideProxyURLCredentials修改SOCKS5代理URL中的用户名密码
-							modifiedSocks5Proxy, err := overrideProxyURLCredentials(upstream.SOCKS5_PROXY, upstream.SOCKS5_USERNAME, upstream.SOCKS5_PASSWORD)
-							if err != nil {
-								return nil, fmt.Errorf("failed to override SOCKS5 proxy credentials: %v", err)
+					proxyURL, err := ProxySelector(r, config.UpStreams, config.Rules, config.Filters)
+					if err != nil {
+						return nil, err
+					}
+
+					if proxyURL != nil {
+						log.Printf("选择的代理 URL: %s\n", proxyURL.String())
+						if proxyURL.Scheme == "ws" || proxyURL.Scheme == "wss" {
+							var modifiedUpstream = UpStream{
+								TYPE:     "websocket",
+								WS_PROXY: proxyURL.String(),
 							}
-
-							// 创建修改后的upstream副本
-							modifiedUpstream := upstream
-							modifiedUpstream.SOCKS5_PROXY = modifiedSocks5Proxy
-
-							// 实现SOCKS5代理连接逻辑
 							return socks5DialContext(ctx, network, addr, modifiedUpstream)
 						}
+						if proxyURL.Scheme == "socks5" || proxyURL.Scheme == "socks5s" {
+							var modifiedUpstream = UpStream{
+								TYPE:         "socks5",
+								SOCKS5_PROXY: proxyURL.String(),
+							}
+							return socks5DialContext(ctx, network, addr, modifiedUpstream)
+						} else {
+							log.Println("未选择代理")
+							var dialer = &net.Dialer{}
+							return dialer.DialContext(ctx, network, addr)
+
+						}
 					}
+					var dialer = &net.Dialer{}
+					return dialer.DialContext(ctx, network, addr)
 				}
+				// 检查是否有WebSocket代理配置
+				// for _, upstream := range config.UpStreams {
+				// 	if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
+				// 		// 创建自定义的DialContext函数来处理WebSocket代理
+				// 		t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+
+				// 			//overrideProxyURLCredentials
+				// 			// 使用overrideProxyURLCredentials修改WebSocket代理URL中的用户名密码
+				// 			modifiedWSProxy, err := overrideProxyURLCredentials(upstream.WS_PROXY, upstream.WS_USERNAME, upstream.WS_PASSWORD)
+				// 			if err != nil {
+				// 				return nil, fmt.Errorf("failed to override WebSocket proxy credentials: %v", err)
+				// 			}
+
+				// 			// 创建修改后的upstream副本
+				// 			modifiedUpstream := upstream
+				// 			modifiedUpstream.WS_PROXY = modifiedWSProxy
+
+				// 			// 实现WebSocket代理连接逻辑
+				// 			return websocketDialContext(ctx, network, addr, modifiedUpstream)
+				// 		}
+				// 	}
+				// 	// 检查是否有SOCKS5代理配置
+				// 	if upstream.SOCKS5_PROXY != "" && upstream.TYPE == "socks5" {
+				// 		// 创建自定义的DialContext函数来处理SOCKS5代理
+				// 		t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+				// 			// 使用overrideProxyURLCredentials修改SOCKS5代理URL中的用户名密码
+				// 			modifiedSocks5Proxy, err := overrideProxyURLCredentials(upstream.SOCKS5_PROXY, upstream.SOCKS5_USERNAME, upstream.SOCKS5_PASSWORD)
+				// 			if err != nil {
+				// 				return nil, fmt.Errorf("failed to override SOCKS5 proxy credentials: %v", err)
+				// 			}
+
+				// 			// 创建修改后的upstream副本
+				// 			modifiedUpstream := upstream
+				// 			modifiedUpstream.SOCKS5_PROXY = modifiedSocks5Proxy
+
+				// 			// 实现SOCKS5代理连接逻辑
+				// 			return socks5DialContext(ctx, network, addr, modifiedUpstream)
+				// 		}
+				// 	}
+				// }
 				return t
+
 			})
 		}
 	}
