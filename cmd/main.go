@@ -21,6 +21,7 @@ import (
 	"github.com/masx200/http-proxy-go-server/simple"
 	"github.com/masx200/http-proxy-go-server/tls"
 	tls_auth "github.com/masx200/http-proxy-go-server/tls+auth"
+	"github.com/masx200/http-proxy-go-server/utils"
 	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
 	"github.com/masx200/socks5-websocket-proxy-golang/pkg/socks5"
 	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
@@ -840,7 +841,16 @@ func main() {
 				}
 				t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 
-					var r, err = http.NewRequest("GET", "https://"+addr, nil)
+					var host, _, err = net.SplitHostPort(addr)
+					if err != nil {
+						return nil, err
+					}
+					if utils.IsLoopbackIP(host) {
+						var dialer = &net.Dialer{}
+						return dialer.DialContext(ctx, network, addr)
+					}
+
+					r, err := http.NewRequest("GET", "https://"+addr, nil)
 					if err != nil {
 						return nil, err
 					}
@@ -874,46 +884,7 @@ func main() {
 					var dialer = &net.Dialer{}
 					return dialer.DialContext(ctx, network, addr)
 				}
-				// 检查是否有WebSocket代理配置
-				// for _, upstream := range config.UpStreams {
-				// 	if upstream.WS_PROXY != "" && upstream.TYPE == "websocket" {
-				// 		// 创建自定义的DialContext函数来处理WebSocket代理
-				// 		t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 
-				// 			//overrideProxyURLCredentials
-				// 			// 使用overrideProxyURLCredentials修改WebSocket代理URL中的用户名密码
-				// 			modifiedWSProxy, err := overrideProxyURLCredentials(upstream.WS_PROXY, upstream.WS_USERNAME, upstream.WS_PASSWORD)
-				// 			if err != nil {
-				// 				return nil, fmt.Errorf("failed to override WebSocket proxy credentials: %v", err)
-				// 			}
-
-				// 			// 创建修改后的upstream副本
-				// 			modifiedUpstream := upstream
-				// 			modifiedUpstream.WS_PROXY = modifiedWSProxy
-
-				// 			// 实现WebSocket代理连接逻辑
-				// 			return websocketDialContext(ctx, network, addr, modifiedUpstream)
-				// 		}
-				// 	}
-				// 	// 检查是否有SOCKS5代理配置
-				// 	if upstream.SOCKS5_PROXY != "" && upstream.TYPE == "socks5" {
-				// 		// 创建自定义的DialContext函数来处理SOCKS5代理
-				// 		t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
-				// 			// 使用overrideProxyURLCredentials修改SOCKS5代理URL中的用户名密码
-				// 			modifiedSocks5Proxy, err := overrideProxyURLCredentials(upstream.SOCKS5_PROXY, upstream.SOCKS5_USERNAME, upstream.SOCKS5_PASSWORD)
-				// 			if err != nil {
-				// 				return nil, fmt.Errorf("failed to override SOCKS5 proxy credentials: %v", err)
-				// 			}
-
-				// 			// 创建修改后的upstream副本
-				// 			modifiedUpstream := upstream
-				// 			modifiedUpstream.SOCKS5_PROXY = modifiedSocks5Proxy
-
-				// 			// 实现SOCKS5代理连接逻辑
-				// 			return socks5DialContext(ctx, network, addr, modifiedUpstream)
-				// 		}
-				// 	}
-				// }
 				return t
 
 			})

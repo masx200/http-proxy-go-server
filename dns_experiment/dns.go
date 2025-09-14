@@ -23,6 +23,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/masx200/http-proxy-go-server/utils"
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	"github.com/miekg/dns"
 	doq "github.com/tantalor93/doq-go/doq"
@@ -182,7 +183,14 @@ func DohClient(msg *dns.Msg, dohServerURL string, dohip string, tranportConfigur
 		}
 		transport.DialTLSContext = DialTLSContext
 		var DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
-
+			var host, _, err = net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
+			if utils.IsLoopbackIP(host) {
+				var dialer = &net.Dialer{}
+				return dialer.DialContext(ctx, network, addr)
+			}
 			log.Println("DialContext", "dialing", network, "to", addr)
 			// 解析出原地址中的端口
 			_, port, err := net.SplitHostPort(addr)

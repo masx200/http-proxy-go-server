@@ -168,6 +168,15 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 		ForceAttemptHTTP2: true,
 		// 自定义 DialContext 函数
 		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+
+			var host, _, err = net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
+			if utils.IsLoopbackIP(host) {
+				var dialer = &net.Dialer{}
+				return dialer.DialContext(ctx, network, addr)
+			}
 			// 解析出原地址中的端口
 			hostname, _, err := net.SplitHostPort(addr)
 			if err != nil {
@@ -258,7 +267,14 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 
 			log.Println("已经修改了代理为websocket", proxyUrl.String())
 			var DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
-
+				var host, _, err = net.SplitHostPort(addr)
+				if err != nil {
+					return nil, err
+				}
+				if utils.IsLoopbackIP(host) {
+					var dialer = &net.Dialer{}
+					return dialer.DialContext(ctx, network, addr)
+				}
 				log.Println("使用代理：" + proxyUrl.String())
 
 				log.Println("network,addr", network, addr)
