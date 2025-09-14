@@ -3,11 +3,13 @@ package connect
 import (
 	"context"
 	"fmt"
-	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
 	"log"
 	"net"
 	"net/url"
 	"strconv"
+
+	"github.com/masx200/http-proxy-go-server/utils"
+	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
 )
 
 // HttpProxyClient HTTP代理客户端实现
@@ -138,6 +140,15 @@ func (c *HttpProxyClient) NetConn() net.Conn {
 
 // DialContext 实现DialContext方法
 func (c *HttpProxyClient) DialContext(ctx context.Context, network, addr string) (net.Conn, error) {
+
+	var host, _, err = net.SplitHostPort(addr)
+	if err != nil {
+		return nil, err
+	}
+	if utils.IsLoopbackIP(host) {
+		var dialer = &net.Dialer{}
+		return dialer.DialContext(ctx, network, addr)
+	}
 	if c.conn == nil || c.closed {
 		// 解析地址
 		host, port, err := net.SplitHostPort(addr)
