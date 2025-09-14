@@ -856,7 +856,7 @@ func main() {
 								TYPE:     "websocket",
 								WS_PROXY: proxyURL.String(),
 							}
-							return socks5DialContext(ctx, network, addr, modifiedUpstream)
+							return websocketDialContext(ctx, network, addr, modifiedUpstream)
 						}
 						if proxyURL.Scheme == "socks5" || proxyURL.Scheme == "socks5s" {
 							var modifiedUpstream = UpStream{

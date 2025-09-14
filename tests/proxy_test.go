@@ -666,7 +666,7 @@ func TestMain1(t *testing.T) {
 	resultChan := make(chan int, 1)
 
 	// 创建进程管理器
-	var processManager *ProcessManager
+	var processManager *ProcessManager=NewProcessManager()
 
 	// 在goroutine中运行测试
 	go func() {
