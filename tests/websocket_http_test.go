@@ -14,7 +14,7 @@ import (
 	// "os/exec"
 	"runtime"
 	"strings"
-	"syscall"
+//	"syscall"
 	"testing"
 	"time"
 )
@@ -113,9 +113,14 @@ func runWebSockethttpProxy(t *testing.T) {
 
 	// 设置进程属性
 	if runtime.GOOS == "windows" {
-		websocketCmd.SysProcAttr = &syscall.SysProcAttr{
-			CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP,
-		}
+		//websocketCmd.SysProcAttr =
+
+websocketCmd.SysProcAttr = NewSysProcAttr()
+
+// &syscall.SysProcAttr{
+//			CreationFlags: 
+//syscall.CREATE_NEW_PROCESS_GROUP,
+	//	}
 	}
 
 	err := websocketCmd.Start()
@@ -165,9 +170,14 @@ func runWebSockethttpProxy(t *testing.T) {
 
 	// 设置进程属性
 	if runtime.GOOS == "windows" {
-		httpCmd.SysProcAttr = &syscall.SysProcAttr{
-			CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP,
-		}
+		httpCmd.SysProcAttr = NewSysProcAttr()
+
+
+
+//&syscall.SysProcAttr{
+		//	CreationFlags:
+ //syscall.CREATE_NEW_PROCESS_GROUP,
+//		}
 	}
 
 	err = httpCmd.Start()
