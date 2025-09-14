@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
+	"net/url"
 
 	// "net"
 	// "net/http"
@@ -143,7 +145,7 @@ func runProxyServerDOH(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// 检查代理服务器是否启动成功
-	if !isProxyServerRunning() {
+	if !isDOHProxyServerRunning() {
 		t.Fatal("代理服务器未正常启动")
 	}
 
@@ -428,4 +430,35 @@ func writeTestResults3(results []string) error {
 		}
 	}
 	return writer.Flush()
+}
+func isDOHProxyServerRunning() bool {
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	// 创建一个测试请求
+	req, err := http.NewRequest("GET", "http://www.baidu.com", nil)
+	if err != nil {
+		return false
+	}
+
+	// 设置代理
+	proxyURL, err := url.Parse("http://localhost:10810")
+	if err != nil {
+		return false
+	}
+
+	transport := &http.Transport{
+		Proxy: http.ProxyURL(proxyURL),
+	}
+	client.Transport = transport
+
+	// 发送测试请求
+	resp, err := client.Do(req)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode == 200
 }
