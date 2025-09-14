@@ -496,9 +496,8 @@ func IsPortOccupied2(port int) bool {
 	return false
 }
 
-
 // RunMainWebSocket 主测试函数
-func RunMainWebSocket(t *testing.T,logfilename string) {
+func RunMainWebSocket(t *testing.T, logfilename string) {
 
 	var processManager *ProcessManager = NewProcessManager(logfilename)
 	defer func() {

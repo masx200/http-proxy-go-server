@@ -21,7 +21,7 @@ import (
 )
 
 // logCommand 记录命令执行到文件
-func logCommand(cmd *exec.Cmd, cmdType string) error {
+func logCommand(processManager *ProcessManager, cmd *exec.Cmd, cmdType string) error {
 	cmdStr := strings.Join(cmd.Args, " ")
 
 	entry := fmt.Sprintf("[%s] [%s] %s\n",
@@ -29,11 +29,11 @@ func logCommand(cmd *exec.Cmd, cmdType string) error {
 		cmdType,
 		cmdStr)
 
-	return appendToFile("command_execution_log.txt", entry)
+	return appendToFile(processManager.GetFile(), entry)
 }
 
 // writeTestResult 记录命令执行结果
-func logCommandResult(cmd *exec.Cmd, err error, output string) error {
+func logCommandResult(processManager *ProcessManager, cmd *exec.Cmd, err error, output string) error {
 	result := "成功"
 	if err != nil {
 		result = "失败"
@@ -46,7 +46,7 @@ func logCommandResult(cmd *exec.Cmd, err error, output string) error {
 		output,
 		errToString(err))
 
-	return appendToFile("command_execution_log.txt", entry)
+	return appendToFile(processManager.GetFile(), entry)
 }
 
 // errToString 将错误转换为字符串
@@ -58,13 +58,8 @@ func errToString(err error) string {
 }
 
 // appendToFile 追加内容到文件
-func appendToFile(filename, content string) error {
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
+func appendToFile(file *os.File, content string) error {
+	var err error
 	_, err = file.WriteString(content)
 	return err
 }
@@ -98,15 +93,15 @@ func runProxyServerDOH(t *testing.T, logfilename string) {
 	buildCmd.Stderr = os.Stderr
 
 	// 记录命令执行
-	if err := logCommand(buildCmd, "BUILD"); err != nil {
+	if err := logCommand(processManager, buildCmd, "BUILD"); err != nil {
 		log.Printf("记录命令失败: %v", err)
 	}
 
 	if err := buildCmd.Run(); err != nil {
-		logCommandResult(buildCmd, err, "")
+		logCommandResult(processManager, buildCmd, err, "")
 		t.Fatalf("编译代理服务器失败: %v", err)
 	}
-	logCommandResult(buildCmd, nil, "")
+	logCommandResult(processManager, buildCmd, nil, "")
 
 	testResults = append(testResults, "✅ 代理服务器编译成功")
 	testResults = append(testResults, "")
@@ -124,7 +119,7 @@ func runProxyServerDOH(t *testing.T, logfilename string) {
 	cmd.Stderr = multiWriter
 
 	// 记录命令执行
-	if err := logCommand(cmd, "SERVER"); err != nil {
+	if err := logCommand(processManager, cmd, "SERVER"); err != nil {
 		log.Printf("记录命令失败: %v", err)
 	}
 
@@ -133,12 +128,12 @@ func runProxyServerDOH(t *testing.T, logfilename string) {
 
 	// 启动代理服务器
 	if err := cmd.Start(); err != nil {
-		logCommandResult(cmd, err, "")
+		logCommandResult(processManager, cmd, err, "")
 		t.Fatalf("启动代理服务器失败: %v", err)
 	}
 
 	// 记录启动结果
-	logCommandResult(cmd, nil, "")
+	logCommandResult(processManager, cmd, nil, "")
 
 	// 等待代理服务器启动
 	time.Sleep(2 * time.Second)
@@ -169,7 +164,7 @@ func runProxyServerDOH(t *testing.T, logfilename string) {
 	curlCmd1.Stderr = &curlOutput1
 
 	// 记录命令执行
-	if err := logCommand(curlCmd1, "TEST"); err != nil {
+	if err := logCommand(processManager, curlCmd1, "TEST"); err != nil {
 		log.Printf("记录命令失败: %v", err)
 	}
 
@@ -187,7 +182,7 @@ func runProxyServerDOH(t *testing.T, logfilename string) {
 	}
 
 	// 记录命令执行结果
-	if err := logCommandResult(curlCmd1, err1, string(output1)); err != nil {
+	if err := logCommandResult(processManager, curlCmd1, err1, string(output1)); err != nil {
 		log.Printf("记录命令结果失败: %v", err)
 	}
 	testResults = append(testResults, "")
@@ -201,7 +196,7 @@ func runProxyServerDOH(t *testing.T, logfilename string) {
 	curlCmd2.Stderr = &curlOutput2
 
 	// 记录命令执行
-	if err := logCommand(curlCmd2, "TEST"); err != nil {
+	if err := logCommand(processManager, curlCmd2, "TEST"); err != nil {
 		log.Printf("记录命令失败: %v", err)
 	}
 
@@ -219,7 +214,7 @@ func runProxyServerDOH(t *testing.T, logfilename string) {
 	}
 
 	// 记录命令执行结果
-	if err := logCommandResult(curlCmd2, err2, string(output2)); err != nil {
+	if err := logCommandResult(processManager, curlCmd2, err2, string(output2)); err != nil {
 		log.Printf("记录命令结果失败: %v", err)
 	}
 	testResults = append(testResults, "")
@@ -233,7 +228,7 @@ func runProxyServerDOH(t *testing.T, logfilename string) {
 	curlCmd3.Stderr = &curlOutput3
 
 	// 记录命令执行
-	if err := logCommand(curlCmd3, "TEST"); err != nil {
+	if err := logCommand(processManager, curlCmd3, "TEST"); err != nil {
 		log.Printf("记录命令失败: %v", err)
 	}
 
@@ -251,7 +246,7 @@ func runProxyServerDOH(t *testing.T, logfilename string) {
 	}
 
 	// 记录命令执行结果
-	if err := logCommandResult(curlCmd3, err3, string(output3)); err != nil {
+	if err := logCommandResult(processManager, curlCmd3, err3, string(output3)); err != nil {
 		log.Printf("记录命令结果失败: %v", err)
 	}
 	testResults = append(testResults, "")
@@ -345,21 +340,21 @@ func RunMainDOH(t *testing.T, logfilename string) {
 		if runtime.GOOS == "windows" {
 			// 使用taskkill终止所有go进程
 			killCmd := processManager.Command("taskkill", "/F", "/IM", "go.exe")
-			if err := logCommand(killCmd, "SYSTEM"); err != nil {
+			if err := logCommand(processManager, killCmd, "SYSTEM"); err != nil {
 				log.Printf("记录命令失败: %v", err)
 			}
 			killCmd.Run() // 忽略错误
-			if err := logCommandResult(killCmd, nil, ""); err != nil {
+			if err := logCommandResult(processManager, killCmd, nil, ""); err != nil {
 				log.Printf("记录命令结果失败: %v", err)
 			}
 
 			// 终止可能的代理服务器进程（在18080端口上）
 			findCmd := processManager.Command("netstat", "-ano", "|", "findstr", ":18080")
-			if err := logCommand(findCmd, "SYSTEM"); err != nil {
+			if err := logCommand(processManager, findCmd, "SYSTEM"); err != nil {
 				log.Printf("记录命令失败: %v", err)
 			}
 			findCmd.Run() // 忽略错误
-			if err := logCommandResult(findCmd, nil, ""); err != nil {
+			if err := logCommandResult(processManager, findCmd, nil, ""); err != nil {
 				log.Printf("记录命令结果失败: %v", err)
 			}
 		}

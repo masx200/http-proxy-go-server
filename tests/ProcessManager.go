@@ -33,8 +33,9 @@ func NewProcessManager(logfilename string) *ProcessManager {
 	}
 
 	// 初始化日志文件
-	pm.initLogFile()
+
 	pm.logFilename = logfilename
+	pm.initLogFile()
 	return pm
 }
 func (pm *ProcessManager) Command(name string, arg ...string) *exec.Cmd {
@@ -50,6 +51,8 @@ func (pm *ProcessManager) Command(name string, arg ...string) *exec.Cmd {
 
 // initLogFile 初始化日志文件
 func (pm *ProcessManager) initLogFile() {
+
+	log.Println("初始化日志文件", pm.logFilename)
 	// 打开或创建日志文件
 	file, err := os.OpenFile(pm.logFilename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
