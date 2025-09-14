@@ -400,10 +400,10 @@ func runWebSockethttpProxy(t *testing.T, logfilename string) {
 		testResults = append(testResults, "")
 
 		// 验证端口是否已释放
-		if !IsPortOccupied2(18080) {
-			testResults = append(testResults, "✅ 端口18080已成功释放")
+		if !IsPortOccupied2(28081) {
+			testResults = append(testResults, "✅ 端口28081已成功释放")
 		} else {
-			testResults = append(testResults, "❌ 端口18080仍被占用")
+			testResults = append(testResults, "❌ 端口28081仍被占用")
 		}
 		if !IsPortOccupied2(18080) {
 			testResults = append(testResults, "✅ 端口18080已成功释放")
