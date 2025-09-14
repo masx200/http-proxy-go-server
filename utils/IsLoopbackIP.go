@@ -15,6 +15,9 @@ func IsLoopbackIP(ipStr string) (isLoopback bool) {
 	}
 
 	// 判断是否在 127.0.0.0/8 范围内
-	_, loopbackNet, _ := net.ParseCIDR("127.0.0.0/8")
+	_, loopbackNet, err := net.ParseCIDR("127.0.0.0/8")
+	if err != nil {
+		return false
+	}
 	return loopbackNet.Contains(ip)
 }
