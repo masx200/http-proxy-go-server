@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -71,8 +70,8 @@ func appendToFile(filename, content string) error {
 }
 
 // runProxyServerDOH 测试带DoH的HTTP代理服务器的基本功能
-func runProxyServerDOH(t *testing.T) {
-	var processManager *ProcessManager = NewProcessManager()
+func runProxyServerDOH(t *testing.T, logfilename string) {
+	var processManager *ProcessManager = NewProcessManager(logfilename)
 	defer func() {
 
 		// 清理所有进程
@@ -258,7 +257,7 @@ func runProxyServerDOH(t *testing.T) {
 	testResults = append(testResults, "")
 
 	// 将测试结果写入文件
-	if err := writeTestResults3(testResults); err != nil {
+	if err := writeTestResults1(testResults, processManager.GetFile()); err != nil {
 		log.Printf("写入测试结果失败: %v\n", err)
 	}
 
@@ -300,7 +299,7 @@ func runProxyServerDOH(t *testing.T) {
 	}
 	var err error
 	// 重新写入测试记录
-	err = writeTestResults3(testResults)
+	err = writeTestResults1(testResults, processManager.GetFile())
 	if err != nil {
 		t.Errorf("更新测试记录失败: %v", err)
 	}
@@ -308,8 +307,8 @@ func runProxyServerDOH(t *testing.T) {
 }
 
 // RunMainDOH 主测试函数
-func RunMainDOH(t *testing.T) {
-	var processManager *ProcessManager = NewProcessManager()
+func RunMainDOH(t *testing.T, logfilename string) {
+	var processManager *ProcessManager = NewProcessManager(logfilename)
 	defer func() {
 
 		// 清理所有进程
@@ -326,7 +325,7 @@ func RunMainDOH(t *testing.T) {
 	// 在goroutine中运行测试
 	go func() {
 		// 运行测试
-		runProxyServerDOH(t)
+		runProxyServerDOH(t, logfilename)
 		resultChan <- 0
 	}()
 
@@ -390,7 +389,7 @@ func RunMainDOH(t *testing.T) {
 		}
 
 		// 写入超时记录
-		if err := writeTestResults3(timeoutMessage); err != nil {
+		if err := writeTestResults1(timeoutMessage, processManager.GetFile()); err != nil {
 			log.Printf("写入超时记录失败: %v\n", err)
 		}
 
@@ -399,38 +398,6 @@ func RunMainDOH(t *testing.T) {
 	}
 }
 
-// writeTestResults 写入测试结果到文件
-func writeTestResults3(results []string) error {
-	// 写入到测试记录.md
-	file, err := os.OpenFile("测试记录.md", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	// 移动到文件末尾
-	_, err = file.Seek(0, io.SeekEnd)
-	if err != nil {
-		return err
-	}
-
-	writer := bufio.NewWriter(file)
-
-	// 写入分隔符
-	_, err = writer.WriteString("\n\n###\n\n")
-	if err != nil {
-		return err
-	}
-
-	// 写入测试结果
-	for _, line := range results {
-		_, err := writer.WriteString(line + "\n")
-		if err != nil {
-			return err
-		}
-	}
-	return writer.Flush()
-}
 func isDOHProxyServerRunning() bool {
 	client := &http.Client{
 		Timeout: 5 * time.Second,

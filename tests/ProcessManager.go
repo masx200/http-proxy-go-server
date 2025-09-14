@@ -15,21 +15,26 @@ import (
 
 // ProcessManager 进程管理器
 type ProcessManager struct {
-	processes []*exec.Cmd
-	mutex     sync.Mutex
-	logFile   *os.File
-	logWriter *bufio.Writer
+	logFilename string
+	processes   []*exec.Cmd
+	mutex       sync.Mutex
+	logFile     *os.File
+	logWriter   *bufio.Writer
+}
+
+func (pm *ProcessManager) GetFile() *os.File {
+	return pm.logFile
 }
 
 // NewProcessManager 创建新的进程管理器
-func NewProcessManager() *ProcessManager {
+func NewProcessManager(logfilename string) *ProcessManager {
 	pm := &ProcessManager{
 		processes: make([]*exec.Cmd, 0),
 	}
 
 	// 初始化日志文件
 	pm.initLogFile()
-
+	pm.logFilename = logfilename
 	return pm
 }
 func (pm *ProcessManager) Command(name string, arg ...string) *exec.Cmd {
@@ -46,7 +51,7 @@ func (pm *ProcessManager) Command(name string, arg ...string) *exec.Cmd {
 // initLogFile 初始化日志文件
 func (pm *ProcessManager) initLogFile() {
 	// 打开或创建日志文件
-	file, err := os.OpenFile("command_execution_log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	file, err := os.OpenFile(pm.logFilename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		// 如果无法打开日志文件，记录到标准错误输出
 		fmt.Fprintf(os.Stderr, "无法打开命令日志文件: %v\n", err)

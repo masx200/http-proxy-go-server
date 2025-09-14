@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"bufio"
+	// "bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -20,9 +20,9 @@ import (
 )
 
 // runWebSockethttpProxy 测试WebSocket和http级联代理服务器
-func runWebSockethttpProxy(t *testing.T) {
+func runWebSockethttpProxy(t *testing.T, logfilename string) {
 	// 使用传入的进程管理器
-	var processManager *ProcessManager = NewProcessManager()
+	var processManager *ProcessManager = NewProcessManager(logfilename)
 	defer func() {
 
 		// 清理所有进程
@@ -310,7 +310,7 @@ func runWebSockethttpProxy(t *testing.T) {
 	testResults = append(testResults, "")
 
 	// 写入测试记录到文件
-	err = WriteTestResults2(testResults)
+	err = writeTestResults1(testResults, processManager.GetFile())
 	if err != nil {
 		t.Errorf("写入测试记录失败: %v", err)
 	}
@@ -410,7 +410,7 @@ func runWebSockethttpProxy(t *testing.T) {
 		}
 
 		// 重新写入测试记录
-		err = WriteTestResults2(testResults)
+		err = writeTestResults1(testResults, processManager.GetFile())
 		if err != nil {
 			t.Errorf("更新测试记录失败: %v", err)
 		}
@@ -445,7 +445,7 @@ func runWebSockethttpProxy(t *testing.T) {
 		}
 
 		// 重新写入测试记录
-		err = WriteTestResults2(testResults)
+		err = writeTestResults1(testResults, processManager.GetFile())
 		if err != nil {
 			t.Errorf("更新测试记录失败: %v", err)
 		}
@@ -496,43 +496,11 @@ func IsPortOccupied2(port int) bool {
 	return false
 }
 
-// WriteTestResults2 写入测试结果到文件
-func WriteTestResults2(results []string) error {
-	// 写入到测试记录.md
-	file, err := os.OpenFile("测试记录.md", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	// 移动到文件末尾
-	_, err = file.Seek(0, io.SeekEnd)
-	if err != nil {
-		return err
-	}
-
-	writer := bufio.NewWriter(file)
-
-	// 写入分隔符
-	_, err = writer.WriteString("\n\n###\n\n")
-	if err != nil {
-		return err
-	}
-
-	// 写入测试结果
-	for _, line := range results {
-		_, err := writer.WriteString(line + "\n")
-		if err != nil {
-			return err
-		}
-	}
-	return writer.Flush()
-}
 
 // RunMainWebSocket 主测试函数
-func RunMainWebSocket(t *testing.T) {
+func RunMainWebSocket(t *testing.T,logfilename string) {
 
-	var processManager *ProcessManager = NewProcessManager()
+	var processManager *ProcessManager = NewProcessManager(logfilename)
 	defer func() {
 
 		// 清理所有进程
@@ -549,7 +517,7 @@ func RunMainWebSocket(t *testing.T) {
 	// 在goroutine中运行测试
 	go func() {
 		// 运行测试，并传递进程管理器
-		runWebSockethttpProxy(t)
+		runWebSockethttpProxy(t, logfilename)
 		resultChan <- true
 	}()
 
@@ -591,7 +559,7 @@ func RunMainWebSocket(t *testing.T) {
 		}
 
 		// 写入超时记录
-		if err := WriteTestResults2(timeoutMessage); err != nil {
+		if err := writeTestResults1(timeoutMessage, processManager.GetFile()); err != nil {
 			log.Printf("写入超时记录失败: %v\n", err)
 		}
 
