@@ -8,7 +8,7 @@ import (
 
 // writeTestResults1 写入测试结果到文件
 func writeTestResults1(results []string, file *os.File) error {
-	// 写入到测试记录.md
+	// 写入到测试记录.log
 
 	var err error
 	// 移动到文件末尾
