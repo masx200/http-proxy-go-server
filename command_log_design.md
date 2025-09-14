@@ -34,10 +34,10 @@ exec.Command 命令添加统一的日志记录功能。
 1. `go build -o main.exe ../cmd/main.go` - 编译代理服务器
 2. `./main.exe -mode server -protocol websocket -addr :8080` - 启动 WebSocket
    服务器
-3. `./main.exe -mode server -protocol socks5 -addr :10810 -upstream-type websocket -upstream-address ws://localhost:8080` -
+3. `./main.exe -mode server -protocol socks5 -addr :18080 -upstream-type websocket -upstream-address ws://localhost:8080` -
    启动 SOCKS5 服务器
-4. `curl -v -I http://www.baidu.com -x socks5://localhost:10810` - 测试 1
-5. `curl -v -I https://www.baidu.com -x socks5://localhost:10810` - 测试 2
+4. `curl -v -I http://www.baidu.com -x socks5://localhost:18080` - 测试 1
+5. `curl -v -I https://www.baidu.com -x socks5://localhost:18080` - 测试 2
 6. `taskkill /F /IM go.exe` - 终止 go 进程
 7. ProcessManager.go 中的 `taskkill /F /T /PID ...` - 终止子进程
 

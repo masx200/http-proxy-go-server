@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-
 	// "os/exec"
 	"runtime"
 	"strings"
@@ -63,8 +62,8 @@ func runWebSockethttpProxy(t *testing.T) {
 	if IsPortOccupied2(18080) {
 		t.Fatal("端口18080已被占用，请先停止占用该端口的进程")
 	}
-	if IsPortOccupied2(10810) {
-		t.Fatal("端口10810已被占用，请先停止占用该端口的进程")
+	if IsPortOccupied2(18080) {
+		t.Fatal("端口18080已被占用，请先停止占用该端口的进程")
 	}
 
 	// 编译代理服务器
@@ -102,10 +101,10 @@ func runWebSockethttpProxy(t *testing.T) {
 	// 启动WebSocket服务器（作为上游）
 	testResults = append(testResults, "## 2. 启动WebSocket服务器（上游）")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `./socks5-websocket-proxy-golang.exe -mode server -protocol websocket -addr :18080`")
+	testResults = append(testResults, "执行命令: `./socks5-websocket-proxy-golang.exe -mode server -protocol websocket -addr :28081`")
 	testResults = append(testResults, "")
 
-	websocketCmd := processManager.Command("./socks5-websocket-proxy-golang.exe", "-mode", "server", "-protocol", "websocket", "-addr", ":18080")
+	websocketCmd := processManager.Command("./socks5-websocket-proxy-golang.exe", "-mode", "server", "-protocol", "websocket", "-addr", ":28081")
 	websocketCmd.Stdout = websocketWriter
 	websocketCmd.Stderr = websocketWriter
 
@@ -135,7 +134,7 @@ func runWebSockethttpProxy(t *testing.T) {
 	testResults = append(testResults, "等待WebSocket服务器启动...")
 	websocketStarted := false
 	for i := 0; i < 10; i++ {
-		if IsPortOccupied2(18080) {
+		if IsPortOccupied2(28081) {
 			websocketStarted = true
 			break
 		}
@@ -153,11 +152,11 @@ func runWebSockethttpProxy(t *testing.T) {
 	// 启动http服务器（设置upstream为WebSocket服务器）
 	testResults = append(testResults, "## 3. 启动http服务器（下游）")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `./main.exe  -port 10810 -upstream-type websocket -upstream-address ws://localhost:18080`")
+	testResults = append(testResults, "执行命令: `./main.exe  -port 18080 -upstream-type websocket -upstream-address ws://localhost:28081`")
 	testResults = append(testResults, "")
 
-	httpCmd := processManager.Command("./main.exe", "-port", "10810",
-		"-upstream-type", "websocket", "-upstream-address", "ws://localhost:18080")
+	httpCmd := processManager.Command("./main.exe", "-port", "18080",
+		"-upstream-type", "websocket", "-upstream-address", "ws://localhost:28081")
 	httpCmd.Stdout = httpWriter
 	httpCmd.Stderr = httpWriter
 
@@ -212,10 +211,10 @@ func runWebSockethttpProxy(t *testing.T) {
 	// 测试HTTP代理
 	testResults = append(testResults, "### 测试1: HTTP代理通过级联")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `curl -v -I http://www.baidu.com -x http://localhost:10810`")
+	testResults = append(testResults, "执行命令: `curl -v -I http://www.baidu.com -x http://localhost:18080`")
 	testResults = append(testResults, "")
 
-	curlCmd1 := processManager.Command("curl", "-v", "-I", "http://www.baidu.com", "-x", "http://localhost:10810")
+	curlCmd1 := processManager.Command("curl", "-v", "-I", "http://www.baidu.com", "-x", "http://localhost:18080")
 	var curlOutput1 bytes.Buffer
 	curlCmd1.Stdout = &curlOutput1
 	curlCmd1.Stderr = &curlOutput1
@@ -255,10 +254,10 @@ func runWebSockethttpProxy(t *testing.T) {
 	// 测试HTTPS代理
 	testResults = append(testResults, "### 测试2: HTTPS代理通过级联")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `curl -v -I https://www.baidu.com -x http://localhost:10810`")
+	testResults = append(testResults, "执行命令: `curl -v -I https://www.baidu.com -x http://localhost:18080`")
 	testResults = append(testResults, "")
 
-	curlCmd2 := processManager.Command("curl", "-v", "-I", "https://www.baidu.com", "-x", "http://localhost:10810")
+	curlCmd2 := processManager.Command("curl", "-v", "-I", "https://www.baidu.com", "-x", "http://localhost:18080")
 	var curlOutput2 bytes.Buffer
 	curlCmd2.Stdout = &curlOutput2
 	curlCmd2.Stderr = &curlOutput2
@@ -396,10 +395,10 @@ func runWebSockethttpProxy(t *testing.T) {
 		} else {
 			testResults = append(testResults, "❌ 端口18080仍被占用")
 		}
-		if !IsPortOccupied2(10810) {
-			testResults = append(testResults, "✅ 端口10810已成功释放")
+		if !IsPortOccupied2(18080) {
+			testResults = append(testResults, "✅ 端口18080已成功释放")
 		} else {
-			testResults = append(testResults, "❌ 端口10810仍被占用")
+			testResults = append(testResults, "❌ 端口18080仍被占用")
 		}
 
 		// 重新写入测试记录
@@ -458,7 +457,7 @@ func ishttpProxyRunning() bool {
 	}
 
 	// 设置代理
-	proxyURL, err := url.Parse("http://localhost:10810")
+	proxyURL, err := url.Parse("http://localhost:18080")
 	if err != nil {
 		return false
 	}

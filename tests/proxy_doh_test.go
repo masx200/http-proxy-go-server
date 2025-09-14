@@ -443,7 +443,7 @@ func isDOHProxyServerRunning() bool {
 	}
 
 	// 设置代理
-	proxyURL, err := url.Parse("http://localhost:10810")
+	proxyURL, err := url.Parse("http://localhost:18080")
 	if err != nil {
 		return false
 	}
