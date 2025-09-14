@@ -2,11 +2,13 @@ module github.com/masx200/http-proxy-go-server
 
 go 1.24.1
 
+replace github.com/quic-go/quic-go => github.com/quic-go/quic-go v0.44.0
+
 require github.com/gin-gonic/gin v1.10.1
 
 require (
-	github.com/masx200/http3-reverse-proxy-server-experiment v0.0.0-20250913161719-e129640db3f5
-	github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250913044213-be2447ea5843
+	github.com/masx200/http3-reverse-proxy-server-experiment v0.0.0-20250913163641-e00608f1326e
+	github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250914082527-d573fbea1a68
 	github.com/tantalor93/doq-go v0.12.0
 )
 
