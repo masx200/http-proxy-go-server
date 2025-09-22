@@ -4,7 +4,7 @@ go 1.24.1
 
 replace github.com/quic-go/quic-go => github.com/quic-go/quic-go v0.44.0
 
-require github.com/gin-gonic/gin v1.10.1
+require github.com/gin-gonic/gin v1.11.0
 
 require (
 	github.com/masx200/http3-reverse-proxy-server-experiment v0.0.0-20250913163641-e00608f1326e
@@ -18,14 +18,13 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/ebi-yade/altsvc-go v0.1.1 // indirect
 	github.com/fanjindong/go-cache v0.0.6 // indirect
-	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
+	github.com/goccy/go-yaml v1.18.0 // indirect
 	github.com/google/pprof v0.0.0-20250903194437-c28834ac2320 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/onsi/ginkgo/v2 v2.25.3 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
-	github.com/quic-go/quic-go v0.44.0 // indirect
-	github.com/rogpeppe/go-internal v1.14.1 // indirect
+	github.com/quic-go/quic-go v0.54.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.uber.org/mock v0.6.0 // indirect
 	golang.org/x/exp v0.0.0-20250911091902-df9299821621 // indirect
@@ -61,5 +60,4 @@ require (
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
