@@ -26,7 +26,7 @@ import (
 	"github.com/masx200/http-proxy-go-server/utils"
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	"github.com/miekg/dns"
-	doq "github.com/tantalor93/doq-go/doq"
+	doq "github.com/masx200/doq-go/doq"
 )
 
 // DNSQueryHTTPS 执行DNS查询以获取HTTPS服务记录。

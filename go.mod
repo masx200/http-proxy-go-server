@@ -2,14 +2,18 @@ module github.com/masx200/http-proxy-go-server
 
 go 1.24.1
 
-replace github.com/quic-go/quic-go => github.com/quic-go/quic-go v0.44.0
+replace github.com/masx200/doq-go => github.com/masx200/doq-go v0.55.0
+
+replace github.com/tantalor93/doq-go => github.com/masx200/doq-go v0.55.0
+
+replace github.com/quic-go/quic-go => github.com/quic-go/quic-go v0.55.0
 
 require github.com/gin-gonic/gin v1.10.1
 
 require (
 	github.com/masx200/http3-reverse-proxy-server-experiment v0.0.0-20250913163641-e00608f1326e
 	github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20250914090943-78540b22deee
-	github.com/tantalor93/doq-go v0.12.0
+	github.com/masx200/doq-go v0.12.0
 )
 
 require github.com/bytedance/gopkg v0.1.3 // indirect
@@ -24,7 +28,7 @@ require (
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/onsi/ginkgo/v2 v2.25.3 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
-	github.com/quic-go/quic-go v0.44.0 // indirect
+	github.com/quic-go/quic-go v0.55.0 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.uber.org/mock v0.6.0 // indirect

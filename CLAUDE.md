@@ -194,7 +194,7 @@ Key external dependencies:
 
 - `github.com/gin-gonic/gin`: HTTP web framework
 - `github.com/masx200/socks5-websocket-proxy-golang`: SOCKS5/WebSocket client
-- `github.com/tantalor93/doq-go`: DoH client
+- `github.com/masx200/doq-go`: DoH client
 - `github.com/miekg/dns`: DNS library
 - `github.com/gorilla/websocket`: WebSocket library
 
