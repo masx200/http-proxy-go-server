@@ -38,8 +38,8 @@ func NewCachingResolver(original NameResolver, cache *DNSCache) *CachingResolver
 // Resolve 使用缓存解析域名到IP
 func (c *CachingResolver) Resolve(ctx context.Context, name string) (context.Context, net.IP, error) {
 	// 尝试从缓存获取
-	cacheKey := fmt.Sprintf("resolve:%s", name)
-	if cached, found := c.cache.Get(cacheKey); found {
+	cacheType := "resolve"
+	if cached, found := c.cache.Get(cacheType, name); found {
 		log.Printf("DNS cache hit for resolve: %s", name)
 		if ip, ok := cached.(net.IP); ok {
 			return ctx, ip, nil
@@ -53,7 +53,7 @@ func (c *CachingResolver) Resolve(ctx context.Context, name string) (context.Con
 	}
 
 	// 存储到缓存，使用默认TTL
-	c.cache.Set(cacheKey, ip)
+	c.cache.Set(cacheType, name, ip, 0)
 	log.Printf("DNS cache set for resolve: %s -> %s", name, ip)
 
 	return resolvedCtx, ip, nil
@@ -62,8 +62,9 @@ func (c *CachingResolver) Resolve(ctx context.Context, name string) (context.Con
 // LookupIP 使用缓存查找IP地址
 func (c *CachingResolver) LookupIP(ctx context.Context, network, host string) ([]net.IP, error) {
 	// 尝试从缓存获取
-	cacheKey := fmt.Sprintf("lookupip:%s:%s", network, host)
-	if cached, found := c.cache.Get(cacheKey); found {
+	cacheType := "lookupip"
+	cacheKey := fmt.Sprintf("%s:%s", network, host)
+	if cached, found := c.cache.Get(cacheType, cacheKey); found {
 		log.Printf("DNS cache hit for lookupip: %s (%s)", host, network)
 		if ips, ok := cached.([]net.IP); ok {
 			return ips, nil
@@ -77,7 +78,7 @@ func (c *CachingResolver) LookupIP(ctx context.Context, network, host string) ([
 	}
 
 	// 存储到缓存，使用默认TTL
-	c.cache.Set(cacheKey, ips)
+	c.cache.Set(cacheType, cacheKey, ips, 0)
 	log.Printf("DNS cache set for lookupip: %s (%s) -> %v", host, network, ips)
 
 	return ips, nil

@@ -499,36 +499,7 @@ func main() {
 	)
 	flag.Parse()
 
-	// 设置信号处理
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
-
-	// 创建上下文，用于优雅关闭
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// 启动信号处理goroutine
-	go func() {
-		sig := <-sigChan
-		log.Printf("收到信号: %v，正在优雅关闭服务器...\n", sig)
-		cancel()
-
-		// 关闭DNS缓存
-		if dnsCache != nil {
-			log.Println("正在关闭DNS缓存...")
-			dnsCache.Close()
-			log.Println("DNS缓存已关闭")
-		}
-
-		// 给予一些时间来完成清理工作
-		time.Sleep(100 * time.Millisecond)
-		log.Println("代理服务器已关闭")
-		os.Exit(0)
-	}()
-
-	// 使用ctx变量以避免未使用错误
-	_ = ctx
-
+	
 	log.Println("代理服务器启动中...")
 
 	// 如果指定了配置文件，则从配置文件读取参数
@@ -601,7 +572,6 @@ func main() {
 
 	// 解析DNS缓存配置
 	var dnsCache *dnscache.DNSCache
-	var err error
 	if *cacheEnabled {
 		// 解析TTL
 		cacheTTLDuration, err := time.ParseDuration(*cacheTTL)
@@ -636,6 +606,19 @@ func main() {
 	} else {
 		log.Println("DNS缓存已禁用")
 	}
+
+	// 添加信号处理
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		<-c
+		log.Println("收到退出信号，正在关闭服务器...")
+		if dnsCache != nil {
+			dnsCache.Close()
+			log.Println("DNS缓存已关闭")
+		}
+		os.Exit(0)
+	}()
 
 	var proxyoptions = options.ProxyOptions{}
 

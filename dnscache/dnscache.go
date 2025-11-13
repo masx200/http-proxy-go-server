@@ -223,7 +223,9 @@ func (dc *DNSCache) Save() error {
 
 	// 只保存未过期的项
 	for k, item := range items {
-		if item.Expiration.After(now) {
+		// go-cache 的 Expiration 是 int64 类型的 Unix 时间戳，或者 0 表示永不过期
+		if item.Expiration == 0 || item.Expiration > now.Unix() {
+			expirationTime := time.Unix(item.Expiration, 0)
 			// 特殊处理IP列表，确保序列化格式一致
 			if ips, ok := item.Object.([]net.IP); ok {
 				var ipsStr []string
@@ -232,12 +234,12 @@ func (dc *DNSCache) Save() error {
 				}
 				validItems[k] = cacheItem{
 					Value:      ipsStr,
-					Expiration: item.Expiration,
+					Expiration: expirationTime,
 				}
 			} else {
 				validItems[k] = cacheItem{
 					Value:      item.Object,
-					Expiration: item.Expiration,
+					Expiration: expirationTime,
 				}
 			}
 		}
