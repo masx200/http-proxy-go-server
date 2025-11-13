@@ -6,22 +6,26 @@
 
 ## 命令行参数
 
-| 参数                 | 类型   | 默认值    | 描述                                    |
-| -------------------- | ------ | --------- | --------------------------------------- |
-| `-config`            | string | -         | JSON配置文件路径                        |
-| `-hostname`          | string | `0.0.0.0` | 服务器绑定的主机名                      |
-| `-port`              | int    | `8080`    | TCP监听端口                             |
-| `-username`          | string | -         | 代理服务器用户名                        |
-| `-password`          | string | -         | 代理服务器密码                          |
-| `-server_cert`       | string | -         | TLS服务器证书文件路径                   |
-| `-server_key`        | string | -         | TLS服务器私钥文件路径                   |
-| `-dohurl`            | value  | -         | DOH服务器URL（可重复）                  |
-| `-dohip`             | value  | -         | DOH服务器IP地址（可重复）               |
-| `-dohalpn`           | value  | -         | DOH ALPN协议（可重复，支持h2和h3）      |
-| `-upstream-type`     | string | -         | 上游代理类型（websocket、socks5、http） |
-| `-upstream-address`  | string | -         | 上游代理地址                            |
-| `-upstream-username` | string | -         | 上游代理用户名                          |
-| `-upstream-password` | string | -         | 上游代理密码                            |
+| 参数                   | 类型   | 默认值             | 描述                                    |
+| ---------------------- | ------ | ------------------ | --------------------------------------- |
+| `-config`              | string | -                  | JSON配置文件路径                        |
+| `-hostname`            | string | `0.0.0.0`          | 服务器绑定的主机名                      |
+| `-port`                | int    | `8080`             | TCP监听端口                             |
+| `-username`            | string | -                  | 代理服务器用户名                        |
+| `-password`            | string | -                  | 代理服务器密码                          |
+| `-server_cert`         | string | -                  | TLS服务器证书文件路径                   |
+| `-server_key`          | string | -                  | TLS服务器私钥文件路径                   |
+| `-dohurl`              | value  | -                  | DOH服务器URL（可重复）                  |
+| `-dohip`               | value  | -                  | DOH服务器IP地址（可重复）               |
+| `-dohalpn`             | value  | -                  | DOH ALPN协议（可重复，支持h2和h3）      |
+| `-upstream-type`       | string | -                  | 上游代理类型（websocket、socks5、http） |
+| `-upstream-address`    | string | -                  | 上游代理地址                            |
+| `-upstream-username`   | string | -                  | 上游代理用户名                          |
+| `-upstream-password`   | string | -                  | 上游代理密码                            |
+| `-cache-enabled`       | bool   | `true`             | 启用DNS缓存                             |
+| `-cache-file`          | string | `./dns_cache.json` | DNS缓存文件路径                         |
+| `-cache-ttl`           | string | `10m`              | DNS缓存TTL（生存时间）                  |
+| `-cache-save-interval` | string | `30s`              | DNS缓存保存间隔                         |
 
 1. `-config string`：指定 JSON 配置文件路径，可以通过配置文件设置所有参数。
 
@@ -54,11 +58,23 @@
 
 11. `-username string`：设置访问代理服务器所需的用户名，同样用于基本身份验证。
 
+12. `-cache-enabled`：启用或禁用DNS缓存功能，默认为启用。启用后可以显著提高DNS解析性能并减少对外部DNS服务器的请求次数。
+
+13. `-cache-file string`：指定DNS缓存文件的存储路径，默认为
+    "./dns_cache.json"。缓存会在程序启动时自动加载，在运行时定期保存，并在程序关闭时保存最新状态。
+
+14. `-cache-ttl string`：设置DNS缓存的TTL（生存时间），默认为
+    "10m"（10分钟）。支持的时间格式包括：5m、10m、1h 等。
+
+15. `-cache-save-interval string`：设置DNS缓存的自动保存间隔，默认为
+    "30s"（30秒）。系统会定期将缓存保存到文件中，以防止数据丢失。
+
 总结来说，`http-proxy-go-server` 提供了一个功能丰富的代理服务器，支持：
 
 - 基本认证和 TLS 加密
 - DOH (DNS over HTTPS) 支持
 - WebSocket、SOCKS5 和 HTTP 上游代理
+- **DNS 缓存功能** - 提高DNS解析性能，减少外部DNS请求
 - 灵活的配置方式（命令行参数和 JSON 配置文件）
   用户可以根据需要调整监听地址、端口、认证凭据、上游代理以及是否启用加密通信等配置项。
 
@@ -647,6 +663,108 @@ HTTP 代理支持以下协议前缀：
 - 需要考虑连接复用和池化管理以提高性能
 - 确保 HTTP 代理能够正确处理 HTTP/HTTPS 请求的转发
 - 用户名密码可以通过 URL 或命令行参数指定
+
+## DNS 缓存功能
+
+### 功能概述
+
+`http-proxy-go-server`
+现已集成智能DNS缓存功能，显著提高DNS解析性能并减少对外部DNS服务器的请求频率。该功能使用
+PatrickMN/go-cache 库实现，具有以下特点：
+
+- **内存缓存**：高速的内存DNS缓存，默认TTL为10分钟
+- **文件持久化**：缓存自动保存到文件，程序重启后可恢复
+- **原子操作**：使用临时文件确保缓存数据完整性
+- **定期保存**：后台定期保存缓存，防止数据丢失
+- **优雅关闭**：程序退出时自动保存最新缓存状态
+
+### 核心特性
+
+#### 1. 高性能缓存
+
+- 支持 IPv4 和 IPv6 地址缓存
+- 智能域名标准化处理
+- 支持多种DNS记录类型（resolve, lookupip）
+- 线程安全的并发操作
+
+#### 2. 文件持久化
+
+- JSON格式的缓存文件，便于调试和查看
+- 自动过滤过期缓存项
+- 原子写入操作，避免数据损坏
+- 自动创建缓存目录
+
+#### 3. 灵活配置
+
+- 可通过命令行参数自定义缓存行为
+- 支持完全禁用缓存功能
+- 可调整TTL和保存间隔
+
+### 命令行配置
+
+```bash
+# 启用DNS缓存（默认）
+go run ./cmd/main.go -cache-enabled
+
+# 自定义缓存文件路径
+go run ./cmd/main.go -cache-file /var/cache/dns_cache.json
+
+# 设置缓存TTL为5分钟
+go run ./cmd/main.go -cache-ttl 5m
+
+# 设置缓存保存间隔为1分钟
+go run ./cmd/main.go -cache-save-interval 1m
+
+# 禁用DNS缓存
+go run ./cmd/main.go -cache-enabled=false
+```
+
+### 配置文件支持
+
+当前版本的DNS缓存主要通过命令行参数配置，未来版本将添加JSON配置文件支持。
+
+### 缓存文件格式
+
+DNS缓存以JSON格式存储，示例如下：
+
+```json
+{
+  "RESOLVE:example.com": {
+    "value": "93.184.216.34",
+    "expiration": "2024-01-15T10:30:00Z"
+  },
+  "LOOKUPIP:tcp:google.com": {
+    "value": ["142.250.191.142", "142.250.191.78"],
+    "expiration": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+### 性能优化
+
+DNS缓存功能能够带来以下性能提升：
+
+1. **减少DNS查询延迟**：缓存的域名解析几乎是瞬时响应
+2. **降低网络负载**：减少对外部DNS服务器的请求
+3. **提高连接建立速度**：更快的域名解析意味着更快的服务器连接
+4. **改善DoH性能**：特别在使用DNS over HTTPS时效果明显
+
+### 监控和调试
+
+程序运行时会输出DNS缓存相关的日志信息：
+
+```
+DNS缓存已启用，文件: ./dns_cache.json, TTL: 10m0s
+DNS cache hit for resolve: example.com
+DNS cache set for lookupip: google.com (tcp) -> [142.250.191.142 142.250.191.78]
+```
+
+### 注意事项
+
+1. **缓存失效**：域名IP地址变更时，需要等待TTL过期或重启程序
+2. **文件权限**：确保程序对缓存文件和目录有读写权限
+3. **磁盘空间**：长期运行可能产生较大的缓存文件，建议定期清理
+4. **隐私考虑**：缓存文件包含DNS查询历史，注意文件安全性
 
 ## 测试项目
 
