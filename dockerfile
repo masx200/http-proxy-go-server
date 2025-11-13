@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 
 
 
-from docker.cnb.cool/masx200/docker_mirror/http-proxy-go-server:2025-09-03-16-34-08
+from docker.cnb.cool/masx200/docker_mirror/http-proxy-go-server:2.6.0
 
 
 workdir /app
