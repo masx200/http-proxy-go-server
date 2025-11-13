@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
-	go_socks5 "gitee.com/masx200/go-socks5"
 	"github.com/masx200/http-proxy-go-server/doh"
 	"github.com/masx200/http-proxy-go-server/hosts"
 	"github.com/masx200/http-proxy-go-server/options"
@@ -20,187 +21,105 @@ type NameResolver interface {
 	LookupIP(ctx context.Context, network, host string) ([]net.IP, error)
 }
 
-// CachingResolver 包装现有的NameResolver以添加缓存功能
+// CachingResolver 包装器，为DNS解析添加缓存功能
 type CachingResolver struct {
-	underlying NameResolver
-	cache      *DNSCache
-	enabled    bool
+	original NameResolver
+	cache    *DNSCache
 }
 
-// NewCachingResolver 创建带有缓存功能的解析器包装器
-func NewCachingResolver(underlying NameResolver, cache *DNSCache) *CachingResolver {
+// NewCachingResolver 创建一个新的带缓存的解析器
+func NewCachingResolver(original NameResolver, cache *DNSCache) *CachingResolver {
 	return &CachingResolver{
-		underlying: underlying,
-		cache:      cache,
-		enabled:    cache != nil && cache.ItemCount() >= 0, // 检查cache是否有效
+		original: original,
+		cache:    cache,
 	}
 }
 
-// Resolve 实现NameResolver接口，返回单个IP地址
+// Resolve 使用缓存解析域名到IP
 func (c *CachingResolver) Resolve(ctx context.Context, name string) (context.Context, net.IP, error) {
-	if !c.enabled {
-		// 如果缓存未启用，直接使用底层解析器
-		return c.underlying.Resolve(ctx, name)
-	}
-
 	// 尝试从缓存获取
-	if ip, found := c.cache.GetIP("A", name); found {
-		return ctx, ip, nil
+	cacheKey := fmt.Sprintf("resolve:%s", name)
+	if cached, found := c.cache.Get(cacheKey); found {
+		log.Printf("DNS cache hit for resolve: %s", name)
+		if ip, ok := cached.(net.IP); ok {
+			return ctx, ip, nil
+		}
 	}
 
-	// 缓存未命中，使用底层解析器
-	resolvedCtx, ip, err := c.underlying.Resolve(ctx, name)
+	// 缓存未命中，使用原始解析器
+	resolvedCtx, ip, err := c.original.Resolve(ctx, name)
 	if err != nil {
-		return resolvedCtx, nil, err
+		return resolvedCtx, ip, err
 	}
 
-	// 将结果存入缓存
-	if ip != nil {
-		c.cache.SetIP("A", name, ip, 0) // 使用默认TTL
-	}
+	// 存储到缓存，使用默认TTL
+	c.cache.Set(cacheKey, ip)
+	log.Printf("DNS cache set for resolve: %s -> %s", name, ip)
 
 	return resolvedCtx, ip, nil
 }
 
-// LookupIP 实现NameResolver接口，返回IP地址列表
+// LookupIP 使用缓存查找IP地址
 func (c *CachingResolver) LookupIP(ctx context.Context, network, host string) ([]net.IP, error) {
-	if !c.enabled {
-		// 如果缓存未启用，直接使用底层解析器
-		return c.underlying.LookupIP(ctx, network, host)
-	}
-
-	// 确定DNS记录类型
-	dnsType := "A"
-	if network == "tcp6" || network == "udp6" || network == "ip6" {
-		dnsType = "AAAA"
-	} else if network == "tcp4" || network == "udp4" || network == "ip4" {
-		dnsType = "A"
-	} else if network == "" {
-		// 如果网络类型为空，同时尝试A和AAAA记录
-		return c.lookupIPBoth(ctx, host)
-	}
-
 	// 尝试从缓存获取
-	if ips, found := c.cache.GetIPs(dnsType, host); found {
-		return ips, nil
+	cacheKey := fmt.Sprintf("lookupip:%s:%s", network, host)
+	if cached, found := c.cache.Get(cacheKey); found {
+		log.Printf("DNS cache hit for lookupip: %s (%s)", host, network)
+		if ips, ok := cached.([]net.IP); ok {
+			return ips, nil
+		}
 	}
 
-	// 缓存未命中，使用底层解析器
-	ips, err := c.underlying.LookupIP(ctx, network, host)
+	// 缓存未命中，使用原始解析器
+	ips, err := c.original.LookupIP(ctx, network, host)
 	if err != nil {
 		return nil, err
 	}
 
-	// 将结果存入缓存
-	if len(ips) > 0 {
-		c.cache.SetIPs(dnsType, host, ips, 0) // 使用默认TTL
-	}
+	// 存储到缓存，使用默认TTL
+	c.cache.Set(cacheKey, ips)
+	log.Printf("DNS cache set for lookupip: %s (%s) -> %v", host, network, ips)
 
 	return ips, nil
 }
 
-// lookupIPBoth 同时查找A和AAAA记录
-func (c *CachingResolver) lookupIPBoth(ctx context.Context, host string) ([]net.IP, error) {
-	var allIPs []net.IP
+// CreateHostsResolverCached 创建带缓存的Hosts解析器
+func CreateHostsResolverCached(dnsCache *DNSCache) NameResolver {
+	original := &HostsResolver{}
+	return NewCachingResolver(original, dnsCache)
+}
 
-	// 尝试获取A记录
-	if aIPs, found := c.cache.GetIPs("A", host); found {
-		allIPs = append(allIPs, aIPs...)
-	} else {
-		// 缓存未命中，使用底层解析器
-		if ips, err := c.underlying.LookupIP(ctx, "tcp4", host); err == nil && len(ips) > 0 {
-			allIPs = append(allIPs, ips...)
-			c.cache.SetIPs("A", host, ips, 0)
-		}
+// CreateDOHResolverCached 创建带缓存的DOH解析器
+func CreateDOHResolverCached(proxyoptions options.ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
+	original := &DOHResolver{
+		proxyoptions:           proxyoptions,
+		tranportConfigurations: tranportConfigurations,
 	}
+	return NewCachingResolver(original, dnsCache)
+}
 
-	// 尝试获取AAAA记录
-	if aaaaIPs, found := c.cache.GetIPs("AAAA", host); found {
-		allIPs = append(allIPs, aaaaIPs...)
-	} else {
-		// 缓存未命中，使用底层解析器
-		if ips, err := c.underlying.LookupIP(ctx, "tcp6", host); err == nil && len(ips) > 0 {
-			allIPs = append(allIPs, ips...)
-			c.cache.SetIPs("AAAA", host, ips, 0)
-		}
+// CreateDOH3ResolverCached 创建带缓存的DOH3解析器
+func CreateDOH3ResolverCached(proxyoptions options.ProxyOptions, dnsCache *DNSCache) NameResolver {
+	original := &DOH3Resolver{
+		proxyoptions: proxyoptions,
 	}
+	return NewCachingResolver(original, dnsCache)
+}
 
-	if len(allIPs) == 0 {
-		return nil, fmt.Errorf("no IP addresses found for %s", host)
+// CreateHostsAndDohResolverCached 创建带缓存的Hosts+DOH解析器
+func CreateHostsAndDohResolverCached(proxyoptions options.ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
+	original := &HostsAndDohResolver{
+		proxyoptions:           proxyoptions,
+		tranportConfigurations: tranportConfigurations,
 	}
-
-	return allIPs, nil
+	return NewCachingResolver(original, dnsCache)
 }
 
-// GetUnderlyingResolver 获取底层解析器（用于调试）
-func (c *CachingResolver) GetUnderlyingResolver() NameResolver {
-	return c.underlying
-}
+// 以下是从resolver包移过来的解析器实现
 
-// GetCache 获取缓存实例（用于统计）
-func (c *CachingResolver) GetCache() *DNSCache {
-	return c.cache
-}
+type HostsResolver struct{}
 
-// IsEnabled 检查缓存是否启用
-func (c *CachingResolver) IsEnabled() bool {
-	return c.enabled
-}
-
-// Invalidate 使特定域名的缓存失效
-func (c *CachingResolver) Invalidate(domain string) {
-	if !c.enabled {
-		return
-	}
-
-	c.cache.Delete("A", domain)
-	c.cache.Delete("AAAA", domain)
-	c.cache.Delete("CNAME", domain)
-	c.cache.Delete("MX", domain)
-	c.cache.Delete("TXT", domain)
-	c.cache.Delete("NS", domain)
-}
-
-// InvalidateAll 使所有缓存失效
-func (c *CachingResolver) InvalidateAll() {
-	if !c.enabled {
-		return
-	}
-
-	c.cache.Flush()
-}
-
-// GetStats 获取缓存统计信息
-func (c *CachingResolver) GetStats() map[string]interface{} {
-	if !c.enabled {
-		return map[string]interface{}{
-			"enabled": false,
-		}
-	}
-
-	stats := c.cache.Stats()
-	stats["underlying_resolver_type"] = fmt.Sprintf("%T", c.underlying)
-	return stats
-}
-
-// SetCustomTTL 为特定域名和类型设置自定义TTL
-func (c *CachingResolver) SetCustomTTL(dnsType, domain string, ttl time.Duration) {
-	if !c.enabled {
-		return
-	}
-
-	if ips, found := c.cache.GetIPs(dnsType, domain); found {
-		c.cache.SetIPs(dnsType, domain, ips, ttl)
-	}
-}
-
-// ===== 缓存解析器创建函数 =====
-
-// HostsResolver 仅使用hosts文件解析
-type HostsResolver struct {
-}
-
-// LookupIP implements NameResolver
+// LookupIP implements NameResolver.
 func (h *HostsResolver) LookupIP(ctx context.Context, network string, host string) ([]net.IP, error) {
 	// 使用 hosts 包解析域名
 	ips, err := hosts.ResolveDomainToIPsWithHosts(host)
@@ -210,7 +129,7 @@ func (h *HostsResolver) LookupIP(ctx context.Context, network string, host strin
 	return ips, nil
 }
 
-// Resolve implements NameResolver
+// Resolve implements NameResolver.
 func (h *HostsResolver) Resolve(ctx context.Context, name string) (context.Context, net.IP, error) {
 	// 使用 hosts 包解析域名
 	ips, err := hosts.ResolveDomainToIPsWithHosts(name)
@@ -224,20 +143,19 @@ func (h *HostsResolver) Resolve(ctx context.Context, name string) (context.Conte
 	return ctx, ips[0], nil
 }
 
-// DOHResolver 使用DNS over HTTPS解析
 type DOHResolver struct {
 	proxyoptions           options.ProxyOptions
 	tranportConfigurations []func(*http.Transport) *http.Transport
 }
 
-// LookupIP implements NameResolver
+// LookupIP implements NameResolver.
 func (d *DOHResolver) LookupIP(ctx context.Context, network string, host string) ([]net.IP, error) {
 	if len(d.proxyoptions) == 0 {
 		return nil, fmt.Errorf("no proxy options provided for DOH resolver")
 	}
 
 	// 随机打乱 proxyoptions 顺序
-	options.Shuffle(d.proxyoptions)
+	Shuffle(d.proxyoptions)
 
 	var allErrors []error
 	for _, opt := range d.proxyoptions {
@@ -261,7 +179,7 @@ func (d *DOHResolver) LookupIP(ctx context.Context, network string, host string)
 	return nil, fmt.Errorf("no IP addresses found for domain %s", host)
 }
 
-// Resolve implements NameResolver
+// Resolve implements NameResolver.
 func (d *DOHResolver) Resolve(ctx context.Context, name string) (context.Context, net.IP, error) {
 	ips, err := d.LookupIP(ctx, "", name)
 	if err != nil {
@@ -274,19 +192,18 @@ func (d *DOHResolver) Resolve(ctx context.Context, name string) (context.Context
 	return ctx, ips[0], nil
 }
 
-// DOH3Resolver 使用DNS over HTTPS HTTP/3解析
 type DOH3Resolver struct {
 	proxyoptions options.ProxyOptions
 }
 
-// LookupIP implements NameResolver
+// LookupIP implements NameResolver.
 func (d *DOH3Resolver) LookupIP(ctx context.Context, network string, host string) ([]net.IP, error) {
 	if len(d.proxyoptions) == 0 {
 		return nil, fmt.Errorf("no proxy options provided for DOH3 resolver")
 	}
 
 	// 随机打乱 proxyoptions 顺序
-	options.Shuffle(d.proxyoptions)
+	Shuffle(d.proxyoptions)
 
 	var allErrors []error
 	for _, opt := range d.proxyoptions {
@@ -317,7 +234,7 @@ func (d *DOH3Resolver) LookupIP(ctx context.Context, network string, host string
 	return nil, fmt.Errorf("no IP addresses found for domain %s", host)
 }
 
-// Resolve implements NameResolver
+// Resolve implements NameResolver.
 func (d *DOH3Resolver) Resolve(ctx context.Context, name string) (context.Context, net.IP, error) {
 	ips, err := d.LookupIP(ctx, "", name)
 	if err != nil {
@@ -330,13 +247,12 @@ func (d *DOH3Resolver) Resolve(ctx context.Context, name string) (context.Contex
 	return ctx, ips[0], nil
 }
 
-// HostsAndDohResolver 组合hosts和DoH解析
 type HostsAndDohResolver struct {
 	proxyoptions           options.ProxyOptions
 	tranportConfigurations []func(*http.Transport) *http.Transport
 }
 
-// LookupIP implements NameResolver
+// LookupIP implements NameResolver.
 func (h *HostsAndDohResolver) LookupIP(ctx context.Context, network string, host string) ([]net.IP, error) {
 	// 首先尝试使用 hosts 解析
 	ips, err := hosts.ResolveDomainToIPsWithHosts(host)
@@ -347,7 +263,7 @@ func (h *HostsAndDohResolver) LookupIP(ctx context.Context, network string, host
 	// 如果 hosts 解析失败，尝试使用 DoH 解析
 	if len(h.proxyoptions) > 0 {
 		// 随机打乱 proxyoptions 顺序
-		options.Shuffle(h.proxyoptions)
+		Shuffle(h.proxyoptions)
 
 		var allErrors []error
 		for _, opt := range h.proxyoptions {
@@ -386,7 +302,7 @@ func (h *HostsAndDohResolver) LookupIP(ctx context.Context, network string, host
 	return nil, fmt.Errorf("no IP addresses found for domain %s", host)
 }
 
-// Resolve implements NameResolver
+// Resolve implements NameResolver.
 func (h *HostsAndDohResolver) Resolve(ctx context.Context, name string) (context.Context, net.IP, error) {
 	ips, err := h.LookupIP(ctx, "", name)
 	if err != nil {
@@ -399,82 +315,177 @@ func (h *HostsAndDohResolver) Resolve(ctx context.Context, name string) (context
 	return ctx, ips[0], nil
 }
 
-// ===== 带缓存的解析器创建函数 =====
+// ErrorArray 错误数组类型
+type ErrorArray []error
 
-// CreateHostsResolverCached 创建带缓存的hosts解析器
-func CreateHostsResolverCached(dnsCache *DNSCache) NameResolver {
-	if dnsCache == nil {
-		return &HostsResolver{}
+// Error implements error.
+func (e ErrorArray) Error() string {
+	// 将 ErrorArray 中的每个 error 转换为字符串
+	errStrings := make([]string, len(e))
+	for i, err := range e {
+		errStrings[i] = err.Error()
 	}
-	underlying := &HostsResolver{}
-	return NewCachingResolver(underlying, dnsCache)
+	// 使用逗号分隔符连接所有错误字符串
+	return "ErrorArray:[" + strings.Join(errStrings, ", ") + "]"
 }
 
-// CreateDOHResolverCached 创建带缓存的DOH解析器
-func CreateDOHResolverCached(proxyoptions options.ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
-	if dnsCache == nil {
-		return &DOHResolver{
-			proxyoptions:           proxyoptions,
-			tranportConfigurations: tranportConfigurations,
-		}
-	}
-	underlying := &DOHResolver{
-		proxyoptions:           proxyoptions,
-		tranportConfigurations: tranportConfigurations,
-	}
-	return NewCachingResolver(underlying, dnsCache)
+// Shuffle 对切片进行随机排序
+func Shuffle[T any](slice []T) {
+	var rand1 = rand.New(rand.NewSource(time.Now().UnixNano())) // 使用当前时间作为随机种子
+	rand1.Shuffle(len(slice), func(i, j int) {
+		slice[i], slice[j] = slice[j], slice[i]
+	})
 }
 
-// CreateDOH3ResolverCached 创建带缓存的DOH3解析器
-func CreateDOH3ResolverCached(proxyoptions options.ProxyOptions, dnsCache *DNSCache) NameResolver {
-	if dnsCache == nil {
-		return &DOH3Resolver{
-			proxyoptions: proxyoptions,
-		}
-	}
-	underlying := &DOH3Resolver{
-		proxyoptions: proxyoptions,
-	}
-	return NewCachingResolver(underlying, dnsCache)
+// IsIP 判断给定的字符串是否是有效的 IPv4 或 IPv6 地址。
+func IsIP(s string) bool {
+	return net.ParseIP(s) != nil
 }
-
-// CreateHostsAndDohResolverCached 创建带缓存的hosts和DoH组合解析器
-func CreateHostsAndDohResolverCached(proxyoptions options.ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
-	if dnsCache == nil {
-		return &HostsAndDohResolver{
-			proxyoptions:           proxyoptions,
-			tranportConfigurations: tranportConfigurations,
-		}
-	}
-	underlying := &HostsAndDohResolver{
-		proxyoptions:           proxyoptions,
-		tranportConfigurations: tranportConfigurations,
-	}
-	return NewCachingResolver(underlying, dnsCache)
-}
-
-// ===== 缓存拨号函数 =====
 
 // Proxy_net_DialCached 带DNS缓存的网络连接拨号函数
-// 如果提供了dnsCache，则使用缓存的解析器；否则使用原始的直接解析方式
 func Proxy_net_DialCached(network string, addr string, proxyoptions options.ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	if dnsCache != nil {
-		return proxy_net_DialWithResolver(network, addr, proxyoptions, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...))
+		return proxy_net_DialWithResolver(nil, network, addr, proxyoptions, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...), tranportConfigurations...)
 	}
 	return proxy_net_DialOriginal(network, addr, proxyoptions, tranportConfigurations...)
 }
 
 // Proxy_net_DialContextCached 带DNS缓存的上下文网络连接拨号函数
-// 如果提供了dnsCache，则使用缓存的解析器；否则使用原始的直接解析方式
-func Proxy_net_DialContextCached(ctx context.Context, network string, address string, proxyoptions options.ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func Proxy_net_DialContextCached(ctx context.Context, network string, addr string, proxyoptions options.ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	if dnsCache != nil {
-		return proxy_net_DialContextWithResolver(ctx, network, address, proxyoptions, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...))
+		return proxy_net_DialWithResolver(ctx, network, addr, proxyoptions, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...), tranportConfigurations...)
 	}
-	return proxy_net_DialContextOriginal(ctx, network, address, proxyoptions, tranportConfigurations...)
+	return proxy_net_DialContextOriginal(ctx, network, addr, proxyoptions, tranportConfigurations...)
 }
 
-// ===== 内部拨号辅助函数 =====
-// 这些函数是从options.go复制过来的，避免循环依赖
+// proxy_net_DialWithResolver 使用指定解析器的网络拨号函数
+func proxy_net_DialWithResolver(ctx context.Context, network string, addr string, proxyoptions options.ProxyOptions, resolver NameResolver, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+	hostname, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	if IsIP(hostname) {
+		dialer := &net.Dialer{}
+		if ctx != nil {
+			return dialer.DialContext(ctx, network, addr)
+		}
+		return dialer.Dial(network, addr)
+	}
+
+	var ips []net.IP
+	if resolver != nil {
+		ips, err = resolver.LookupIP(ctx, network, hostname)
+		if err != nil {
+			log.Printf("Resolver failed for %s: %v", hostname, err)
+		}
+	}
+
+	// 如果resolver解析失败，尝试使用本地hosts文件解析域名
+	if len(ips) == 0 {
+		ips, err = hosts.ResolveDomainToIPsWithHosts(hostname)
+		if err != nil {
+			log.Printf("Hosts resolution failed for %s: %v", hostname, err)
+		}
+	}
+
+	if len(ips) > 0 {
+		Shuffle(ips)
+		var errorsaray = make([]error, 0)
+		for _, ip := range ips {
+			serverIP := ip.String()
+			newAddr := net.JoinHostPort(serverIP, port)
+			dialer := &net.Dialer{}
+			var connection net.Conn
+			if ctx != nil {
+				connection, err = dialer.DialContext(ctx, network, newAddr)
+			} else {
+				connection, err = dialer.Dial(network, newAddr)
+			}
+
+			if err != nil {
+				errorsaray = append(errorsaray, err)
+				continue
+			} else {
+				log.Printf("Successfully connected to %s via IP %s", addr, serverIP)
+				return connection, nil
+			}
+		}
+		return nil, ErrorArray(errorsaray)
+	}
+
+	// 如果提供了代理选项，尝试使用DOH解析
+	if len(proxyoptions) > 0 {
+		Shuffle(proxyoptions)
+		var allErrors []error
+		for _, opt := range proxyoptions {
+			var ips []net.IP
+			var errors []error
+
+			if opt.Dohalpn == "h3" {
+				if opt.Dohip == "" {
+					ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, opt.Dohurl)
+				} else {
+					ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, opt.Dohurl, opt.Dohip)
+				}
+			} else {
+				if opt.Dohip == "" {
+					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, opt.Dohurl, "", tranportConfigurations...)
+				} else {
+					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, opt.Dohurl, opt.Dohip, tranportConfigurations...)
+				}
+			}
+
+			if len(ips) == 0 && len(errors) > 0 {
+				allErrors = append(allErrors, errors...)
+				continue
+			} else {
+				lengthip := len(ips)
+				Shuffle(ips)
+				for i := 0; i < lengthip; i++ {
+					var serverIP = ips[i].String()
+					newAddr := net.JoinHostPort(serverIP, port)
+					dialer := &net.Dialer{}
+					var connection net.Conn
+					var err1 error
+					if ctx != nil {
+						connection, err1 = dialer.DialContext(ctx, network, newAddr)
+					} else {
+						connection, err1 = dialer.Dial(network, newAddr)
+					}
+
+					if err1 != nil {
+						allErrors = append(allErrors, err1)
+						continue
+					} else {
+						log.Printf("Successfully connected to %s via DOH %s using IP %s", addr, opt.Dohurl, serverIP)
+						return connection, nil
+					}
+				}
+			}
+		}
+		return nil, ErrorArray(allErrors)
+	}
+
+	// 如果所有方法都失败了，使用原始地址
+	dialer := &net.Dialer{}
+	if ctx != nil {
+		connection, err := dialer.DialContext(ctx, network, addr)
+		if err != nil {
+			log.Printf("Failed to connect to %s: %v", addr, err)
+			return nil, err
+		}
+		log.Printf("Successfully connected to %s using original address", addr)
+		return connection, nil
+	}
+	connection, err := dialer.Dial(network, addr)
+	if err != nil {
+		log.Printf("Failed to connect to %s: %v", addr, err)
+		return nil, err
+	}
+	log.Printf("Successfully connected to %s using original address", addr)
+	return connection, nil
+}
 
 // proxy_net_DialOriginal 原始的网络拨号函数（不使用缓存）
 func proxy_net_DialOriginal(network string, addr string, proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
@@ -483,70 +494,101 @@ func proxy_net_DialOriginal(network string, addr string, proxyoptions options.Pr
 		return nil, err
 	}
 
-	if len(proxyoptions) > 0 {
-		// 随机打乱 proxyoptions 顺序
-		options.Shuffle(proxyoptions)
+	if IsIP(hostname) {
+		dialer := &net.Dialer{}
+		return dialer.Dial(network, addr)
+	}
 
-		var allErrors []error
-		for _, opt := range proxyoptions {
-			if opt.Dohalpn == "h3" {
-				if opt.Dohip == "" {
-					log.Printf("使用HTTP/3 DOH %s 解析域名: %s", opt.Dohurl, hostname)
-					ips, errors := doh.ResolveDomainToIPsWithDoh3(hostname, opt.Dohurl)
-					if len(ips) > 0 {
-						return doh.ConnectWithIp(network, ips, port, opt)
-					}
-					if len(errors) > 0 {
-						allErrors = append(allErrors, errors...)
-					}
+	var ips []net.IP
+	ips, err = hosts.ResolveDomainToIPsWithHosts(hostname)
+
+	if len(ips) > 0 {
+		Shuffle(ips)
+		lengthip := len(ips)
+		var errorsaray = make([]error, 0)
+		for i := 0; i < lengthip; i++ {
+			var serverIP = ips[i].String()
+			newAddr := net.JoinHostPort(serverIP, port)
+			dialer := &net.Dialer{}
+			connection, err1 := dialer.Dial(network, newAddr)
+
+			if err1 != nil {
+				errorsaray = append(errorsaray, err1)
+				continue
+			} else {
+				log.Printf("success connect to addr=%s by network=%s by serverIP=%s", addr, network, serverIP)
+				return connection, nil
+			}
+		}
+		return nil, ErrorArray(errorsaray)
+	}
+
+	// hosts没有找到域名解析ip,可以忽略这个错误
+	if len(ips) == 0 && err != nil {
+		log.Println(err)
+	}
+
+	//调用ResolveDomainToIPsWithHosts函数解析域名
+	if len(proxyoptions) > 0 {
+		var errorsaray = make([]error, 0)
+		Shuffle(proxyoptions)
+		for _, dohurlopt := range proxyoptions {
+			var dohip = dohurlopt.Dohip
+			var dohalpn = dohurlopt.Dohalpn
+			var ips []net.IP
+			var errors []error
+			hostname, port, err := net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
+
+			if dohalpn == "h3" {
+				if dohip == "" {
+					ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, dohurlopt.Dohurl)
 				} else {
-					log.Printf("使用HTTP/3 DOH %s 和IP %s 解析域名: %s", opt.Dohurl, opt.Dohip, hostname)
-					ips, errors := doh.ResolveDomainToIPsWithDoh3(hostname, opt.Dohurl, opt.Dohip)
-					if len(ips) > 0 {
-						return doh.ConnectWithIp(network, ips, port, opt)
-					}
-					if len(errors) > 0 {
-						allErrors = append(allErrors, errors...)
-					}
+					ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, dohurlopt.Dohurl, dohip)
 				}
 			} else {
-				if opt.Dohip == "" {
-					log.Printf("使用DOH %s 解析域名: %s", opt.Dohurl, hostname)
-					ips, errors := doh.ResolveDomainToIPsWithDoh(hostname, opt.Dohurl, opt.Dohip, tranportConfigurations...)
-					if len(ips) > 0 {
-						return doh.ConnectWithIp(network, ips, port, opt)
-					}
-					if len(errors) > 0 {
-						allErrors = append(allErrors, errors...)
-					}
+				if dohip == "" {
+					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurlopt.Dohurl, "", tranportConfigurations...)
 				} else {
-					log.Printf("使用DOH %s 和IP %s 解析域名: %s", opt.Dohurl, opt.Dohip, hostname)
-					ips, errors := doh.ResolveDomainToIPsWithDoh(hostname, opt.Dohurl, opt.Dohip, tranportConfigurations...)
-					if len(ips) > 0 {
-						return doh.ConnectWithIp(network, ips, port, opt)
-					}
-					if len(errors) > 0 {
-						allErrors = append(allErrors, errors...)
+					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurlopt.Dohurl, dohip, tranportConfigurations...)
+				}
+			}
+
+			if len(ips) == 0 && len(errors) > 0 {
+				errorsaray = append(errorsaray, errors...)
+				continue
+			} else {
+				lengthip := len(ips)
+				Shuffle(ips)
+				for i := 0; i < lengthip; i++ {
+					var serverIP = ips[i].String()
+					newAddr := net.JoinHostPort(serverIP, port)
+					dialer := &net.Dialer{}
+					connection, err1 := dialer.Dial(network, newAddr)
+
+					if err1 != nil {
+						errorsaray = append(errorsaray, err1)
+						continue
+					} else {
+						log.Printf("success connect to address=%s by network=%s by Dohurl=%s by dohip=%s by serverIP=%s", addr, network, dohurlopt.Dohurl, dohip, serverIP)
+						return connection, nil
 					}
 				}
 			}
 		}
-
-		if len(allErrors) > 0 {
-			return nil, fmt.Errorf("所有DOH解析都失败了: %v", allErrors)
-		}
+		return nil, ErrorArray(errorsaray)
 	} else {
-		// 尝试使用本地hosts文件解析域名
-		ips, err := hosts.ResolveDomainToIPsWithHosts(hostname)
-		if err == nil && len(ips) > 0 {
-			// 使用解析到的IP地址直接连接
-			return doh.ConnectWithIp(network, ips, port, options.ProxyOption{})
+		dialer := &net.Dialer{}
+		connection, err1 := dialer.Dial(network, addr)
+		if err1 != nil {
+			log.Printf("failure connect to %s by %s%s", addr, network, err1.Error())
+			return nil, err1
 		}
+		log.Printf("success connect to %s by %s", addr, network)
+		return connection, nil
 	}
-
-	// 如果都失败了，使用原始地址
-	log.Printf("所有解析方法都失败了，使用原始地址连接: %s", addr)
-	return net.Dial(network, addr)
 }
 
 // proxy_net_DialContextOriginal 原始的上下文网络拨号函数（不使用缓存）
@@ -556,232 +598,97 @@ func proxy_net_DialContextOriginal(ctx context.Context, network string, address 
 		return nil, err
 	}
 
-	if len(proxyoptions) > 0 {
-		// 随机打乱 proxyoptions 顺序
-		options.Shuffle(proxyoptions)
+	if IsIP(hostname) {
+		dialer := &net.Dialer{}
+		return dialer.DialContext(ctx, network, address)
+	}
 
-		var allErrors []error
-		for _, opt := range proxyoptions {
-			if opt.Dohalpn == "h3" {
-				if opt.Dohip == "" {
-					log.Printf("使用HTTP/3 DOH %s 解析域名: %s", opt.Dohurl, hostname)
-					ips, errors := doh.ResolveDomainToIPsWithDoh3(hostname, opt.Dohurl)
-					if len(ips) > 0 {
-						return doh.ConnectWithIpContext(ctx, network, ips, port, opt)
-					}
-					if len(errors) > 0 {
-						allErrors = append(allErrors, errors...)
-					}
+	var ips []net.IP
+	ips, err = hosts.ResolveDomainToIPsWithHosts(hostname)
+
+	if len(ips) > 0 {
+		Shuffle(ips)
+		lengthip := len(ips)
+		var errorsaray = make([]error, 0)
+		for i := 0; i < lengthip; i++ {
+			var serverIP = ips[i].String()
+			newAddr := net.JoinHostPort(serverIP, port)
+			dialer := &net.Dialer{}
+			connection, err1 := dialer.DialContext(ctx, network, newAddr)
+
+			if err1 != nil {
+				errorsaray = append(errorsaray, err1)
+				continue
+			} else {
+				log.Printf("success connect to addr=%s by network=%s by serverIP=%s", address, network, serverIP)
+				return connection, nil
+			}
+		}
+		return nil, ErrorArray(errorsaray)
+	}
+
+	if len(ips) == 0 && err != nil {
+		log.Println(err)
+	}
+
+	if len(proxyoptions) > 0 {
+		var errorsaray = make([]error, 0)
+		Shuffle(proxyoptions)
+		for _, dohurlopt := range proxyoptions {
+			var dohip = dohurlopt.Dohip
+			var dohalpn = dohurlopt.Dohalpn
+			var ips []net.IP
+			var errors []error
+			hostname, port, err := net.SplitHostPort(address)
+			if err != nil {
+				return nil, err
+			}
+
+			if dohalpn == "h3" {
+				if dohip == "" {
+					ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, dohurlopt.Dohurl)
 				} else {
-					log.Printf("使用HTTP/3 DOH %s 和IP %s 解析域名: %s", opt.Dohurl, opt.Dohip, hostname)
-					ips, errors := doh.ResolveDomainToIPsWithDoh3(hostname, opt.Dohurl, opt.Dohip)
-					if len(ips) > 0 {
-						return doh.ConnectWithIpContext(ctx, network, ips, port, opt)
-					}
-					if len(errors) > 0 {
-						allErrors = append(allErrors, errors...)
-					}
+					ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, dohurlopt.Dohurl, dohip)
 				}
 			} else {
-				if opt.Dohip == "" {
-					log.Printf("使用DOH %s 解析域名: %s", opt.Dohurl, hostname)
-					ips, errors := doh.ResolveDomainToIPsWithDoh(hostname, opt.Dohurl, opt.Dohip, tranportConfigurations...)
-					if len(ips) > 0 {
-						return doh.ConnectWithIpContext(ctx, network, ips, port, opt)
-					}
-					if len(errors) > 0 {
-						allErrors = append(allErrors, errors...)
-					}
+				if dohip == "" {
+					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurlopt.Dohurl, "", tranportConfigurations...)
 				} else {
-					log.Printf("使用DOH %s 和IP %s 解析域名: %s", opt.Dohurl, opt.Dohip, hostname)
-					ips, errors := doh.ResolveDomainToIPsWithDoh(hostname, opt.Dohurl, opt.Dohip, tranportConfigurations...)
-					if len(ips) > 0 {
-						return doh.ConnectWithIpContext(ctx, network, ips, port, opt)
-					}
-					if len(errors) > 0 {
-						allErrors = append(allErrors, errors...)
+					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurlopt.Dohurl, dohip, tranportConfigurations...)
+				}
+			}
+
+			if len(ips) == 0 && len(errors) > 0 {
+				errorsaray = append(errorsaray, errors...)
+				continue
+			} else {
+				lengthip := len(ips)
+				Shuffle(ips)
+				for i := 0; i < lengthip; i++ {
+					var serverIP = ips[i].String()
+					newAddr := net.JoinHostPort(serverIP, port)
+					dialer := &net.Dialer{}
+					connection, err1 := dialer.DialContext(ctx, network, newAddr)
+
+					if err1 != nil {
+						errorsaray = append(errorsaray, err1)
+						continue
+					} else {
+						log.Printf("success connect to address=%s by network=%s by Dohurl=%s by dohip=%s by serverIP=%s", address, network, dohurlopt.Dohurl, dohip, serverIP)
+						return connection, nil
 					}
 				}
 			}
 		}
-
-		if len(allErrors) > 0 {
-			return nil, fmt.Errorf("所有DOH解析都失败了: %v", allErrors)
-		}
+		return nil, ErrorArray(errorsaray)
 	} else {
-		// 尝试使用本地hosts文件解析域名
-		ips, err := hosts.ResolveDomainToIPsWithHosts(hostname)
-		if err == nil && len(ips) > 0 {
-			// 使用解析到的IP地址直接连接
-			return doh.ConnectWithIpContext(ctx, network, ips, port, options.ProxyOption{})
+		dialer := &net.Dialer{}
+		connection, err1 := dialer.DialContext(ctx, network, address)
+		if err1 != nil {
+			log.Printf("failure connect to %s by %s%s", address, network, err1.Error())
+			return nil, err1
 		}
+		log.Printf("success connect to %s by %s", address, network)
+		return connection, nil
 	}
-
-	// 如果都失败了，使用原始地址
-	log.Printf("所有解析方法都失败了，使用原始地址连接: %s", address)
-	var dialer net.Dialer
-	connection, err1 := dialer.DialContext(ctx, network, address)
-	return connection, err1
-}
-
-// proxy_net_DialWithResolver 使用指定的解析器进行网络连接
-func proxy_net_DialWithResolver(network string, addr string, proxyoptions options.ProxyOptions, nameResolver NameResolver, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
-	hostname, port, err := net.SplitHostPort(addr)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(proxyoptions) > 0 {
-		// 随机打乱 proxyoptions 顺序
-		options.Shuffle(proxyoptions)
-
-		var allErrors []error
-		for _, opt := range proxyoptions {
-			if opt.Dohalpn == "h3" {
-				if opt.Dohip == "" {
-					log.Printf("使用HTTP/3 DOH %s 解析域名: %s", opt.Dohurl, hostname)
-					ips, errors := doh.ResolveDomainToIPsWithDoh3(hostname, opt.Dohurl)
-					if len(ips) > 0 {
-						return doh.ConnectWithIp(network, ips, port, opt)
-					}
-					if len(errors) > 0 {
-						allErrors = append(allErrors, errors...)
-					}
-				} else {
-					log.Printf("使用HTTP/3 DOH %s 和IP %s 解析域名: %s", opt.Dohurl, opt.Dohip, hostname)
-					ips, errors := doh.ResolveDomainToIPsWithDoh3(hostname, opt.Dohurl, opt.Dohip)
-					if len(ips) > 0 {
-						return doh.ConnectWithIp(network, ips, port, opt)
-					}
-					if len(errors) > 0 {
-						allErrors = append(allErrors, errors...)
-					}
-				}
-			} else {
-				if opt.Dohip == "" {
-					log.Printf("使用DOH %s 解析域名: %s", opt.Dohurl, hostname)
-					ips, errors := doh.ResolveDomainToIPsWithDoh(hostname, opt.Dohurl, opt.Dohip, tranportConfigurations...)
-					if len(ips) > 0 {
-						return doh.ConnectWithIp(network, ips, port, opt)
-					}
-					if len(errors) > 0 {
-						allErrors = append(allErrors, errors...)
-					}
-				} else {
-					log.Printf("使用DOH %s 和IP %s 解析域名: %s", opt.Dohurl, opt.Dohip, hostname)
-					ips, errors := doh.ResolveDomainToIPsWithDoh(hostname, opt.Dohurl, opt.Dohip, tranportConfigurations...)
-					if len(ips) > 0 {
-						return doh.ConnectWithIp(network, ips, port, opt)
-					}
-					if len(errors) > 0 {
-						allErrors = append(allErrors, errors...)
-					}
-				}
-			}
-		}
-
-		if len(allErrors) > 0 {
-			return nil, fmt.Errorf("所有DOH解析都失败了: %v", allErrors)
-		}
-	} else {
-		// 使用提供的解析器
-		ips, err := nameResolver.LookupIP(context.Background(), "tcp", hostname)
-		if err == nil && len(ips) > 0 {
-			// 使用解析到的IP地址直接连接
-			return doh.ConnectWithIp(network, ips, port, options.ProxyOption{})
-		}
-
-		// 如果使用解析器失败，尝试使用本地hosts文件解析域名
-		ips, err = hosts.ResolveDomainToIPsWithHosts(hostname)
-		if err == nil && len(ips) > 0 {
-			// 使用解析到的IP地址直接连接
-			return doh.ConnectWithIp(network, ips, port, options.ProxyOption{})
-		}
-	}
-
-	// 如果都失败了，使用原始地址
-	log.Printf("所有解析方法都失败了，使用原始地址连接: %s", addr)
-	return net.Dial(network, addr)
-}
-
-// proxy_net_DialContextWithResolver 使用指定的解析器和上下文进行网络连接
-func proxy_net_DialContextWithResolver(ctx context.Context, network string, address string, proxyoptions options.ProxyOptions, nameResolver NameResolver, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
-	hostname, port, err := net.SplitHostPort(address)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(proxyoptions) > 0 {
-		// 随机打乱 proxyoptions 顺序
-		options.Shuffle(proxyoptions)
-
-		var allErrors []error
-		for _, opt := range proxyoptions {
-			if opt.Dohalpn == "h3" {
-				if opt.Dohip == "" {
-					log.Printf("使用HTTP/3 DOH %s 解析域名: %s", opt.Dohurl, hostname)
-					ips, errors := doh.ResolveDomainToIPsWithDoh3(hostname, opt.Dohurl)
-					if len(ips) > 0 {
-						return doh.ConnectWithIpContext(ctx, network, ips, port, opt)
-					}
-					if len(errors) > 0 {
-						allErrors = append(allErrors, errors...)
-					}
-				} else {
-					log.Printf("使用HTTP/3 DOH %s 和IP %s 解析域名: %s", opt.Dohurl, opt.Dohip, hostname)
-					ips, errors := doh.ResolveDomainToIPsWithDoh3(hostname, opt.Dohurl, opt.Dohip)
-					if len(ips) > 0 {
-						return doh.ConnectWithIpContext(ctx, network, ips, port, opt)
-					}
-					if len(errors) > 0 {
-						allErrors = append(allErrors, errors...)
-					}
-				}
-			} else {
-				if opt.Dohip == "" {
-					log.Printf("使用DOH %s 解析域名: %s", opt.Dohurl, hostname)
-					ips, errors := doh.ResolveDomainToIPsWithDoh(hostname, opt.Dohurl, opt.Dohip, tranportConfigurations...)
-					if len(ips) > 0 {
-						return doh.ConnectWithIpContext(ctx, network, ips, port, opt)
-					}
-					if len(errors) > 0 {
-						allErrors = append(allErrors, errors...)
-					}
-				} else {
-					log.Printf("使用DOH %s 和IP %s 解析域名: %s", opt.Dohurl, opt.Dohip, hostname)
-					ips, errors := doh.ResolveDomainToIPsWithDoh(hostname, opt.Dohurl, opt.Dohip, tranportConfigurations...)
-					if len(ips) > 0 {
-						return doh.ConnectWithIpContext(ctx, network, ips, port, opt)
-					}
-					if len(errors) > 0 {
-						allErrors = append(allErrors, errors...)
-					}
-				}
-			}
-		}
-
-		if len(allErrors) > 0 {
-			return nil, fmt.Errorf("所有DOH解析都失败了: %v", allErrors)
-		}
-	} else {
-		// 使用提供的解析器
-		ips, err := nameResolver.LookupIP(ctx, "tcp", hostname)
-		if err == nil && len(ips) > 0 {
-			// 使用解析到的IP地址直接连接
-			return doh.ConnectWithIpContext(ctx, network, ips, port, options.ProxyOption{})
-		}
-
-		// 如果使用解析器失败，尝试使用本地hosts文件解析域名
-		ips, err = hosts.ResolveDomainToIPsWithHosts(hostname)
-		if err == nil && len(ips) > 0 {
-			// 使用解析到的IP地址直接连接
-			return doh.ConnectWithIpContext(ctx, network, ips, port, options.ProxyOption{})
-		}
-	}
-
-	// 如果都失败了，使用原始地址
-	log.Printf("所有解析方法都失败了，使用原始地址连接: %s", address)
-	var dialer net.Dialer
-	connection, err1 := dialer.DialContext(ctx, network, address)
-	return connection, err1
 }
