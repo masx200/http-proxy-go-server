@@ -384,8 +384,27 @@ func (dc *DNSCache) Save() error {
 		return fmt.Errorf("写入临时文件失败: %w", err)
 	}
 
+	// 尝试原子重命名
 	if err := os.Rename(tempFile, dc.filePath); err != nil {
-		return fmt.Errorf("重命名文件失败: %w", err)
+		// 如果重命名失败（常见于Docker bind mount），使用复制和删除的备选方案
+		fmt.Printf("重命名失败，尝试备选方案: %v\n", err)
+
+		// 先读取临时文件内容
+		tempData, readErr := os.ReadFile(tempFile)
+		if readErr != nil {
+			return fmt.Errorf("读取临时文件失败: %w", readErr)
+		}
+
+		// 直接写入目标文件
+		if writeErr := os.WriteFile(dc.filePath, tempData, 0644); writeErr != nil {
+			return fmt.Errorf("直接写入目标文件失败: %w", writeErr)
+		}
+
+		// 删除临时文件
+		if removeErr := os.Remove(tempFile); removeErr != nil {
+			// 删除失败不作为致命错误，只记录警告
+			fmt.Printf("警告: 删除临时文件失败: %v\n", removeErr)
+		}
 	}
 
 	return nil
@@ -405,9 +424,28 @@ func (dc *DNSCache) Load() error {
 		return err
 	}
 
+	// 检查文件是否为空
+	if len(data) == 0 {
+		fmt.Printf("缓存文件为空，将创建新的缓存\n")
+		return nil
+	}
+
+	// 检查是否只包含空白字符
+	trimmed := strings.TrimSpace(string(data))
+	if len(trimmed) == 0 {
+		fmt.Printf("缓存文件只包含空白字符，将创建新的缓存\n")
+		return nil
+	}
+
 	var fileItems map[string]cacheItem
 	if err := json.Unmarshal(data, &fileItems); err != nil {
 		return fmt.Errorf("反序列化失败: %w", err)
+	}
+
+	// 检查是否解析出了有效的数据结构
+	if fileItems == nil {
+		fmt.Printf("缓存文件格式无效，将创建新的缓存\n")
+		return nil
 	}
 
 	now := time.Now()
