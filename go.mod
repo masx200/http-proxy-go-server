@@ -21,6 +21,7 @@ require (
 	github.com/fanjindong/go-cache v0.0.6 // indirect
 	github.com/goccy/go-yaml v1.18.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/quic-go/quic-go v0.55.0 // indirect
 	go.uber.org/mock v0.6.0 // indirect

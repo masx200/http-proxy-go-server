@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/masx200/http-proxy-go-server/auth"
+	"github.com/masx200/http-proxy-go-server/dnscache"
 	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/http-proxy-go-server/simple"
 	"github.com/masx200/http-proxy-go-server/tls"
@@ -490,6 +491,11 @@ func main() {
 		upstreamAddress  = flag.String("upstream-address", "", "upstream proxy address (e.g., ws://127.0.0.1:1081, socks5://127.0.0.1:1080 or http://127.0.0.1:8080)")
 		upstreamUsername = flag.String("upstream-username", "", "upstream proxy username")
 		upstreamPassword = flag.String("upstream-password", "", "upstream proxy password")
+		// DNS缓存相关参数
+		cacheEnabled     = flag.Bool("cache-enabled", true, "enable DNS caching")
+		cacheFile        = flag.String("cache-file", "./dns_cache.json", "DNS cache file path")
+		cacheTTL         = flag.String("cache-ttl", "10m", "DNS cache TTL (duration string, e.g., 5m, 10m, 1h)")
+		cacheSaveInterval = flag.String("cache-save-interval", "30s", "DNS cache save interval (duration string, e.g., 30s, 1m)")
 	)
 	flag.Parse()
 
@@ -506,6 +512,13 @@ func main() {
 		sig := <-sigChan
 		log.Printf("收到信号: %v，正在优雅关闭服务器...\n", sig)
 		cancel()
+
+		// 关闭DNS缓存
+		if dnsCache != nil {
+			log.Println("正在关闭DNS缓存...")
+			dnsCache.Close()
+			log.Println("DNS缓存已关闭")
+		}
 
 		// 给予一些时间来完成清理工作
 		time.Sleep(100 * time.Millisecond)
@@ -581,6 +594,48 @@ func main() {
 	log.Println("upstream-address:", *upstreamAddress)
 	log.Println("upstream-username:", *upstreamUsername)
 	log.Println("upstream-password:", *upstreamPassword)
+	log.Println("cache-enabled:", *cacheEnabled)
+	log.Println("cache-file:", *cacheFile)
+	log.Println("cache-ttl:", *cacheTTL)
+	log.Println("cache-save-interval:", *cacheSaveInterval)
+
+	// 解析DNS缓存配置
+	var dnsCache *dnscache.DNSCache
+	var err error
+	if *cacheEnabled {
+		// 解析TTL
+		cacheTTLDuration, err := time.ParseDuration(*cacheTTL)
+		if err != nil {
+			log.Printf("解析cache-ttl失败，使用默认值: %v", err)
+			cacheTTLDuration = 10 * time.Minute
+		}
+
+		// 解析保存间隔
+		cacheSaveIntervalDuration, err := time.ParseDuration(*cacheSaveInterval)
+		if err != nil {
+			log.Printf("解析cache-save-interval失败，使用默认值: %v", err)
+			cacheSaveIntervalDuration = 30 * time.Second
+		}
+
+		// 创建缓存配置
+		cacheConfig := &dnscache.Config{
+			FilePath:        *cacheFile,
+			DefaultTTL:      cacheTTLDuration,
+			CleanupInterval: 5 * time.Minute, // 固定清理间隔
+			SaveInterval:    cacheSaveIntervalDuration,
+			Enabled:         true,
+		}
+
+		dnsCache, err = dnscache.NewWithConfig(cacheConfig)
+		if err != nil {
+			log.Printf("创建DNS缓存失败，将禁用缓存: %v", err)
+			dnsCache = nil
+		} else {
+			log.Printf("DNS缓存已启用，文件: %s, TTL: %v", *cacheFile, cacheTTLDuration)
+		}
+	} else {
+		log.Println("DNS缓存已禁用")
+	}
 
 	var proxyoptions = options.ProxyOptions{}
 
