@@ -46,6 +46,66 @@ type cacheItem struct {
 	Expiration time.Time   `json:"expiration"`
 }
 
+// MarshalJSON 自定义JSON序列化，处理无效时间
+func (ci cacheItem) MarshalJSON() ([]byte, error) {
+	type Alias cacheItem
+	aux := struct {
+		*Alias
+		Expiration int64 `json:"expiration"`
+	}{
+		Alias: (*Alias)(&ci),
+	}
+
+	// 如果时间是零值，使用特殊标记
+	if ci.Expiration.IsZero() {
+		aux.Expiration = 0
+	} else {
+		// 验证年份是否有效
+		year := ci.Expiration.Year()
+		if year < 0 || year > 9999 {
+			aux.Expiration = 0 // 使用0作为安全默认值
+		} else {
+			aux.Expiration = ci.Expiration.Unix()
+		}
+	}
+
+	return json.Marshal(&aux)
+}
+
+// UnmarshalJSON 自定义JSON反序列化，处理时间戳
+func (ci *cacheItem) UnmarshalJSON(data []byte) error {
+	type Alias cacheItem
+	aux := struct {
+		*Alias
+		Expiration int64 `json:"expiration"`
+	}{
+		Alias: (*Alias)(ci),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// 处理时间戳
+	if aux.Expiration == 0 {
+		ci.Expiration = time.Time{} // 零值表示永不过期
+	} else {
+		// 验证时间戳范围
+		if aux.Expiration < -62135596800 || aux.Expiration > 253402300799 { // 约束在有效年份范围内
+			ci.Expiration = time.Time{} // 无效时间戳使用零值
+		} else {
+			ci.Expiration = time.Unix(aux.Expiration, 0)
+			// 再次验证年份
+			year := ci.Expiration.Year()
+			if year < 0 || year > 9999 {
+				ci.Expiration = time.Time{} // 无效年份使用零值
+			}
+		}
+	}
+
+	return nil
+}
+
 // Config DNS缓存配置
 type Config struct {
 	FilePath         string        `json:"file_path"`
@@ -117,6 +177,25 @@ func normalizeDomain(domain string) string {
 	domain = strings.TrimSuffix(domain, ".")
 	domain = strings.ToLower(domain)
 	return domain
+}
+
+// convertToStringSlice 将任意类型转换为字符串切片
+// 处理JSON反序列化后可能出现的[]interface{}情况
+func convertToStringSlice(value interface{}) []string {
+	switch v := value.(type) {
+	case []string:
+		return v
+	case []interface{}:
+		result := make([]string, 0, len(v))
+		for _, item := range v {
+			if str, ok := item.(string); ok {
+				result = append(result, str)
+			}
+		}
+		return result
+	default:
+		return nil
+	}
 }
 
 // GetIPs 获取DNS记录（IP地址列表）
@@ -223,9 +302,11 @@ func (dc *DNSCache) Save() error {
 
 	// 只保存未过期的项
 	for k, item := range items {
-		// go-cache 的 Expiration 是 int64 类型的 Unix 时间戳，或者 0 表示永不过期
-		if item.Expiration == 0 || item.Expiration > now.Unix() {
-			expirationTime := time.Unix(item.Expiration, 0)
+		// go-cache 的 Expiration 是 int64 类型的 Unix 时间戳（纳秒精度），或者 0 表示永不过期
+		// 某些情况下可能是纳秒时间戳而不是秒时间戳
+		if item.Expiration == 0 {
+			// 对于永不过期的项，使用零时间
+			expirationTime := time.Time{}
 			// 特殊处理IP列表，确保序列化格式一致
 			if ips, ok := item.Object.([]net.IP); ok {
 				var ipsStr []string
@@ -240,6 +321,45 @@ func (dc *DNSCache) Save() error {
 				validItems[k] = cacheItem{
 					Value:      item.Object,
 					Expiration: expirationTime,
+				}
+			}
+		} else {
+			// 尝试将时间戳转换为有效的时间
+			var expirationTime time.Time
+			var unixSeconds int64
+
+			// 判断是秒时间戳还是纳秒时间戳
+			if item.Expiration > 1e18 { // 纳秒时间戳
+				unixSeconds = item.Expiration / 1e9
+			} else { // 秒时间戳
+				unixSeconds = item.Expiration
+			}
+
+			// 验证时间戳范围
+			if unixSeconds < 0 || unixSeconds > 253402300799 { // 9999-12-31 23:59:59 UTC
+				fmt.Printf("警告: 跳过无效的过期时间戳 %d for key %s (转换为秒: %d)\n", item.Expiration, k, unixSeconds)
+				continue
+			}
+
+			expirationTime = time.Unix(unixSeconds, 0)
+
+			// 验证是否未过期
+			if expirationTime.After(now) {
+				// 特殊处理IP列表，确保序列化格式一致
+				if ips, ok := item.Object.([]net.IP); ok {
+					var ipsStr []string
+					for _, ip := range ips {
+						ipsStr = append(ipsStr, ip.String())
+					}
+					validItems[k] = cacheItem{
+						Value:      ipsStr,
+						Expiration: expirationTime,
+					}
+				} else {
+					validItems[k] = cacheItem{
+						Value:      item.Object,
+						Expiration: expirationTime,
+					}
 				}
 			}
 		}
@@ -292,10 +412,35 @@ func (dc *DNSCache) Load() error {
 
 	now := time.Now()
 	for k, item := range fileItems {
+		// 如果过期时间是零值，表示永不过期，使用默认TTL加载
+		if item.Expiration.IsZero() {
+			// 尝试将字符串IP转换为net.IP
+			if ipsStr := convertToStringSlice(item.Value); len(ipsStr) > 0 {
+				var ips []net.IP
+				for _, ipStr := range ipsStr {
+					if ip := net.ParseIP(ipStr); ip != nil {
+						ips = append(ips, ip)
+					}
+				}
+				if len(ips) > 0 {
+					dc.cache.Set(k, ips, DefaultTTL) // 使用默认TTL
+				}
+			} else {
+				dc.cache.Set(k, item.Value, DefaultTTL) // 使用默认TTL
+			}
+			continue
+		}
+
+		// 验证过期时间是否有效
+		if item.Expiration.Year() < 0 || item.Expiration.Year() > 9999 {
+			fmt.Printf("警告: 跳过无效的过期时间 for key %s: %v\n", k, item.Expiration)
+			continue
+		}
+
 		if item.Expiration.After(now) {
 			ttl := time.Until(item.Expiration)
 			// 尝试将字符串IP转换为net.IP
-			if ipsStr, ok := item.Value.([]string); ok {
+			if ipsStr := convertToStringSlice(item.Value); len(ipsStr) > 0 {
 				var ips []net.IP
 				for _, ipStr := range ipsStr {
 					if ip := net.ParseIP(ipStr); ip != nil {

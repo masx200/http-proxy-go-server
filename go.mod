@@ -12,6 +12,7 @@ require (
 	github.com/masx200/doq-go v0.55.0
 	github.com/masx200/http3-reverse-proxy-server-experiment v0.0.0-20251004130120-07f6b38af34d
 	github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20251004130715-0afdf9b68b1f
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 )
 
 require github.com/bytedance/gopkg v0.1.3 // indirect
@@ -21,7 +22,6 @@ require (
 	github.com/fanjindong/go-cache v0.0.6 // indirect
 	github.com/goccy/go-yaml v1.18.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
-	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/quic-go/quic-go v0.55.0 // indirect
 	go.uber.org/mock v0.6.0 // indirect
