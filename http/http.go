@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/masx200/http-proxy-go-server/dnscache"
 	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
 	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
@@ -86,7 +87,7 @@ func parseForwardedHeader(header string) ([]ForwardedBy, error) {
 
 	return forwardedByList, nil
 }
-func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, proxyoptions options.ProxyOptions, username, password string, tranportConfigurations ...func(*http.Transport) *http.Transport) error {
+func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, username, password string, tranportConfigurations ...func(*http.Transport) *http.Transport) error {
 	log.Println("method:", r.Method)
 	log.Println("url:", r.URL)
 	log.Println("host:", r.Host)
@@ -195,7 +196,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 			//				// 发起连接
 			//				return dialer.DialContext(ctx, network, newAddr)
 
-			return options.Proxy_net_DialContext(ctx, network, addr, proxyoptions)
+			return dnscache.Proxy_net_DialContextCached(ctx, network, addr, proxyoptions, dnsCache)
 		},
 		DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 
@@ -209,7 +210,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 			//				// 创建 net.Dialer 实例
 			//				dialer := &net.Dialer{}
 			//				// 发起连接
-			conn, err := options.Proxy_net_DialContext(ctx, network, addr, proxyoptions) //dialer.DialContext(ctx, network, newAddr)
+			conn, err := dnscache.Proxy_net_DialContextCached(ctx, network, addr, proxyoptions, dnsCache) //dialer.DialContext(ctx, network, newAddr)
 			if err != nil {
 				return nil, err
 			}
@@ -341,7 +342,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	return nil
 }
 
-func Http(hostname string, port int, proxyoptions options.ProxyOptions, username, password string, tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Http(hostname string, port int, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, username, password string, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
@@ -360,7 +361,7 @@ func Http(hostname string, port int, proxyoptions options.ProxyOptions, username
 	engine.Use(func(c *gin.Context) {
 		var w = c.Writer
 		var r = c.Request
-		err := proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, username, password, tranportConfigurations...)
+		err := proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, dnsCache, username, password, tranportConfigurations...)
 		c.Abort()
 
 		if err != nil {

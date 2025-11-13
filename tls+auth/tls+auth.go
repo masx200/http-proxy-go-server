@@ -7,11 +7,12 @@ import (
 	"net/http"
 
 	"github.com/masx200/http-proxy-go-server/auth"
+	"github.com/masx200/http-proxy-go-server/dnscache"
 	http_server "github.com/masx200/http-proxy-go-server/http"
 	"github.com/masx200/http-proxy-go-server/options"
 )
 
-func Tls_auth(server_cert string, server_key, hostname string, port int, username, password string, proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Tls_auth(server_cert string, server_key, hostname string, port int, username, password string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 
 	cert, err := tls.LoadX509KeyPair(server_cert, server_key)
 	if err != nil {
@@ -30,7 +31,7 @@ func Tls_auth(server_cert string, server_key, hostname string, port int, usernam
 	xh := http_server.GenerateRandomLoopbackIP()
 	x1 := http_server.GenerateRandomIntPort()
 	var upstreamAddress string = xh + ":" + fmt.Sprint(rune(x1))
-	go http_server.Http(xh, x1, proxyoptions, username, password, tranportConfigurations...)
+	go http_server.Http(xh, x1, proxyoptions, dnsCache, username, password, tranportConfigurations...)
 	// 死循环，每当遇到连接时，调用 handle
 	for {
 		client, err := l.Accept()
@@ -39,8 +40,7 @@ func Tls_auth(server_cert string, server_key, hostname string, port int, usernam
 		}
 
 		// go handle(client, username, password)
-		go auth.Handle(client, username, password, upstreamAddress, proxyoptions,
-
+		go auth.Handle(client, username, password, upstreamAddress, proxyoptions, dnsCache,
 			tranportConfigurations...)
 	}
 }

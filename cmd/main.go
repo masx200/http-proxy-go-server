@@ -968,7 +968,7 @@ func main() {
 	}
 	log.Println(string(by))
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
-		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, proxyoptions, tranportConfigurations...)
+		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, proxyoptions, dnsCache, tranportConfigurations...)
 		return
 	}
 	// if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
@@ -976,15 +976,15 @@ func main() {
 	// 	return
 	// }
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) == 0 && len(*server_key) == 0 {
-		auth.Auth(*hostname, *port, *username, *password, proxyoptions, tranportConfigurations...)
+		auth.Auth(*hostname, *port, *username, *password, proxyoptions, dnsCache, tranportConfigurations...)
 		return
 	}
 	if len(*username) == 0 && len(*password) == 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
-		tls.Tls(*server_cert, *server_key, *hostname, *port, proxyoptions, tranportConfigurations...)
+		tls.Tls(*server_cert, *server_key, *hostname, *port, proxyoptions, dnsCache, tranportConfigurations...)
 		return
 	}
 	if len(*username) == 0 && len(*password) == 0 && len(*server_cert) == 0 && len(*server_key) == 0 {
-		simple.Simple(*hostname, *port, proxyoptions, tranportConfigurations...)
+		simple.Simple(*hostname, *port, proxyoptions, dnsCache, tranportConfigurations...)
 		return
 	}
 }
