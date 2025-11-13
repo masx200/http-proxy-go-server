@@ -90,11 +90,11 @@ After deployment, create separate PR to:
 
 **Context Checklist:**
 
-- [ ] Read relevant specs in `specs/[capability]/spec.md`
-- [ ] Check pending changes in `changes/` for conflicts
-- [ ] Read `openspec/project.md` for conventions
-- [ ] Run `openspec list` to see active changes
-- [ ] Run `openspec list --specs` to see existing capabilities
+- [x] Read relevant specs in `specs/[capability]/spec.md`
+- [x] Check pending changes in `changes/` for conflicts
+- [x] Read `openspec/project.md` for conventions
+- [x] Run `openspec list` to see active changes
+- [x] Run `openspec list --specs` to see existing capabilities
 
 **Before Creating Specs:**
 
@@ -175,7 +175,7 @@ openspec/
 ```
 New request?
 ├─ Bug fix restoring spec behavior? → Fix directly
-├─ Typo/format/comment? → Fix directly  
+├─ Typo/format/comment? → Fix directly
 ├─ New feature/capability? → Create proposal
 ├─ Breaking change? → Create proposal
 ├─ Architecture change? → Create proposal
@@ -239,10 +239,10 @@ If multiple capabilities are affected, create multiple delta files under
 ```markdown
 ## 1. Implementation
 
-- [ ] 1.1 Create database schema
-- [ ] 1.2 Implement API endpoint
-- [ ] 1.3 Add frontend component
-- [ ] 1.4 Write tests
+- [x] 1.1 Create database schema
+- [x] 1.2 Implement API endpoint
+- [x] 1.3 Add frontend component
+- [x] 1.4 Write tests
 ```
 
 5. **Create design.md when needed:** Create `design.md` if any of the following
@@ -404,7 +404,7 @@ openspec list
 CHANGE=add-two-factor-auth
 mkdir -p openspec/changes/$CHANGE/{specs/auth}
 printf "## Why\n...\n\n## What Changes\n- ...\n\n## Impact\n- ...\n" > openspec/changes/$CHANGE/proposal.md
-printf "## 1. Implementation\n- [ ] 1.1 ...\n" > openspec/changes/$CHANGE/tasks.md
+printf "## 1. Implementation\n- [x] 1.1 ...\n" > openspec/changes/$CHANGE/tasks.md
 
 # 3) Add deltas (example)
 cat > openspec/changes/$CHANGE/specs/auth/spec.md << 'EOF'
