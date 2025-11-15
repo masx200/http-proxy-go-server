@@ -6,7 +6,6 @@ import (
 	"net"
 	"strings"
 	"sync"
-	"time"
 
 	h3_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h3"
 	"github.com/miekg/dns"
@@ -51,17 +50,6 @@ func Doh3nslookup(domain string, dnstype string, dohurl string, dohip ...string)
 	return results, errors
 }
 func ResolveDomainToIPsWithDoh3(domain string, dohurl string, dohip ...string) ([]net.IP, []error) { // 使用 A 和 AAAA 记录类型查询域名
-	// 首先尝试从缓存获取
-	if globalDNSCache != nil {
-		if cachedIPs, found := globalDNSCache.GetIPs("A", domain); found && len(cachedIPs) > 0 {
-			log.Printf("dns cache hit for %s: [%s]", domain, formatIPs(cachedIPs))
-			return cachedIPs, nil
-		}
-		if cachedIPs, found := globalDNSCache.GetIPs("AAAA", domain); found && len(cachedIPs) > 0 {
-			log.Printf("dns cache hit for %s (AAAA): [%s]", domain, formatIPs(cachedIPs))
-			return cachedIPs, nil
-		}
-	}
 
 	dnstypes := "A,AAAA"
 	responses, errors := Doh3nslookup(domain, dnstypes, dohurl, dohip...)
@@ -69,35 +57,19 @@ func ResolveDomainToIPsWithDoh3(domain string, dohurl string, dohip ...string) (
 		return nil, errors
 	}
 	var ips []net.IP
-	var aIPs []net.IP
-	var aaaaIPs []net.IP
 	for _, response := range responses {
 		for _, record := range response.Answer {
 			switch r := record.(type) {
 			case *dns.A:
 				ips = append(ips, r.A)
-				aIPs = append(aIPs, r.A)
 			case *dns.AAAA:
 				ips = append(ips, r.AAAA)
-				aaaaIPs = append(aaaaIPs, r.AAAA)
 			}
 		}
 	}
 
 	if len(ips) == 0 {
 		return nil, []error{fmt.Errorf("no IP addresses found for domain %s", domain)}
-	}
-
-	// 将结果缓存到DNS缓存中
-	if globalDNSCache != nil {
-		if len(aIPs) > 0 {
-			globalDNSCache.SetIPs("A", domain, aIPs, 5*time.Minute)
-			log.Printf("dns cached A record for %s: [%s]", domain, formatIPs(aIPs))
-		}
-		if len(aaaaIPs) > 0 {
-			globalDNSCache.SetIPs("AAAA", domain, aaaaIPs, 5*time.Minute)
-			log.Printf("dns cached AAAA record for %s: [%s]", domain, formatIPs(aaaaIPs))
-		}
 	}
 
 	// 将 []net.IP 转换为 []string

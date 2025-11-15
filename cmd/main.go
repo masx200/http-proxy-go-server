@@ -13,12 +13,13 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/masx200/http-proxy-go-server/auth"
 	"github.com/masx200/http-proxy-go-server/dnscache"
-	"github.com/masx200/http-proxy-go-server/doh"
+	_ "github.com/masx200/http-proxy-go-server/doh"
 	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/http-proxy-go-server/simple"
 	"github.com/masx200/http-proxy-go-server/tls"
@@ -28,6 +29,76 @@ import (
 	"github.com/masx200/socks5-websocket-proxy-golang/pkg/socks5"
 	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
 )
+
+// 全局DNS缓存实例
+var (
+	globalDNSCache *dnscache.DNSCache
+	cacheOnce      sync.Once
+)
+
+// CacheConfig DNS缓存配置
+type CacheConfig struct {
+	Enabled          bool          `json:"enabled"`
+	FilePath         string        `json:"file_path"`
+	AOFPath          string        `json:"aof_path"`
+	DefaultTTL       time.Duration `json:"default_ttl"`
+	SaveInterval     time.Duration `json:"save_interval"`
+	AOFInterval      time.Duration `json:"aof_interval"`
+	AOFEnabled       bool          `json:"aof_enabled"`
+}
+
+// DefaultCacheConfig 返回默认缓存配置
+func DefaultCacheConfig() *CacheConfig {
+	return &CacheConfig{
+		Enabled:      true,
+		FilePath:     "./dns_cache.json",
+		AOFPath:      "./dns_cache.aof",
+		DefaultTTL:   10 * time.Minute,
+		SaveInterval: 30 * time.Second,
+		AOFInterval:  1 * time.Second,
+		AOFEnabled:   true,
+	}
+}
+
+// InitDNSCache 初始化DNS缓存
+func InitDNSCache(config *CacheConfig) error {
+	var err error
+	cacheOnce.Do(func() {
+		if !config.Enabled {
+			globalDNSCache = &dnscache.DNSCache{}
+			return
+		}
+
+		dnscacheConfig := &dnscache.Config{
+			FilePath:        config.FilePath,
+			AOFPath:         config.AOFPath,
+			DefaultTTL:      config.DefaultTTL,
+			SaveInterval:    config.SaveInterval,
+			AOFInterval:     config.AOFInterval,
+			Enabled:         config.Enabled,
+		}
+
+		globalDNSCache, err = dnscache.NewWithConfig(dnscacheConfig)
+		if err != nil {
+			log.Printf("初始化DNS缓存失败: %v", err)
+		} else {
+			log.Printf("DNS缓存初始化成功，AOF: %v", config.AOFEnabled)
+		}
+	})
+	return err
+}
+
+// GetDNSCache 获取全局DNS缓存实例
+func GetDNSCache() *dnscache.DNSCache {
+	return globalDNSCache
+}
+
+// CloseDNSCache 关闭DNS缓存
+func CloseDNSCache() {
+	if globalDNSCache != nil {
+		globalDNSCache.Close()
+	}
+}
 
 type multiString []string
 
@@ -637,8 +708,8 @@ func main() {
 			cacheAOFIntervalDuration = 1 * time.Second
 		}
 
-		// 创建缓存配置并初始化DoH缓存系统
-		dohCacheConfig := &doh.CacheConfig{
+		// 创建缓存配置并初始化DNS缓存系统
+		dnsCacheConfig := &CacheConfig{
 			Enabled:      *cacheEnabled,
 			FilePath:     *cacheFile,
 			AOFPath:      *cacheAOFFile,
@@ -648,19 +719,19 @@ func main() {
 			AOFEnabled:   *cacheAOFEnabled,
 		}
 
-		// 初始化DoH模块中的DNS缓存
-		err = doh.InitDNSCache(dohCacheConfig)
+		// 初始化DNS缓存
+		err = InitDNSCache(dnsCacheConfig)
 		if err != nil {
 			log.Printf("初始化DNS缓存失败，将禁用缓存: %v", err)
 		} else {
 			log.Printf("DNS缓存已启用，文件: %s, AOF: %v, TTL: %v", *cacheFile, *cacheAOFEnabled, cacheTTLDuration)
 		}
 	} else {
-		// 即使禁用缓存也要初始化，以便DoH模块正常工作
-		dohCacheConfig := &doh.CacheConfig{
+		// 即使禁用缓存也要初始化
+		dnsCacheConfig := &CacheConfig{
 			Enabled: false,
 		}
-		doh.InitDNSCache(dohCacheConfig)
+		InitDNSCache(dnsCacheConfig)
 		log.Println("DNS缓存已禁用")
 	}
 
@@ -671,7 +742,7 @@ func main() {
 		<-c
 		log.Println("收到退出信号，正在关闭服务器...")
 		// 关闭DNS缓存
-		doh.CloseDNSCache()
+		CloseDNSCache()
 		log.Println("DNS缓存已关闭")
 		os.Exit(0)
 	}()
@@ -1007,7 +1078,7 @@ func main() {
 	}
 	log.Println(string(by))
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
-		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, proxyoptions, dnsCache, tranportConfigurations...)
+		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, proxyoptions, GetDNSCache(), tranportConfigurations...)
 		return
 	}
 	// if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
@@ -1015,15 +1086,15 @@ func main() {
 	// 	return
 	// }
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) == 0 && len(*server_key) == 0 {
-		auth.Auth(*hostname, *port, *username, *password, proxyoptions, dnsCache, tranportConfigurations...)
+		auth.Auth(*hostname, *port, *username, *password, proxyoptions, GetDNSCache(), tranportConfigurations...)
 		return
 	}
 	if len(*username) == 0 && len(*password) == 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
-		tls.Tls(*server_cert, *server_key, *hostname, *port, proxyoptions, dnsCache, tranportConfigurations...)
+		tls.Tls(*server_cert, *server_key, *hostname, *port, proxyoptions, GetDNSCache(), tranportConfigurations...)
 		return
 	}
 	if len(*username) == 0 && len(*password) == 0 && len(*server_cert) == 0 && len(*server_key) == 0 {
-		simple.Simple(*hostname, *port, proxyoptions, dnsCache, tranportConfigurations...)
+		simple.Simple(*hostname, *port, proxyoptions, GetDNSCache(), tranportConfigurations...)
 		return
 	}
 }
