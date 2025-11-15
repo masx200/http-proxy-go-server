@@ -108,7 +108,7 @@ jobs:
           org.opencontainers.image.revision=${{ steps.git_metadata.outputs.git_hash }}
           org.opencontainers.image.created=${{ steps.git_metadata.outputs.build_date }}
           org.opencontainers.image.licenses=MIT
-        platforms: linux/amd64#,linux/arm64
+        platforms: linux/amd64
         cache-from: type=gha
         cache-to: type=gha,mode=max
         build-args: |
@@ -116,9 +116,9 @@ jobs:
           BUILD_DATE=${{ steps.git_metadata.outputs.build_date }}
           GIT_REVISION=${{ steps.git_metadata.outputs.git_hash }}
 
-    - name: Create multi-architecture test
+    - name: Create test
       run: |
-        echo "🧪 Testing Docker image on multiple architectures..."
+        echo "🧪 Testing Docker image..."
 
         # 测试AMD64架构
         echo "Testing AMD64 image..."
@@ -126,13 +126,7 @@ jobs:
           ghcr.io/${{ github.repository }}:${{ steps.git_metadata.outputs.git_short_hash }} \
           -version || echo "Version command not available, but image started successfully"
 
-        # 测试ARM64架构
-        echo "Testing ARM64 image..."
-        docker run --rm --platform linux/arm64 \
-          ghcr.io/${{ github.repository }}:${{ steps.git_metadata.outputs.git_short_hash }} \
-          -version || echo "Version command not available, but image started successfully"
-
-        echo "✅ Multi-architecture test completed successfully"
+        echo "✅ Docker image test completed successfully"
 
     - name: Generate comprehensive release notes
       run: |
