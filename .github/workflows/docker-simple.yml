@@ -60,13 +60,9 @@ jobs:
         file: ./dockerfile
         push: true
         tags: |
-          # 主要标签：Git短哈希
           ghcr.io/${{ github.repository }}:${{ steps.git_info.outputs.short_hash }}
-          # 分支标签
           ghcr.io/${{ github.repository }}:${{ steps.git_info.outputs.branch_name }}
-          # 完整哈希标签（用于精确版本）
           ghcr.io/${{ github.repository }}:hash-${{ steps.git_info.outputs.full_hash }}
-          # 时间戳标签
           ghcr.io/${{ github.repository }}:${{ steps.git_info.outputs.timestamp }}
         labels: |
           org.opencontainers.image.title=http-proxy-go-server
