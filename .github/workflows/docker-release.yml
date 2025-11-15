@@ -124,7 +124,7 @@ jobs:
         echo "Testing AMD64 image..."
         docker run --rm --platform linux/amd64 \
           ghcr.io/${{ github.repository }}:${{ steps.git_metadata.outputs.git_short_hash }} \
-          -version || echo "Version command not available, but image started successfully"
+          -- -version || echo "Version command not available, but image started successfully"
 
         echo "✅ Docker image test completed successfully"
 
@@ -168,7 +168,7 @@ jobs:
         echo '```bash' >> $GITHUB_STEP_SUMMARY
         echo "docker run -d -p 8080:8080 --name http-proxy \\" >> $GITHUB_STEP_SUMMARY
         echo "  ghcr.io/${{ github.repository }}:${{ steps.git_metadata.outputs.git_short_hash }} \\" >> $GITHUB_STEP_SUMMARY
-        echo "  -hostname 0.0.0.0 -port 8080 \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -- -hostname 0.0.0.0 -port 8080 \\" >> $GITHUB_STEP_SUMMARY
         echo "  -username admin -password secret" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
@@ -178,7 +178,7 @@ jobs:
         echo "docker run -d -p 8080:8080 --name http-proxy \\" >> $GITHUB_STEP_SUMMARY
         echo "  -v $(pwd)/dns_cache:/app/cache \\" >> $GITHUB_STEP_SUMMARY
         echo "  ghcr.io/${{ github.repository }}:${{ steps.git_metadata.outputs.git_short_hash }} \\" >> $GITHUB_STEP_SUMMARY
-        echo "  -hostname 0.0.0.0 -port 8080 \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -- -hostname 0.0.0.0 -port 8080 \\" >> $GITHUB_STEP_SUMMARY
         echo "  -dohurl https://dns.google/dns-query \\" >> $GITHUB_STEP_SUMMARY
         echo "  -dohip 8.8.8.8 \\" >> $GITHUB_STEP_SUMMARY
         echo "  -dohalpn h2 \\" >> $GITHUB_STEP_SUMMARY
