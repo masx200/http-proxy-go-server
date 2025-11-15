@@ -108,7 +108,7 @@ jobs:
           org.opencontainers.image.revision=${{ steps.git_metadata.outputs.git_hash }}
           org.opencontainers.image.created=${{ steps.git_metadata.outputs.build_date }}
           org.opencontainers.image.licenses=MIT
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/amd64#,linux/arm64
         cache-from: type=gha
         cache-to: type=gha,mode=max
         build-args: |
