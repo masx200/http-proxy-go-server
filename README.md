@@ -25,7 +25,10 @@
 | `-cache-enabled`       | bool   | `true`             | 启用DNS缓存                             |
 | `-cache-file`          | string | `./dns_cache.json` | DNS缓存文件路径                         |
 | `-cache-ttl`           | string | `10m`              | DNS缓存TTL（生存时间）                  |
-| `-cache-save-interval` | string | `30s`              | DNS缓存保存间隔                         |
+| `-cache-save-interval` | string | `30s`              | DNS缓存全量保存间隔                     |
+| `-cache-aof-enabled`   | bool   | `true`             | 启用DNS缓存AOF（增量持久化）            |
+| `-cache-aof-file`      | string | `./dns_cache.aof`  | DNS缓存AOF文件路径                      |
+| `-cache-aof-interval`  | string | `1s`               | DNS缓存AOF增量保存间隔                  |
 
 1. `-config string`：指定 JSON 配置文件路径，可以通过配置文件设置所有参数。
 
@@ -66,8 +69,16 @@
 14. `-cache-ttl string`：设置DNS缓存的TTL（生存时间），默认为
     "10m"（10分钟）。支持的时间格式包括：5m、10m、1h 等。
 
-15. `-cache-save-interval string`：设置DNS缓存的自动保存间隔，默认为
-    "30s"（30秒）。系统会定期将缓存保存到文件中，以防止数据丢失。
+15. `-cache-save-interval string`：设置DNS缓存的自动全量保存间隔，默认为
+    "30s"（30秒）。系统会定期将完整缓存保存到文件中，以防止数据丢失。
+
+16. `-cache-aof-enabled`：启用或禁用DNS缓存AOF（Append Only File）增量持久化功能，默认为启用。AOF模式可以实现更频繁的数据保存，提高数据安全性。
+
+17. `-cache-aof-file string`：指定DNS缓存AOF文件的存储路径，默认为
+    "./dns_cache.aof"。AOF文件采用JSONL（JSON Lines）格式，记录所有的DNS查询操作。
+
+18. `-cache-aof-interval string`：设置DNS缓存AOF的增量保存间隔，默认为
+    "1s"（1秒）。系统会以指定间隔将DNS查询操作追加到AOF文件中，实现近乎实时的数据持久化。
 
 总结来说，`http-proxy-go-server` 提供了一个功能丰富的代理服务器，支持：
 
@@ -75,6 +86,7 @@
 - DOH (DNS over HTTPS) 支持
 - WebSocket、SOCKS5 和 HTTP 上游代理
 - **DNS 缓存功能** - 提高DNS解析性能，减少外部DNS请求
+- **AOF 增量持久化** - Redis风格的增量日志，实现秒级数据持久化
 - 灵活的配置方式（命令行参数和 JSON 配置文件）
   用户可以根据需要调整监听地址、端口、认证凭据、上游代理以及是否启用加密通信等配置项。
 
@@ -101,7 +113,16 @@ JSON 配置文件支持以下参数：
       "alpn": "h2",
       "url": "https://dns.alidns.com/dns-query"
     }
-  ]
+  ],
+  "dns_cache": {
+    "enabled": true,
+    "file": "./dns_cache.json",
+    "ttl": "10m",
+    "save_interval": "30s",
+    "aof_enabled": true,
+    "aof_file": "./dns_cache.aof",
+    "aof_interval": "1s"
+  }
 }
 ```
 
@@ -117,6 +138,14 @@ JSON 配置文件支持以下参数：
   - `ip`: DOH 服务器 IP 地址，支持 ipv4 和 ipv6 地址
   - `alpn`: DOH ALPN 协议，支持 h2 和 h3 协议
   - `url`: DOH 服务器 URL，支持 http 和 https 协议
+- `dns_cache`: DNS 缓存配置对象，包含以下字段：
+  - `enabled`: 是否启用DNS缓存，默认为 true
+  - `file`: DNS缓存文件路径，默认为 "./dns_cache.json"
+  - `ttl`: DNS缓存TTL（生存时间），默认为 "10m"
+  - `save_interval`: DNS缓存全量保存间隔，默认为 "30s"
+  - `aof_enabled`: 是否启用AOF增量持久化，默认为 true
+  - `aof_file`: AOF文件路径，默认为 "./dns_cache.aof"
+  - `aof_interval`: AOF增量保存间隔，默认为 "1s"
 
 ### 使用配置文件
 

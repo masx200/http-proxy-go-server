@@ -18,6 +18,7 @@ import (
 
 	"github.com/masx200/http-proxy-go-server/auth"
 	"github.com/masx200/http-proxy-go-server/dnscache"
+	"github.com/masx200/http-proxy-go-server/doh"
 	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/http-proxy-go-server/simple"
 	"github.com/masx200/http-proxy-go-server/tls"
@@ -77,6 +78,17 @@ type Config struct {
 	Username   string      `json:"username"`
 	Password   string      `json:"password"`
 	Doh        []DohConfig `json:"doh"`
+
+	// DNS缓存配置
+	DNSCache struct {
+		Enabled         bool   `json:"enabled"`
+		File            string `json:"file"`
+		TTL             string `json:"ttl"`
+		SaveInterval    string `json:"save_interval"`
+		AOFEnabled      bool   `json:"aof_enabled"`
+		AOFFile         string `json:"aof_file"`
+		AOFInterval     string `json:"aof_interval"`
+	} `json:"dns_cache"`
 
 	UpStreams map[string]UpStream `json:"upstreams"`
 	Rules     []struct {
@@ -495,7 +507,11 @@ func main() {
 		cacheEnabled     = flag.Bool("cache-enabled", true, "enable DNS caching")
 		cacheFile        = flag.String("cache-file", "./dns_cache.json", "DNS cache file path")
 		cacheTTL         = flag.String("cache-ttl", "10m", "DNS cache TTL (duration string, e.g., 5m, 10m, 1h)")
-		cacheSaveInterval = flag.String("cache-save-interval", "30s", "DNS cache save interval (duration string, e.g., 30s, 1m)")
+		cacheSaveInterval = flag.String("cache-save-interval", "30s", "DNS cache full save interval (duration string, e.g., 30s, 1m)")
+		// DNS缓存AOF相关参数
+		cacheAOFEnabled  = flag.Bool("cache-aof-enabled", true, "enable DNS cache AOF (append-only file) persistence")
+		cacheAOFFile     = flag.String("cache-aof-file", "./dns_cache.aof", "DNS cache AOF file path")
+		cacheAOFInterval = flag.String("cache-aof-interval", "1s", "DNS cache AOF save interval (duration string, e.g., 1s, 5s)")
 	)
 	flag.Parse()
 
@@ -569,9 +585,36 @@ func main() {
 	log.Println("cache-file:", *cacheFile)
 	log.Println("cache-ttl:", *cacheTTL)
 	log.Println("cache-save-interval:", *cacheSaveInterval)
+	log.Println("cache-aof-enabled:", *cacheAOFEnabled)
+	log.Println("cache-aof-file:", *cacheAOFFile)
+	log.Println("cache-aof-interval:", *cacheAOFInterval)
 
-	// 解析DNS缓存配置
-	var dnsCache *dnscache.DNSCache
+	// 如果指定了配置文件，则从配置文件读取DNS缓存配置
+	if config != nil {
+		if config.DNSCache.Enabled {
+			*cacheEnabled = config.DNSCache.Enabled
+		}
+		if config.DNSCache.File != "" {
+			*cacheFile = config.DNSCache.File
+		}
+		if config.DNSCache.TTL != "" {
+			*cacheTTL = config.DNSCache.TTL
+		}
+		if config.DNSCache.SaveInterval != "" {
+			*cacheSaveInterval = config.DNSCache.SaveInterval
+		}
+		if config.DNSCache.AOFEnabled {
+			*cacheAOFEnabled = config.DNSCache.AOFEnabled
+		}
+		if config.DNSCache.AOFFile != "" {
+			*cacheAOFFile = config.DNSCache.AOFFile
+		}
+		if config.DNSCache.AOFInterval != "" {
+			*cacheAOFInterval = config.DNSCache.AOFInterval
+		}
+	}
+
+	// 解析DNS缓存配置并初始化
 	if *cacheEnabled {
 		// 解析TTL
 		cacheTTLDuration, err := time.ParseDuration(*cacheTTL)
@@ -587,23 +630,37 @@ func main() {
 			cacheSaveIntervalDuration = 30 * time.Second
 		}
 
-		// 创建缓存配置
-		cacheConfig := &dnscache.Config{
-			FilePath:        *cacheFile,
-			DefaultTTL:      cacheTTLDuration,
-			CleanupInterval: 5 * time.Minute, // 固定清理间隔
-			SaveInterval:    cacheSaveIntervalDuration,
-			Enabled:         true,
+		// 解析AOF保存间隔
+		cacheAOFIntervalDuration, err := time.ParseDuration(*cacheAOFInterval)
+		if err != nil {
+			log.Printf("解析cache-aof-interval失败，使用默认值: %v", err)
+			cacheAOFIntervalDuration = 1 * time.Second
 		}
 
-		dnsCache, err = dnscache.NewWithConfig(cacheConfig)
+		// 创建缓存配置并初始化DoH缓存系统
+		dohCacheConfig := &doh.CacheConfig{
+			Enabled:      *cacheEnabled,
+			FilePath:     *cacheFile,
+			AOFPath:      *cacheAOFFile,
+			DefaultTTL:   cacheTTLDuration,
+			SaveInterval: cacheSaveIntervalDuration,
+			AOFInterval:  cacheAOFIntervalDuration,
+			AOFEnabled:   *cacheAOFEnabled,
+		}
+
+		// 初始化DoH模块中的DNS缓存
+		err = doh.InitDNSCache(dohCacheConfig)
 		if err != nil {
-			log.Printf("创建DNS缓存失败，将禁用缓存: %v", err)
-			dnsCache = nil
+			log.Printf("初始化DNS缓存失败，将禁用缓存: %v", err)
 		} else {
-			log.Printf("DNS缓存已启用，文件: %s, TTL: %v", *cacheFile, cacheTTLDuration)
+			log.Printf("DNS缓存已启用，文件: %s, AOF: %v, TTL: %v", *cacheFile, *cacheAOFEnabled, cacheTTLDuration)
 		}
 	} else {
+		// 即使禁用缓存也要初始化，以便DoH模块正常工作
+		dohCacheConfig := &doh.CacheConfig{
+			Enabled: false,
+		}
+		doh.InitDNSCache(dohCacheConfig)
 		log.Println("DNS缓存已禁用")
 	}
 
@@ -613,10 +670,9 @@ func main() {
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		<-c
 		log.Println("收到退出信号，正在关闭服务器...")
-		if dnsCache != nil {
-			dnsCache.Close()
-			log.Println("DNS缓存已关闭")
-		}
+		// 关闭DNS缓存
+		doh.CloseDNSCache()
+		log.Println("DNS缓存已关闭")
 		os.Exit(0)
 	}()
 
