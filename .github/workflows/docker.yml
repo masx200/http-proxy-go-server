@@ -122,7 +122,7 @@ jobs:
         # 启动容器进行基本测试
         docker run -d --name test-proxy -p 8080:8080 \
           ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.git_hash.outputs.short_hash }} \
-          -- -hostname 0.0.0.0 -port 8080
+          /app/main -hostname 0.0.0.0 -port 8080
 
         # 等待容器启动
         sleep 10
