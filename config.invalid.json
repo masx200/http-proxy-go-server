@@ -1,0 +1,17 @@
+{
+  "hostname": "invalid_hostname_with_underscores_and_symbols!",
+  "port": 99999,
+  "server_cert": "nonexistent_cert.pem",
+  "doh": [
+    {
+      "ip": "invalid_ip_address",
+      "alpn": "invalid_alpn",
+      "url": "not_a_valid_url"
+    }
+  ],
+  "dns_cache": {
+    "enabled": true,
+    "ttl": "invalid_duration_format",
+    "save_interval": "another_invalid_format"
+  }
+}

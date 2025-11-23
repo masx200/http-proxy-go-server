@@ -1,0 +1,16 @@
+hostname: "127.0.0.1"
+port: 8083
+
+doh:
+  - ip: "8.8.8.8"
+    alpn: "h2"
+    url: "https://dns.google/dns-query"
+
+dns_cache:
+  enabled: true
+  file: "./dns_cache.json"
+  ttl: "10m"
+  save_interval: "30s"
+  aof_enabled: true
+  aof_file: "./dns_cache.aof"
+  aof_interval: "1s"

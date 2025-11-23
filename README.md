@@ -72,10 +72,12 @@
 15. `-cache-save-interval string`：设置DNS缓存的自动全量保存间隔，默认为
     "30s"（30秒）。系统会定期将完整缓存保存到文件中，以防止数据丢失。
 
-16. `-cache-aof-enabled`：启用或禁用DNS缓存AOF（Append Only File）增量持久化功能，默认为启用。AOF模式可以实现更频繁的数据保存，提高数据安全性。
+16. `-cache-aof-enabled`：启用或禁用DNS缓存AOF（Append Only
+    File）增量持久化功能，默认为启用。AOF模式可以实现更频繁的数据保存，提高数据安全性。
 
 17. `-cache-aof-file string`：指定DNS缓存AOF文件的存储路径，默认为
-    "./dns_cache.aof"。AOF文件采用JSONL（JSON Lines）格式，记录所有的DNS查询操作。
+    "./dns_cache.aof"。AOF文件采用JSONL（JSON
+    Lines）格式，记录所有的DNS查询操作。
 
 18. `-cache-aof-interval string`：设置DNS缓存AOF的增量保存间隔，默认为
     "1s"（1秒）。系统会以指定间隔将DNS查询操作追加到AOF文件中，实现近乎实时的数据持久化。

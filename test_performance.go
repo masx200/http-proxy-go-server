@@ -20,8 +20,8 @@ func main() {
 	config := dnscache.DefaultConfig()
 	config.FilePath = "./perf_dns_cache.json"
 	config.AOFPath = "./perf_dns_cache.aof"
-	config.SaveInterval = 30 * time.Second  // 30秒全量保存
-	config.AOFInterval = 1 * time.Second    // 1秒增量保存
+	config.SaveInterval = 30 * time.Second // 30秒全量保存
+	config.AOFInterval = 1 * time.Second   // 1秒增量保存
 
 	fmt.Printf("配置: 全量保存=%v, 增量保存=%v\n", config.SaveInterval, config.AOFInterval)
 

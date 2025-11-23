@@ -15,8 +15,8 @@ func main() {
 	config := dnscache.DefaultConfig()
 	config.FilePath = "./test_dns_cache.json"
 	config.AOFPath = "./test_dns_cache.aof"
-	config.SaveInterval = 5 * time.Second  // 5秒全量保存，测试用
-	config.AOFInterval = 1 * time.Second   // 1秒增量保存
+	config.SaveInterval = 5 * time.Second // 5秒全量保存，测试用
+	config.AOFInterval = 1 * time.Second  // 1秒增量保存
 
 	// 创建DNS缓存实例
 	cache, err := dnscache.NewWithConfig(config)

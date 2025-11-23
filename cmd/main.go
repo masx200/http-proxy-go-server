@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/masx200/http-proxy-go-server/auth"
+	"github.com/masx200/http-proxy-go-server/config"
 	"github.com/masx200/http-proxy-go-server/dnscache"
 	_ "github.com/masx200/http-proxy-go-server/doh"
 	"github.com/masx200/http-proxy-go-server/options"
@@ -30,6 +31,14 @@ import (
 	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
 )
 
+// Type aliases for backward compatibility and easier migration
+type Config = config.Config
+type UpStream = config.UpStream
+type RoutingRule = config.RoutingRule
+type Filter = config.Filter
+type DohConfig = config.DohConfig
+type DNSCacheConfig = config.DNSCacheConfig
+
 // 全局DNS缓存实例
 var (
 	globalDNSCache *dnscache.DNSCache
@@ -38,13 +47,13 @@ var (
 
 // CacheConfig DNS缓存配置
 type CacheConfig struct {
-	Enabled          bool          `json:"enabled"`
-	FilePath         string        `json:"file_path"`
-	AOFPath          string        `json:"aof_path"`
-	DefaultTTL       time.Duration `json:"default_ttl"`
-	SaveInterval     time.Duration `json:"save_interval"`
-	AOFInterval      time.Duration `json:"aof_interval"`
-	AOFEnabled       bool          `json:"aof_enabled"`
+	Enabled      bool          `json:"enabled"`
+	FilePath     string        `json:"file_path"`
+	AOFPath      string        `json:"aof_path"`
+	DefaultTTL   time.Duration `json:"default_ttl"`
+	SaveInterval time.Duration `json:"save_interval"`
+	AOFInterval  time.Duration `json:"aof_interval"`
+	AOFEnabled   bool          `json:"aof_enabled"`
 }
 
 // DefaultCacheConfig 返回默认缓存配置
@@ -70,12 +79,12 @@ func InitDNSCache(config *CacheConfig) error {
 		}
 
 		dnscacheConfig := &dnscache.Config{
-			FilePath:        config.FilePath,
-			AOFPath:         config.AOFPath,
-			DefaultTTL:      config.DefaultTTL,
-			SaveInterval:    config.SaveInterval,
-			AOFInterval:     config.AOFInterval,
-			Enabled:         config.Enabled,
+			FilePath:     config.FilePath,
+			AOFPath:      config.AOFPath,
+			DefaultTTL:   config.DefaultTTL,
+			SaveInterval: config.SaveInterval,
+			AOFInterval:  config.AOFInterval,
+			Enabled:      config.Enabled,
 		}
 
 		globalDNSCache, err = dnscache.NewWithConfig(dnscacheConfig)
@@ -111,80 +120,9 @@ func (m *multiString) Set(value string) error {
 	return nil
 }
 
-type UpStream struct {
-	TYPE        string   `json:"type"`
-	HTTP_PROXY  string   `json:"http_proxy"`
-	HTTPS_PROXY string   `json:"https_proxy"`
-	BypassList  []string `json:"bypass_list"`
-	// 新增WebSocket支持
-	WS_PROXY    string `json:"ws_proxy"`    // WebSocket代理地址
-	WS_USERNAME string `json:"ws_username"` // WebSocket代理用户名
-	WS_PASSWORD string `json:"ws_password"` // WebSocket代理密码
-
-	HTTP_USERNAME string `json:"http_username"` // http代理用户名
-	HTTP_PASSWORD string `json:"http_password"` // http代理密码
-	// 新增SOCKS5支持
-	SOCKS5_PROXY    string `json:"socks5_proxy"`    // SOCKS5代理地址
-	SOCKS5_USERNAME string `json:"socks5_username"` // SOCKS5代理用户名
-	SOCKS5_PASSWORD string `json:"socks5_password"` // SOCKS5代理密码
-}
-
-// func init() {
-// 	http.ProxyFromEnvironment()
-// }
-
-// DohConfig DOH配置结构体
-type DohConfig struct {
-	IP   string `json:"ip"`
-	Alpn string `json:"alpn"`
-	URL  string `json:"url"`
-}
-
-// Config 结构体用于JSON配置文件
-type Config struct {
-	Hostname   string      `json:"hostname"`
-	Port       int         `json:"port"`
-	ServerCert string      `json:"server_cert"`
-	ServerKey  string      `json:"server_key"`
-	Username   string      `json:"username"`
-	Password   string      `json:"password"`
-	Doh        []DohConfig `json:"doh"`
-
-	// DNS缓存配置
-	DNSCache struct {
-		Enabled         bool   `json:"enabled"`
-		File            string `json:"file"`
-		TTL             string `json:"ttl"`
-		SaveInterval    string `json:"save_interval"`
-		AOFEnabled      bool   `json:"aof_enabled"`
-		AOFFile         string `json:"aof_file"`
-		AOFInterval     string `json:"aof_interval"`
-	} `json:"dns_cache"`
-
-	UpStreams map[string]UpStream `json:"upstreams"`
-	Rules     []struct {
-		Filter   string `json:"filter"`
-		Upstream string `json:"upstream"`
-	} `json:"rules"`
-	Filters map[string]struct {
-		Patterns []string `json:"patterns"`
-	} `json:"filters"`
-}
-
-// loadConfig 从JSON文件加载配置
-func loadConfig(configFile string) (*Config, error) {
-	data, err := os.ReadFile(configFile)
-	if err != nil {
-		return nil, err
-	}
-
-	var config Config
-	err = json.Unmarshal(data, &config)
-	if err != nil {
-		return nil, err
-	}
-
-	return &config, nil
+// loadConfig 从配置文件加载并验证配置
+func loadConfig(configFile string) (*config.Config, error) {
+	return config.LoadAndValidateConfig(configFile)
 }
 
 // isValidDomain 检查字符串是否为有效的域名格式
@@ -264,12 +202,7 @@ func overrideProxyURLCredentials(proxyURL string, username, password string) (st
 }
 
 // SelectProxyURLWithCIDR 根据输入的域名或IP地址选择代理服务器的URL，支持CIDR匹配和WebSocket代理
-func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
-	Filter   string `json:"filter"`
-	Upstream string `json:"upstream"`
-}, filters map[string]struct {
-	Patterns []string `json:"patterns"`
-}, domain string, scheme string) (string, error) {
+func SelectProxyURLWithCIDR(upstreams map[string]config.UpStream, rules []config.RoutingRule, filters map[string]config.Filter, domain string, scheme string) (string, error) {
 	// 首先尝试解析为IP地址
 	ip := net.ParseIP(domain)
 	if ip != nil {
@@ -456,12 +389,7 @@ func SelectProxyURLWithCIDR(upstreams map[string]UpStream, rules []struct {
 }
 
 // IsBypassedWithCIDR 检查目标是否在bypass列表中，支持CIDR匹配
-func IsBypassedWithCIDR(upstreams map[string]UpStream, rules []struct {
-	Filter   string `json:"filter"`
-	Upstream string `json:"upstream"`
-}, filters map[string]struct {
-	Patterns []string `json:"patterns"`
-}, target string) bool {
+func IsBypassedWithCIDR(upstreams map[string]config.UpStream, rules []config.RoutingRule, filters map[string]config.Filter, target string) bool {
 	// 首先尝试解析为IP地址
 	ip := net.ParseIP(target)
 	if ip != nil {
@@ -501,12 +429,7 @@ func IsBypassedWithCIDR(upstreams map[string]UpStream, rules []struct {
 }
 
 // ProxySelector 使用SelectProxyURLWithCIDR和IsBypassedWithCIDR实现代理选择逻辑，支持WebSocket代理
-func ProxySelector(r *http.Request, UpStreams map[string]UpStream, Rules []struct {
-	Filter   string `json:"filter"`
-	Upstream string `json:"upstream"`
-}, Filters map[string]struct {
-	Patterns []string `json:"patterns"`
-}) (*url.URL, error) {
+func ProxySelector(r *http.Request, UpStreams map[string]config.UpStream, Rules []config.RoutingRule, Filters map[string]config.Filter) (*url.URL, error) {
 	scheme := r.URL.Scheme
 	// 提取请求的主机名
 	host := r.URL.Host
@@ -575,9 +498,9 @@ func main() {
 		upstreamUsername = flag.String("upstream-username", "", "upstream proxy username")
 		upstreamPassword = flag.String("upstream-password", "", "upstream proxy password")
 		// DNS缓存相关参数
-		cacheEnabled     = flag.Bool("cache-enabled", true, "enable DNS caching")
-		cacheFile        = flag.String("cache-file", "./dns_cache.json", "DNS cache file path")
-		cacheTTL         = flag.String("cache-ttl", "10m", "DNS cache TTL (duration string, e.g., 5m, 10m, 1h)")
+		cacheEnabled      = flag.Bool("cache-enabled", true, "enable DNS caching")
+		cacheFile         = flag.String("cache-file", "./dns_cache.json", "DNS cache file path")
+		cacheTTL          = flag.String("cache-ttl", "10m", "DNS cache TTL (duration string, e.g., 5m, 10m, 1h)")
 		cacheSaveInterval = flag.String("cache-save-interval", "30s", "DNS cache full save interval (duration string, e.g., 30s, 1m)")
 		// DNS缓存AOF相关参数
 		cacheAOFEnabled  = flag.Bool("cache-aof-enabled", true, "enable DNS cache AOF (append-only file) persistence")
@@ -586,7 +509,6 @@ func main() {
 	)
 	flag.Parse()
 
-	
 	log.Println("代理服务器启动中...")
 
 	// 如果指定了配置文件，则从配置文件读取参数
@@ -761,16 +683,11 @@ func main() {
 		}
 		// 如果Rules为空，则初始化
 		if config.Rules == nil {
-			config.Rules = []struct {
-				Filter   string `json:"filter"`
-				Upstream string `json:"upstream"`
-			}{}
+			config.Rules = []RoutingRule{}
 		}
 		// 如果Filters为空，则初始化
 		if config.Filters == nil {
-			config.Filters = make(map[string]struct {
-				Patterns []string `json:"patterns"`
-			})
+			config.Filters = make(map[string]Filter)
 		}
 
 		// 创建WebSocket代理配置
@@ -788,17 +705,12 @@ func main() {
 		config.UpStreams["websocket_upstream"] = wsUpstream
 
 		// 添加规则和过滤器
-		config.Rules = append(config.Rules, struct {
-			Filter   string `json:"filter"`
-			Upstream string `json:"upstream"`
-		}{
+		config.Rules = append(config.Rules, RoutingRule{
 			Filter:   "websocket_filter",
 			Upstream: "websocket_upstream",
 		})
 
-		config.Filters["websocket_filter"] = struct {
-			Patterns []string `json:"patterns"`
-		}{
+		config.Filters["websocket_filter"] = Filter{
 			Patterns: []string{"*"},
 		}
 
@@ -817,16 +729,11 @@ func main() {
 		}
 		// 如果Rules为空，则初始化
 		if config.Rules == nil {
-			config.Rules = []struct {
-				Filter   string `json:"filter"`
-				Upstream string `json:"upstream"`
-			}{}
+			config.Rules = []RoutingRule{}
 		}
 		// 如果Filters为空，则初始化
 		if config.Filters == nil {
-			config.Filters = make(map[string]struct {
-				Patterns []string `json:"patterns"`
-			})
+			config.Filters = make(map[string]Filter)
 		}
 
 		// 创建SOCKS5代理配置
@@ -844,17 +751,12 @@ func main() {
 		config.UpStreams["socks5_upstream"] = socks5Upstream
 
 		// 添加规则和过滤器
-		config.Rules = append(config.Rules, struct {
-			Filter   string `json:"filter"`
-			Upstream string `json:"upstream"`
-		}{
+		config.Rules = append(config.Rules, RoutingRule{
 			Filter:   "socks5_filter",
 			Upstream: "socks5_upstream",
 		})
 
-		config.Filters["socks5_filter"] = struct {
-			Patterns []string `json:"patterns"`
-		}{
+		config.Filters["socks5_filter"] = Filter{
 			Patterns: []string{"*"},
 		}
 
@@ -873,16 +775,11 @@ func main() {
 		}
 		// 如果Rules为空，则初始化
 		if config.Rules == nil {
-			config.Rules = []struct {
-				Filter   string `json:"filter"`
-				Upstream string `json:"upstream"`
-			}{}
+			config.Rules = []RoutingRule{}
 		}
 		// 如果Filters为空，则初始化
 		if config.Filters == nil {
-			config.Filters = make(map[string]struct {
-				Patterns []string `json:"patterns"`
-			})
+			config.Filters = make(map[string]Filter)
 		}
 
 		// 创建HTTP代理配置
@@ -913,17 +810,12 @@ func main() {
 		config.UpStreams["http_upstream"] = httpUpstream
 
 		// 添加规则和过滤器
-		config.Rules = append(config.Rules, struct {
-			Filter   string `json:"filter"`
-			Upstream string `json:"upstream"`
-		}{
+		config.Rules = append(config.Rules, RoutingRule{
 			Filter:   "http_filter",
 			Upstream: "http_upstream",
 		})
 
-		config.Filters["http_filter"] = struct {
-			Patterns []string `json:"patterns"`
-		}{
+		config.Filters["http_filter"] = Filter{
 			Patterns: []string{"*"},
 		}
 
@@ -1100,7 +992,7 @@ func main() {
 }
 
 // websocketDialContext 实现WebSocket代理连接
-func websocketDialContext(ctx context.Context, network, addr string, upstream UpStream) (net.Conn, error) {
+func websocketDialContext(ctx context.Context, network, addr string, upstream config.UpStream) (net.Conn, error) {
 	// 解析目标地址
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
@@ -1172,7 +1064,7 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream Up
 }
 
 // socks5DialContext 实现SOCKS5代理连接
-func socks5DialContext(ctx context.Context, network, addr string, upstream UpStream) (net.Conn, error) {
+func socks5DialContext(ctx context.Context, network, addr string, upstream config.UpStream) (net.Conn, error) {
 	// 解析SOCKS5代理地址
 	proxyURL, err := url.Parse(upstream.SOCKS5_PROXY)
 	if err != nil {

@@ -70,10 +70,10 @@ func TestCacheItemMarshalJSON(t *testing.T) {
 
 func TestCacheItemUnmarshalJSON(t *testing.T) {
 	tests := []struct {
-		name        string
-		jsonData    string
-		wantItem    cacheItem
-		shouldFail  bool
+		name       string
+		jsonData   string
+		wantItem   cacheItem
+		shouldFail bool
 	}{
 		{
 			name:     "正常时间戳",
@@ -108,9 +108,9 @@ func TestCacheItemUnmarshalJSON(t *testing.T) {
 			},
 		},
 		{
-			name:        "无效JSON",
-			jsonData:    `{"value":"test-value","expiration":invalid}`,
-			shouldFail:  true,
+			name:       "无效JSON",
+			jsonData:   `{"value":"test-value","expiration":invalid}`,
+			shouldFail: true,
 		},
 	}
 

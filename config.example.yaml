@@ -1,0 +1,66 @@
+hostname: "0.0.0.0"
+port: 8080
+username: "admin"
+password: "secret123"
+
+doh:
+  - ip: "8.8.8.8"
+    alpn: "h2"
+    url: "https://dns.google/dns-query"
+  - ip: "1.1.1.1"
+    alpn: "h3"
+    url: "https://cloudflare-dns.com/dns-query"
+
+dns_cache:
+  enabled: true
+  file: "./dns_cache.json"
+  ttl: "10m"
+  save_interval: "30s"
+  aof_enabled: true
+  aof_file: "./dns_cache.aof"
+  aof_interval: "1s"
+
+upstreams:
+  ws_proxy:
+    type: "websocket"
+    ws_proxy: "ws://127.0.0.1:1081"
+    ws_username: "ws_user"
+    ws_password: "ws_pass"
+
+  socks5_proxy:
+    type: "socks5"
+    socks5_proxy: "socks5://127.0.0.1:1080"
+    socks5_username: "socks5_user"
+    socks5_password: "socks5_pass"
+
+  http_proxy:
+    type: "http"
+    http_proxy: "http://127.0.0.1:8080"
+    https_proxy: "http://127.0.0.1:8080"
+    http_username: "http_user"
+    http_password: "http_pass"
+    bypass_list:
+      - "localhost"
+      - "127.0.0.1"
+      - "*.local"
+
+rules:
+  - filter: "ws_filter"
+    upstream: "ws_proxy"
+  - filter: "socks5_filter"
+    upstream: "socks5_proxy"
+  - filter: "http_filter"
+    upstream: "http_proxy"
+
+filters:
+  ws_filter:
+    patterns:
+      - "*.example.com"
+      - "api.*.com"
+  socks5_filter:
+    patterns:
+      - "*.internal"
+      - "company.com"
+  http_filter:
+    patterns:
+      - "*"

@@ -42,9 +42,9 @@ type DNSCache struct {
 
 // Record DNS记录结构 (用于可能的统计和调试)
 type Record struct {
-	Type   string      `json:"type"`
-	Domain string      `json:"domain"`
-	Value  interface{} `json:"value"`
+	Type   string        `json:"type"`
+	Domain string        `json:"domain"`
+	Value  interface{}   `json:"value"`
 	TTL    time.Duration `json:"ttl"`
 }
 
@@ -125,13 +125,13 @@ func (ci *cacheItem) UnmarshalJSON(data []byte) error {
 
 // Config DNS缓存配置
 type Config struct {
-	FilePath         string        `json:"file_path"`
-	AOFPath          string        `json:"aof_path"`
-	DefaultTTL       time.Duration `json:"default_ttl"`
-	CleanupInterval  time.Duration `json:"cleanup_interval"`
-	SaveInterval     time.Duration `json:"save_interval"`
-	AOFInterval      time.Duration `json:"aof_interval"`
-	Enabled          bool          `json:"enabled"`
+	FilePath        string        `json:"file_path"`
+	AOFPath         string        `json:"aof_path"`
+	DefaultTTL      time.Duration `json:"default_ttl"`
+	CleanupInterval time.Duration `json:"cleanup_interval"`
+	SaveInterval    time.Duration `json:"save_interval"`
+	AOFInterval     time.Duration `json:"aof_interval"`
+	Enabled         bool          `json:"enabled"`
 }
 
 // DefaultConfig 返回默认配置
@@ -621,7 +621,7 @@ func (dc *DNSCache) ItemCount() int {
 func (dc *DNSCache) Stats() map[string]interface{} {
 	if dc.cache == nil {
 		return map[string]interface{}{
-			"enabled":   false,
+			"enabled":    false,
 			"item_count": 0,
 			"file_path":  "",
 			"aof_path":   "",
