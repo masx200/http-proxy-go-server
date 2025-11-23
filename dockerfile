@@ -1,4 +1,4 @@
-FROM docker.cnb.cool/masx200/docker_mirror/golang:1.24.4-alpine-linux-amd64 AS build
+FROM library/golang:1.25.4-alpine3.22 AS build
 
 
 # Set the working directory
