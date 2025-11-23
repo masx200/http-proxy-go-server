@@ -24,3 +24,4 @@ main
 .claude
 *.log
 dns_cache.aof
+test_dns_cache.aof

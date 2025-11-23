@@ -4,9 +4,22 @@ import "time"
 
 // DohConfig DOH配置结构体
 type DohConfig struct {
-	IP   string `json:"ip"`
-	Alpn string `json:"alpn"`
-	URL  string `json:"url"`
+	IP       string `json:"ip"`
+	Alpn     string `json:"alpn"`
+	URL      string `json:"url"`
+	Protocol string `json:"protocol"` // "doh", "doh3"
+}
+
+// DotConfig DoT配置结构体
+type DotConfig struct {
+	IP  string `json:"ip"`
+	URL string `json:"url"`
+}
+
+// DoqConfig DoQ配置结构体
+type DoqConfig struct {
+	IP  string `json:"ip"`
+	URL string `json:"url"`
 }
 
 // DNSCacheConfig DNS缓存配置
@@ -61,6 +74,8 @@ type Config struct {
 	Username   string      `json:"username"`
 	Password   string      `json:"password"`
 	Doh        []DohConfig `json:"doh"`
+	Dot        []DotConfig `json:"dot"`
+	Doq        []DoqConfig `json:"doq"`
 
 	// DNS缓存配置
 	DNSCache DNSCacheConfig `json:"dns_cache"`

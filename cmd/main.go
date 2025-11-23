@@ -37,6 +37,8 @@ type UpStream = config.UpStream
 type RoutingRule = config.RoutingRule
 type Filter = config.Filter
 type DohConfig = config.DohConfig
+type DotConfig = config.DotConfig
+type DoqConfig = config.DoqConfig
 type DNSCacheConfig = config.DNSCacheConfig
 
 // 全局DNS缓存实例
@@ -479,11 +481,19 @@ func main() {
 		dohurls  multiString
 		dohips   multiString
 		dohalpns multiString
+		doturls  multiString
+		dotips   multiString
+		doqurls  multiString
+		doqips   multiString
 	)
 	// 注册可重复参数
 	flag.Var(&dohurls, "dohurl", "DOH URL (可重复),支持http协议和https协议")
 	flag.Var(&dohips, "dohip", "DOH IP (可重复),支持ipv4地址和ipv6地址")
 	flag.Var(&dohalpns, "dohalpn", "DOH alpn (可重复),支持h2协议和h3协议")
+	flag.Var(&doturls, "doturl", "DoT URL (可重复),格式为 tls://dns.example.com:853")
+	flag.Var(&dotips, "dotip", "DoT IP (可重复),支持ipv4地址和ipv6地址")
+	flag.Var(&doqurls, "doqurl", "DoQ URL (可重复),格式为 quic://dns.example.com:784")
+	flag.Var(&doqips, "doqip", "DoQ IP (可重复),支持ipv4地址和ipv6地址")
 
 	var (
 		hostname    = flag.String("hostname", "0.0.0.0", "an String value for hostname")
@@ -549,6 +559,26 @@ func main() {
 				}
 				if dohConfig.Alpn != "" {
 					dohalpns = append(dohalpns, dohConfig.Alpn)
+				}
+			}
+		}
+		if len(config.Dot) > 0 {
+			for _, dotConfig := range config.Dot {
+				if dotConfig.URL != "" {
+					doturls = append(doturls, dotConfig.URL)
+				}
+				if dotConfig.IP != "" {
+					dotips = append(dotips, dotConfig.IP)
+				}
+			}
+		}
+		if len(config.Doq) > 0 {
+			for _, doqConfig := range config.Doq {
+				if doqConfig.URL != "" {
+					doqurls = append(doqurls, doqConfig.URL)
+				}
+				if doqConfig.IP != "" {
+					doqips = append(doqips, doqConfig.IP)
 				}
 			}
 		}
@@ -837,7 +867,48 @@ func main() {
 			dohalpn = ""
 		}
 
-		proxyoptions = append(proxyoptions, options.ProxyOption{Dohurl: dohurl, Dohip: dohip, Dohalpn: dohalpn})
+		protocol := "doh"
+		if dohalpn == "h3" {
+			protocol = "doh3"
+		}
+		proxyoptions = append(proxyoptions, options.ProxyOption{
+			Dohurl:   dohurl,
+			Dohip:    dohip,
+			Dohalpn:  dohalpn,
+			Protocol: protocol,
+		})
+	}
+
+	// 添加 DoT 配置
+	for i, doturl := range doturls {
+		var dotip string
+		if len(dotips) > i {
+			dotip = dotips[i]
+		} else {
+			dotip = ""
+		}
+
+		proxyoptions = append(proxyoptions, options.ProxyOption{
+			Doturl:   doturl,
+			Dotip:    dotip,
+			Protocol: "dot",
+		})
+	}
+
+	// 添加 DoQ 配置
+	for i, doqurl := range doqurls {
+		var doqip string
+		if len(doqips) > i {
+			doqip = doqips[i]
+		} else {
+			doqip = ""
+		}
+
+		proxyoptions = append(proxyoptions, options.ProxyOption{
+			Doqurl:   doqurl,
+			Doqip:    doqip,
+			Protocol: "doq",
+		})
 	}
 
 	var tranportConfigurations = []func(*http.Transport) *http.Transport{}

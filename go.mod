@@ -1,6 +1,6 @@
 module github.com/masx200/http-proxy-go-server
 
-go 1.24.1
+go 1.25.2
 
 replace github.com/masx200/doq-go => github.com/masx200/doq-go v0.55.0
 
@@ -9,6 +9,7 @@ replace github.com/quic-go/quic-go => github.com/quic-go/quic-go v0.55.0
 require github.com/gin-gonic/gin v1.11.0
 
 require (
+	github.com/masx200/dnsproxy v1.0.2
 	github.com/masx200/doq-go v0.55.0
 	github.com/masx200/http3-reverse-proxy-server-experiment v0.0.0-20251004130120-07f6b38af34d
 	github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20251004130715-0afdf9b68b1f
@@ -20,6 +21,9 @@ require (
 require github.com/bytedance/gopkg v0.1.3 // indirect
 
 require (
+	github.com/AdguardTeam/golibs v0.35.0 // indirect
+	github.com/ameshkov/dnscrypt/v2 v2.4.0 // indirect
+	github.com/ameshkov/dnsstamps v1.0.3 // indirect
 	github.com/ebi-yade/altsvc-go v0.1.1 // indirect
 	github.com/fanjindong/go-cache v0.0.6 // indirect
 	github.com/goccy/go-yaml v1.18.0 // indirect
@@ -29,6 +33,7 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	go.uber.org/mock v0.6.0 // indirect
+	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b // indirect
 	golang.org/x/mod v0.29.0 // indirect
 	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/tools v0.38.0 // indirect

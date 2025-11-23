@@ -2,6 +2,7 @@ package options
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/rand"
 	"net"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	dns_experiment "github.com/masx200/http-proxy-go-server/dns_experiment"
 	"github.com/masx200/http-proxy-go-server/doh"
 	"github.com/masx200/http-proxy-go-server/hosts"
 )
@@ -34,6 +36,12 @@ type ProxyOption struct {
 	Dohurl  string
 	Dohip   string
 	Dohalpn string
+	Doturl  string
+	Dotip   string
+	Doqurl  string
+	Doqip   string
+	// 新增DNS协议类型字段，用于标识使用哪种DNS协议
+	Protocol string // "doh", "dot", "doq", "doh3"
 }
 type ProxyOptions = []ProxyOption
 
@@ -190,10 +198,8 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 	if len(proxyoptions) > 0 {
 		var errorsaray = make([]error, 0)
 		Shuffle(proxyoptions)
-		for _, dohurlopt := range proxyoptions {
+		for _, dnsOpt := range proxyoptions {
 
-			var dohip = dohurlopt.Dohip
-			var dohalpn = dohurlopt.Dohalpn
 			var ips []net.IP
 			var errors []error
 			hostname, port, err := net.SplitHostPort(address)
@@ -201,20 +207,53 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 				return nil, err
 			}
 
-			if dohalpn == "h3" {
-				if dohip == "" {
+			// 根据协议类型选择DNS解析方法
+			protocol := dnsOpt.Protocol
+			if protocol == "" {
+				// 默认使用DoH，保持向后兼容
+				protocol = "doh"
+			}
 
-					ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, dohurlopt.Dohurl)
+			switch protocol {
+			case "doh3":
+				if dnsOpt.Dohip == "" {
+					ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, dnsOpt.Dohurl)
 				} else {
-					ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, dohurlopt.Dohurl, dohip)
+					ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, dnsOpt.Dohurl, dnsOpt.Dohip)
 				}
-			} else {
-				if dohip == "" {
-
-					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurlopt.Dohurl, "", tranportConfigurations...)
+				if len(ips) > 0 {
+					log.Println("success resolve " + hostname + " by DoH3 url=" + dnsOpt.Dohurl + " ips=" + formatIPs(ips))
+				}
+			case "doh":
+				if dnsOpt.Dohip == "" {
+					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dnsOpt.Dohurl, "", tranportConfigurations...)
 				} else {
-					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dohurlopt.Dohurl, dohip, tranportConfigurations...)
+					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dnsOpt.Dohurl, dnsOpt.Dohip, tranportConfigurations...)
 				}
+				if len(ips) > 0 {
+					log.Println("success resolve " + hostname + " by DoH url=" + dnsOpt.Dohurl + " ips=" + formatIPs(ips))
+				}
+			case "dot":
+				dotOptions := &dns_experiment.DotDNSOptions{
+					ServerURL: dnsOpt.Doturl,
+					ServerIP:  dnsOpt.Dotip,
+				}
+				ips, errors = dns_experiment.ResolveDomainToIPsWithDoT(hostname, dotOptions)
+				if len(ips) > 0 {
+					log.Println("success resolve " + hostname + " by DoT url=" + dnsOpt.Doturl + " ips=" + formatIPs(ips))
+				}
+			case "doq":
+				doqOptions := &dns_experiment.DoqDNSOptions{
+					ServerURL: dnsOpt.Doqurl,
+					ServerIP:  dnsOpt.Doqip,
+				}
+				ips, errors = dns_experiment.ResolveDomainToIPsWithDoQ(hostname, doqOptions)
+				if len(ips) > 0 {
+					log.Println("success resolve " + hostname + " by DoQ url=" + dnsOpt.Doqurl + " ips=" + formatIPs(ips))
+				}
+			default:
+				// 不支持的协议，跳过
+				errors = []error{fmt.Errorf("unsupported DNS protocol: %s", protocol)}
 			}
 
 			if len(ips) == 0 && len(errors) > 0 {
@@ -237,7 +276,7 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 						continue
 					} else {
 
-						log.Println("success connect to address=" + address + " by network=" + network + " by Dohurl=" + dohurlopt.Dohurl + " by dohip=" + dohip + " by serverIP=" + serverIP)
+						log.Println("success connect to address=" + address + " by network=" + network + " by protocol=" + protocol + " by serverIP=" + serverIP)
 						return connection, err1
 					}
 				}
@@ -270,4 +309,13 @@ func Shuffle[T any](slice []T) {
 // IsIP 判断给定的字符串是否是有效的 IPv4 或 IPv6 地址。
 func IsIP(s string) bool {
 	return net.ParseIP(s) != nil
+}
+
+// formatIPs 格式化IP地址列表为字符串
+func formatIPs(ips []net.IP) string {
+	var ipStrings []string
+	for _, ip := range ips {
+		ipStrings = append(ipStrings, ip.String())
+	}
+	return strings.Join(ipStrings, ",")
 }

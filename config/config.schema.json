@@ -68,6 +68,62 @@
             "description": "DoH server URL",
             "format": "uri",
             "pattern": "^https?://.*"
+          },
+          "protocol": {
+            "type": "string",
+            "description": "DNS protocol type",
+            "enum": ["doh", "doh3"],
+            "default": "doh"
+          }
+        }
+      }
+    },
+    "dot": {
+      "type": "array",
+      "description": "DNS over TLS configuration",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["url"],
+        "properties": {
+          "ip": {
+            "type": "string",
+            "description": "DoT server IP address (IPv4 or IPv6)",
+            "anyOf": [
+              { "format": "ipv4" },
+              { "format": "ipv6" }
+            ]
+          },
+          "url": {
+            "type": "string",
+            "description": "DoT server URL",
+            "format": "uri",
+            "pattern": "^tls://.*"
+          }
+        }
+      }
+    },
+    "doq": {
+      "type": "array",
+      "description": "DNS over QUIC configuration",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["url"],
+        "properties": {
+          "ip": {
+            "type": "string",
+            "description": "DoQ server IP address (IPv4 or IPv6)",
+            "anyOf": [
+              { "format": "ipv4" },
+              { "format": "ipv6" }
+            ]
+          },
+          "url": {
+            "type": "string",
+            "description": "DoQ server URL",
+            "format": "uri",
+            "pattern": "^quic://.*"
           }
         }
       }
