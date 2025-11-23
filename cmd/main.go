@@ -492,7 +492,7 @@ func main() {
 	flag.Var(&dohalpns, "dohalpn", "DOH alpn (可重复),支持h2协议和h3协议")
 	flag.Var(&doturls, "doturl", "DoT URL (可重复),格式为 tls://dns.example.com:853")
 	flag.Var(&dotips, "dotip", "DoT IP (可重复),支持ipv4地址和ipv6地址")
-	flag.Var(&doqurls, "doqurl", "DoQ URL (可重复),格式为 quic://dns.example.com:784")
+	flag.Var(&doqurls, "doqurl", "DoQ URL (可重复),格式为 quic://dns.example.com:853")
 	flag.Var(&doqips, "doqip", "DoQ IP (可重复),支持ipv4地址和ipv6地址")
 
 	var (

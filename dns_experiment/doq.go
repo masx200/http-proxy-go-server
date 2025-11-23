@@ -3,6 +3,7 @@ package dns_experiment
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"strings"
 	"time"
@@ -99,6 +100,7 @@ func DoQClientWithOptions(msg *dns.Msg, options *DoqDNSOptions) (*dns.Msg, error
 	// 创建上游选项
 	opts := &upstream.Options{
 		Timeout: options.Timeout,
+		Logger:  slog.Default(),
 	}
 
 	// 如果指定了服务器IP，需要使用自定义的UpstreamOptions

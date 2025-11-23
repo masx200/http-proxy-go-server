@@ -85,7 +85,7 @@ func (c *CustomUpstreamOptions) DialUDP(ctx context.Context, addr string) (*net.
 		if err != nil {
 			// 如果解析失败，尝试使用默认端口
 			if port == "" {
-				port = "784" // DoQ默认端口
+				port = "853" // DoQ默认端口
 			}
 		}
 
