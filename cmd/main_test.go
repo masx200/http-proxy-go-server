@@ -3,11 +3,13 @@ package main
 import (
 	"strings"
 	"testing"
+
+	"github.com/masx200/http-proxy-go-server/config"
 )
 
 func TestSelectProxyURLWithCIDR(t *testing.T) {
 	// 设置测试用的upstreams
-	upstreams := map[string]UpStream{
+	upstreams := map[string]config.UpStream{
 		"proxy1": {
 			HTTP_PROXY:  "http://proxy1.example.com:8080",
 			HTTPS_PROXY: "http://proxy1.example.com:8080",
@@ -25,10 +27,7 @@ func TestSelectProxyURLWithCIDR(t *testing.T) {
 	}
 
 	// 设置测试用的rules
-	rules := []struct {
-		Filter   string `json:"filter"`
-		Upstream string `json:"upstream"`
-	}{
+	rules := []config.RoutingRule{
 		{Filter: "google", Upstream: "proxy1"}, // 字符串包含匹配
 		{Filter: "github", Upstream: "proxy1"},
 		{Filter: "network", Upstream: "proxy2"},
@@ -38,9 +37,7 @@ func TestSelectProxyURLWithCIDR(t *testing.T) {
 	}
 
 	// 设置测试用的filters
-	filters := map[string]struct {
-		Patterns []string `json:"patterns"`
-	}{
+	filters := map[string]config.Filter{
 		"google":   {Patterns: []string{"google.com"}},
 		"github":   {Patterns: []string{"github.com"}},
 		"network":  {Patterns: []string{"192.168.1.0/24"}},
@@ -198,7 +195,7 @@ func TestSelectProxyURLWithCIDR(t *testing.T) {
 
 func TestSelectProxyURLWithCIDR_Priority(t *testing.T) {
 	// 测试规则优先级
-	upstreams := map[string]UpStream{
+	upstreams := map[string]config.UpStream{
 		"proxy1": {
 			HTTP_PROXY:  "http://proxy1.example.com:8080",
 			HTTPS_PROXY: "http://proxy1.example.com:8080",
@@ -210,18 +207,13 @@ func TestSelectProxyURLWithCIDR_Priority(t *testing.T) {
 	}
 
 	// 规则按顺序，第一个匹配的规则生效
-	rules := []struct {
-		Filter   string `json:"filter"`
-		Upstream string `json:"upstream"`
-	}{
+	rules := []config.RoutingRule{
 		{Filter: "com", Upstream: "proxy1"}, // 字符串包含匹配
 		{Filter: "google", Upstream: "proxy2"},
 	}
 
 	// 设置测试用的filters
-	filters := map[string]struct {
-		Patterns []string `json:"patterns"`
-	}{
+	filters := map[string]config.Filter{
 		"com":    {Patterns: []string{"com"}},
 		"google": {Patterns: []string{"google.com"}},
 	}
@@ -242,7 +234,7 @@ func TestSelectProxyURLWithCIDR_Priority(t *testing.T) {
 
 func TestSelectProxyURLWithCIDR_WebSocketProxy(t *testing.T) {
 	// 测试WebSocket代理选择逻辑
-	upstreams := map[string]UpStream{
+	upstreams := map[string]config.UpStream{
 		"proxy1": {
 			TYPE:        "websocket",
 			HTTP_PROXY:  "http://proxy1.example.com:8080",
@@ -265,10 +257,7 @@ func TestSelectProxyURLWithCIDR_WebSocketProxy(t *testing.T) {
 	}
 
 	// 设置测试用的rules
-	rules := []struct {
-		Filter   string `json:"filter"`
-		Upstream string `json:"upstream"`
-	}{
+	rules := []config.RoutingRule{
 		{Filter: "google", Upstream: "proxy1"},
 		{Filter: "github", Upstream: "proxy1"},
 		{Filter: "network", Upstream: "proxy2"},
@@ -278,9 +267,7 @@ func TestSelectProxyURLWithCIDR_WebSocketProxy(t *testing.T) {
 	}
 
 	// 设置测试用的filters
-	filters := map[string]struct {
-		Patterns []string `json:"patterns"`
-	}{
+	filters := map[string]config.Filter{
 		"google":   {Patterns: []string{"google.com"}},
 		"github":   {Patterns: []string{"github.com"}},
 		"network":  {Patterns: []string{"192.168.1.0/24"}},
