@@ -14,7 +14,7 @@ require github.com/gin-gonic/gin v1.11.0
 
 require (
 	github.com/ameshkov/dnscrypt/v2 v2.4.0
-	github.com/masx200/dnsproxy v1.0.3
+	github.com/masx200/dnsproxy v1.0.4
 	github.com/masx200/doq-go v0.55.0
 	github.com/masx200/http3-reverse-proxy-server-experiment v0.0.0-20251004130120-07f6b38af34d
 	github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20251004130715-0afdf9b68b1f
