@@ -105,7 +105,7 @@ func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions ProxyOption
 //   - net.Conn: 成功建立的网络连接
 //   - error: 连接过程中发生的错误
 func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
-	hostname, _, err := net.SplitHostPort(addr)
+	hostname, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
 	}
