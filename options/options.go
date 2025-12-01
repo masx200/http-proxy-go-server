@@ -292,12 +292,12 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 // 
 // 					if err1 != nil {
 // 						errorsArray = append(errorsArray, err1)
-// 						log.Printf("Failed to connect to IP %d/%d (%s) for %s: %v", i+1, lengthip, serverIP, addr, err1)
-// 						continue
-// 					} else {
-// 						log.Printf("Successfully connected to %s via IP %d/%d: %s (network: %s, protocol: %s)", addr, i+1, lengthip, serverIP, network, protocol)
-// 						log.Println("success connect to addr=" + addr + " by network=" + network + " by protocol=" + protocol + " by serverIP=" + serverIP)
-// 						return connection, err1
+ 						log.Printf("Failed to connect to IP %d/%d (%s) for %s: %v", i+1, lengthip, serverIP, addr, err1)
+ 						continue
+ 					} else {
+ 						log.Printf("Successfully connected to %s via IP %d/%d: %s (network: %s, protocol: %s)", addr, i+1, lengthip, serverIP, network, protocol)
+ 						log.Println("success connect to addr=" + addr + " by network=" + network + " by protocol=" + protocol + " by serverIP=" + serverIP)
+ 						return connection, err1
 					}
 				}
 				// var serverIP = ips[0].String()
@@ -306,16 +306,17 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 			}
 		}
 		return nil, ErrorArray(errorsArray)
-	} else {
-		dialer := &net.Dialer{}
-		connection, err1 := dialer.DialContext(ctx, network, addr)
-		if err1 != nil {
-			log.Println("failure connect to " + addr + " by " + network + "" + err1.Error())
-			return nil, err1
-		}
-		log.Println("success connect to " + addr + " by " + network + "")
-		return connection, err1
 	}
+
+	// 直接连接到原始地址（不使用上游代理）
+	dialer := &net.Dialer{}
+	connection, err1 := dialer.DialContext(ctx, network, addr)
+	if err1 != nil {
+		log.Println("failure connect to " + addr + " by " + network + "" + err1.Error())
+		return nil, err1
+	}
+	log.Println("success connect to " + addr + " by " + network + "")
+	return connection, err1
 }
 
 // Shuffle 对切片进行随机排序
