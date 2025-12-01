@@ -9,6 +9,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"time"
 )
 
 // ResolveDomainToIPs 根据域名解析出对应的 IP 地址列表
@@ -111,24 +112,22 @@ func ResolveDomainToIPsWithCache(domain string, dnsCache interface{}) ([]net.IP,
 	// 如果hosts文件中没有找到，并且提供了DNS缓存，则使用DNS缓存解析
 	if dnsCache != nil {
 		log.Printf("Resolving domain %s using DNS cache/DoH infrastructure", domain)
-		// 创建一个临时的resolver来使用DNS缓存
-		resolver := &struct {
-			dnsCache interface{}
-		}{
-			dnsCache: dnsCache,
-		}
-
-		// 这里需要调用实际的DNS缓存解析逻辑
-		// 由于循环导入问题，我们需要通过interface调用
+		
+		// 由于循环导入问题，我们通过类型断言来调用DNS缓存
+		// 检查是否是dnscache.DNSCache类型
 		if typedCache, ok := dnsCache.(interface {
-			LookupIP(host string) ([]net.IP, error)
+			GetIPs(dnsType, domain string) ([]net.IP, bool)
+			SetIPs(dnsType, domain string, ips []net.IP, ttl time.Duration)
 		}); ok {
-			ips, err := typedCache.LookupIP(domain)
-			if err == nil && len(ips) > 0 {
-				log.Printf("Resolved domain %s to IPs via DNS cache: %v", domain, ips)
-				return ips, nil
+			// 尝试从缓存获取
+			if cachedIPs, found := typedCache.GetIPs("doh", domain); found {
+				log.Printf("DNS cache hit for domain %s: %v", domain, cachedIPs)
+				return cachedIPs, nil
 			}
-			log.Printf("DNS cache resolution failed for %s: %v", domain, err)
+			
+			// 缓存未命中，直接返回hosts文件的结果
+			// 实际的DoH解析在dnscache包的resolver中进行
+			log.Printf("DNS cache miss for domain %s, fallback to hosts resolution", domain)
 		}
 	}
 
@@ -136,5 +135,7 @@ func ResolveDomainToIPsWithCache(domain string, dnsCache interface{}) ([]net.IP,
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve domain %s: hosts file error: %v, no cache available", domain, err)
 	}
+	
+	log.Printf("No IPs found for domain %s in hosts file", domain)
 	return []net.IP{}, fmt.Errorf("no IP addresses found for domain %s", domain)
 }
