@@ -3,6 +3,7 @@ package hosts
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -100,7 +101,40 @@ func ParseHostsFile(filePath string) (map[string][]string, error) {
 
 // ResolveDomainToIPsWithCache 解析域名到 IP 地址，如果提供了缓存则使用缓存
 func ResolveDomainToIPsWithCache(domain string, dnsCache interface{}) ([]net.IP, error) {
-	// 简单的实现，暂时忽略缓存参数，直接调用现有函数
-	// TODO: 实际实现中应该使用 dnsCache 参数
-	return ResolveDomainToIPsWithHosts(domain)
+	// 首先尝试本地hosts文件解析
+	ips, err := ResolveDomainToIPsWithHosts(domain)
+	if err == nil && len(ips) > 0 {
+		log.Printf("Resolved domain %s to IPs via hosts file: %v", domain, ips)
+		return ips, nil
+	}
+
+	// 如果hosts文件中没有找到，并且提供了DNS缓存，则使用DNS缓存解析
+	if dnsCache != nil {
+		log.Printf("Resolving domain %s using DNS cache/DoH infrastructure", domain)
+		// 创建一个临时的resolver来使用DNS缓存
+		resolver := &struct {
+			dnsCache interface{}
+		}{
+			dnsCache: dnsCache,
+		}
+
+		// 这里需要调用实际的DNS缓存解析逻辑
+		// 由于循环导入问题，我们需要通过interface调用
+		if typedCache, ok := dnsCache.(interface {
+			LookupIP(host string) ([]net.IP, error)
+		}); ok {
+			ips, err := typedCache.LookupIP(domain)
+			if err == nil && len(ips) > 0 {
+				log.Printf("Resolved domain %s to IPs via DNS cache: %v", domain, ips)
+				return ips, nil
+			}
+			log.Printf("DNS cache resolution failed for %s: %v", domain, err)
+		}
+	}
+
+	// 如果所有方法都失败，返回hosts文件的错误或空结果
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve domain %s: hosts file error: %v, no cache available", domain, err)
+	}
+	return []net.IP{}, fmt.Errorf("no IP addresses found for domain %s", domain)
 }
