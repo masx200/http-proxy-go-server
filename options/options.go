@@ -71,7 +71,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 	}
 	var ips []net.IP
 	// var errors []error
-	// hostname, _, err := net.SplitHostPort(address)
+	// hostname, _, err := net.SplitHostPort(addr)
 	// if err != nil {
 	// 	return nil, err
 	// }
@@ -132,11 +132,11 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 // 						log.Printf("Failed to connect to upstream IP %s: %v", serverIP, err1)
 // 						continue
 // 					} else {
-// 						log.Printf("Successfully connected to upstream address=%s via resolved IP=%s", addr, serverIP)
+// 						log.Printf("Successfully connected to upstream addr=%s via resolved IP=%s", addr, serverIP)
 // 						return connection, err1
 // 					}
 // 				}
-// 				log.Printf("All resolved upstream IPs failed for address=%s, falling back to domain connection", addr)
+// 				log.Printf("All resolved upstream IPs failed for addr=%s, falling back to domain connection", addr)
 // 			}
 // 		}
 
@@ -152,7 +152,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 		//		// 发起连接
 		//		return dialer.DialContext(ctx, network, newAddr)
 		var ctx = context.Background()
-		return Proxy_net_DialContext(ctx, network, addr, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
+		return Proxy_net_DialContext(ctx, network, addr, proxyoptions, nil, upstreamResolveIPs, tranportConfigurations...)
 	} else {
 		connection, err1 := net.Dial(network, addr)
 
@@ -167,7 +167,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 
 
 // Proxy_net_DialContext function
-	// hostname, _, err := net.SplitHostPort(address)
+	// hostname, _, err := net.SplitHostPort(addr)
 	// if err != nil {
 	// 	return nil, err
 	// }
@@ -191,7 +191,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 				continue
 			} else {
 
-				log.Println("success connect to addr=" + address + " by network=" + network + " by serverIP=" + serverIP)
+				log.Println("success connect to addr=" + addr + " by network=" + network + " by serverIP=" + serverIP)
 				return connection, err1
 			}
 		}
@@ -209,7 +209,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 
 			var ips []net.IP
 			var errors []error
-			hostname, port, err := net.SplitHostPort(address)
+			hostname, port, err := net.SplitHostPort(addr)
 			if err != nil {
 				return nil, err
 			}
@@ -264,7 +264,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 			}
 
 			if len(ips) == 0 && len(errors) > 0 {
-				errorsaray = append(errorsaray, errors...)
+				errorsArray = append(errorsArray, errors...)
 				continue
 			} else {
 				lengthip := len(ips)
@@ -278,25 +278,25 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 					dialer := &net.Dialer{}
 
 					// 添加详细的上游连接日志
-					if dnsCache != nil {
-						if reflect.ValueOf(dnsCache).Type().String() == "*dnscache.DNSCache" {
-							if i == 0 {
-								log.Printf("Attempting upstream connection to %s (resolved to %d IPs), trying IP %d/%d: %s", address, lengthip, i+1, lengthip, serverIP)
-							} else {
-								log.Printf("Previous IP failed, trying next IP %d/%d for %s: %s", i+1, lengthip, address, serverIP)
-							}
-						}
-					}
+// 					if dnsCache != nil {
+// 						if reflect.ValueOf(dnsCache).Type().String() == "*dnscache.DNSCache" {
+// 							if i == 0 {
+// 								log.Printf("Attempting upstream connection to %s (resolved to %d IPs), trying IP %d/%d: %s", addr, lengthip, i+1, lengthip, serverIP)
+// 							} else {
+// 								log.Printf("Previous IP failed, trying next IP %d/%d for %s: %s", i+1, lengthip, addr, serverIP)
+// 							}
+// 						}
+// 					}
 
 					connection, err1 := dnscache.Proxy_net_DialContextCached(ctx, network, newAddr, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
 
 					if err1 != nil {
 						errorsArray = append(errorsArray, err1)
-						log.Printf("Failed to connect to IP %d/%d (%s) for %s: %v", i+1, lengthip, serverIP, address, err1)
+						log.Printf("Failed to connect to IP %d/%d (%s) for %s: %v", i+1, lengthip, serverIP, addr, err1)
 						continue
 					} else {
-						log.Printf("Successfully connected to %s via IP %d/%d: %s (network: %s, protocol: %s)", address, i+1, lengthip, serverIP, network, protocol)
-						log.Println("success connect to address=" + address + " by network=" + network + " by protocol=" + protocol + " by serverIP=" + serverIP)
+						log.Printf("Successfully connected to %s via IP %d/%d: %s (network: %s, protocol: %s)", addr, i+1, lengthip, serverIP, network, protocol)
+						log.Println("success connect to addr=" + addr + " by network=" + network + " by protocol=" + protocol + " by serverIP=" + serverIP)
 						return connection, err1
 					}
 				}
@@ -308,12 +308,12 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 		return nil, ErrorArray(errorsArray)
 	} else {
 		dialer := &net.Dialer{}
-		connection, err1 := dialer.DialContext(ctx, network, address)
+		connection, err1 := dialer.DialContext(ctx, network, addr)
 		if err1 != nil {
-			log.Println("failure connect to " + address + " by " + network + "" + err1.Error())
+			log.Println("failure connect to " + addr + " by " + network + "" + err1.Error())
 			return nil, err1
 		}
-		log.Println("success connect to " + address + " by " + network + "")
+		log.Println("success connect to " + addr + " by " + network + "")
 		return connection, err1
 	}
 }
