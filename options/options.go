@@ -141,7 +141,6 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 		}
 
 		// 原有的解析逻辑，作为回退选项
-		var errorsArray = make([]error, 0)
 		//		_, port, err := net.SplitHostPort(addr)
 		//		if err != nil {
 		//			return nil, err
@@ -153,7 +152,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 		//		// 发起连接
 		//		return dialer.DialContext(ctx, network, newAddr)
 		var ctx = context.Background()
-		return proxy_net_DialWithResolver(ctx, network, addr, proxyoptions, upstreamResolveIPs, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...))
+		return Proxy_net_DialContext(ctx, network, addr, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
 	} else {
 		connection, err1 := net.Dial(network, addr)
 
