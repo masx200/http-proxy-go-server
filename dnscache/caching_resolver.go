@@ -344,7 +344,7 @@ func IsIP(s string) bool {
 }
 
 // Proxy_net_DialCached 带DNS缓存的网络连接拨号函数
-func Proxy_net_DialCached(network string, addr string, proxyoptions options.ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func Proxy_net_DialCached(network string, addr string, proxyoptions options.ProxyOptions, upstreamResolveIPs bool, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	if dnsCache != nil {
 		return proxy_net_DialWithResolver(nil, network, addr, proxyoptions, upstreamResolveIPs, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...))
 	}
