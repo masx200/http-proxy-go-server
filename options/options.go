@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/masx200/http-proxy-go-server/hosts"
+	"github.com/masx200/http-proxy-go-server/dnscache"
 )
 
 type ErrorArray []error
@@ -104,25 +105,24 @@ func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions ProxyOption
 // 返回值:
 //   - net.Conn: 成功建立的网络连接
 //   - error: 连接过程中发生的错误
-func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upstreamResolveIPs bool, dnsCache interface{}, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+	var ctx = context.Background()
+
+	// 优先使用dnscache包的缓存版本，支持upstreamResolveIPs逻辑
+	if typedCache, ok := dnsCache.(*dnscache.DNSCache); ok {
+		return dnscache.Proxy_net_DialCached(network, addr, proxyoptions, upstreamResolveIPs, typedCache, tranportConfigurations...)
+	}
+
+	// 回退到基础解析逻辑
 	hostname, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
 	}
-	var ctx = context.Background()
 	if IsIP(hostname) {
 		dialer := &net.Dialer{}
-		//				// 发起连接
 		return dialer.DialContext(ctx, network, addr)
 	}
 	var ips []net.IP
-	// var errors []error
-	// hostname, _, err := net.SplitHostPort(address)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// 使用正确的DNS缓存解析器，支持DoH和上游IP解析
-	ips, err = hosts.ResolveDomainToIPsWithCache(hostname, dnsCache)
 
 	if len(ips) > 0 {
 		Shuffle(ips)
@@ -223,11 +223,23 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 		log.Println(err)
 	}
 
-	//调用ResolveDomainToIPsWithHosts函数解析域名
+	// 调用正确的DNS缓存函数解析域名
 	if len(proxyoptions) > 0 {
-		// 注意: upstreamResolveIPs 的逻辑已在 dnscache 包中实现
+		// 使用 dnscache 包中的缓存版本，支持upstreamResolveIPs逻辑
 		var ctx = context.Background()
-		return Proxy_net_DialContext(ctx, network, address, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
+		// 需要类型断言来转换 dnsCache interface{} 到 *dnscache.DNSCache
+		if typedCache, ok := dnsCache.(*dnscache.DNSCache); ok {
+			return dnscache.Proxy_net_DialContextCached(ctx, network, address, proxyoptions, typedCache, upstreamResolveIPs, tranportConfigurations...)
+		} else {
+			// 如果类型转换失败，回退到基础连接
+			connection, err1 := net.Dial(network, address)
+			if err1 != nil {
+				log.Println("failure connect to " + address + " by " + network + "" + err1.Error())
+				return nil, err1
+			}
+			log.Println("success connect to " + address + " by " + network + "")
+			return connection, err1
+		}
 	} else {
 		connection, err1 := net.Dial(network, address)
 
