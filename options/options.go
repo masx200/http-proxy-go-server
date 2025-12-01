@@ -121,7 +121,8 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 	// if err != nil {
 	// 	return nil, err
 	// }
-	ips, err = hosts.ResolveDomainToIPsWithHosts(hostname)
+	// 使用正确的DNS缓存解析器，支持DoH和上游IP解析
+	ips, err = hosts.ResolveDomainToIPsWithCache(hostname, dnsCache)
 
 	if len(ips) > 0 {
 		Shuffle(ips)
@@ -191,7 +192,8 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 	// if err != nil {
 	// 	return nil, err
 	// }
-	ips, err = hosts.ResolveDomainToIPsWithHosts(hostname)
+	// 使用正确的DNS缓存解析器，支持DoH和上游IP解析
+	ips, err = hosts.ResolveDomainToIPsWithCache(hostname, dnsCache)
 
 	if len(ips) > 0 {
 		Shuffle(ips)
