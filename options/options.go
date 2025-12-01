@@ -111,13 +111,13 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 		// 如果启用了上游IP解析功能，则使用新的解析逻辑
 		if upstreamResolveIPs {
 			// 对于上游代理连接，使用IP地址解析
-			resolvedIPs, err := ResolveUpstreamDomainToIPs(address, proxyoptions, dnsCache)
+			resolvedIPs, err := ResolveUpstreamDomainToIPs(addr, proxyoptions, dnsCache)
 			if err != nil {
-				log.Printf("Failed to resolve upstream domain %s: %v, falling back to domain connection", address, err)
+				log.Printf("Failed to resolve upstream domain %s: %v, falling back to domain connection", addr, err)
 				// 回退到原有的域名连接方式
 			} else if len(resolvedIPs) > 0 {
 				// 使用解析出的IP地址进行连接尝试
-				hostname, port, err := net.SplitHostPort(address)
+				hostname, port, err := net.SplitHostPort(addr)
 				if err != nil {
 					return nil, err
 				}
@@ -132,17 +132,16 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 						log.Printf("Failed to connect to upstream IP %s: %v", serverIP, err1)
 						continue
 					} else {
-						log.Printf("Successfully connected to upstream address=%s via resolved IP=%s", address, serverIP)
+						log.Printf("Successfully connected to upstream address=%s via resolved IP=%s", addr, serverIP)
 						return connection, err1
 					}
 				}
-				log.Printf("All resolved upstream IPs failed for address=%s, falling back to domain connection", address)
+				log.Printf("All resolved upstream IPs failed for address=%s, falling back to domain connection", addr)
 			}
 		}
 
 		// 原有的解析逻辑，作为回退选项
 		var errorsArray = make([]error, 0)
-		//		var addr=address
 		//		_, port, err := net.SplitHostPort(addr)
 		//		if err != nil {
 		//			return nil, err
