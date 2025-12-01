@@ -354,7 +354,7 @@ func Proxy_net_DialCached(network string, addr string, proxyoptions options.Prox
 // Proxy_net_DialContextCached 带DNS缓存的上下文网络连接拨号函数
 func Proxy_net_DialContextCached(ctx context.Context, network string, addr string, proxyoptions options.ProxyOptions, dnsCache *DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	if dnsCache != nil {
-		return proxy_net_DialWithResolver(ctx, network, addr, proxyoptions, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...), tranportConfigurations..., upstreamResolveIPs)
+		return proxy_net_DialWithResolver(ctx, network, addr, proxyoptions, upstreamResolveIPs, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...))
 	}
 	return proxy_net_DialContextOriginal(ctx, network, addr, proxyoptions, tranportConfigurations...)
 }
