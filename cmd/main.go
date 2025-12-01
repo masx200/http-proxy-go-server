@@ -643,7 +643,6 @@ func main() {
 	if config.UpstreamResolveIPs {
 		*upstreamResolveIPs = config.UpstreamResolveIPs
 	}
-	}
 
 	// 解析DNS缓存配置并初始化
 	if *cacheEnabled {
