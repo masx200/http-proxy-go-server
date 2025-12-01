@@ -58,7 +58,7 @@ type ProxyOptions = []ProxyOption
 // 返回值:
 //   - net.Conn: 成功建立的网络连接
 //   - error: 连接过程中发生的错误
-func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
@@ -154,7 +154,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, tran
 		//		// 发起连接
 		//		return dialer.DialContext(ctx, network, newAddr)
 		var ctx = context.Background()
-		return proxy_net_DialWithResolver(ctx, network, addr, proxyoptions, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...), upstreamResolveIPs)
+		return proxy_net_DialWithResolver(ctx, network, addr, proxyoptions, upstreamResolveIPs, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...))
 	} else {
 		connection, err1 := net.Dial(network, addr)
 
@@ -218,7 +218,7 @@ func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions ProxyOption
 // Proxy_net_DialContext 是一个支持代理和 DoH 解析的网络连接拨号函数。
 // 它会尝试通过本地 hosts 文件解析域名，如果失败则使用提供的 DoH 配置进行解析，
 // 并尝试连接到解析出的 IP 地址。
-func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport, dnsCache interface{}, upstreamResolveIPs bool) (net.Conn, error) {
+func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, dnsCache interface{}, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, err
