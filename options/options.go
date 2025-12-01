@@ -8,9 +8,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
-	"time"
 
-	"github.com/masx200/http-proxy-go-server/doh"
 	"github.com/masx200/http-proxy-go-server/hosts"
 )
 
@@ -38,17 +36,6 @@ type ProxyOption struct {
 }
 
 type ProxyOptions = []ProxyOption
-
-// Error implements error interface.
-func (e ErrorArray) Error() string {
-	var errorMessages []string
-	for _, err := range e {
-		errorMessages = append(errorMessages, err.Error())
-	}
-	return strings.Join(errorMessages, "; ")
-}
-
-// IsIP 检查给定的字符串是否是有效的IP地址
 func IsIP(domain string) bool {
 	return net.ParseIP(domain) != nil
 }
@@ -118,7 +105,7 @@ func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions ProxyOption
 //   - net.Conn: 成功建立的网络连接
 //   - error: 连接过程中发生的错误
 func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
-	hostname, port, err := net.SplitHostPort(addr)
+	hostname, _, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
 	}
