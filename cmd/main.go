@@ -801,6 +801,9 @@ func main() {
 		}
 
 		log.Println("SOCKS5代理配置已添加")
+
+		// 设置UpstreamResolveIPs字段
+		config.UpstreamResolveIPs = *upstreamResolveIPs
 	}
 
 	// 处理HTTP代理参数
