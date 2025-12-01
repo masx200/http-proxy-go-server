@@ -360,7 +360,7 @@ func Proxy_net_DialContextCached(ctx context.Context, network string, addr strin
 }
 
 // proxy_net_DialWithResolver 使用指定解析器的网络拨号函数
-func proxy_net_DialWithResolver(ctx context.Context, network string, addr string, proxyoptions options.ProxyOptions, resolver NameResolver, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func proxy_net_DialWithResolver(ctx context.Context, network string, addr string, proxyoptions options.ProxyOptions, upstreamResolveIPs bool, dnsCache interface{}, resolver NameResolver, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
