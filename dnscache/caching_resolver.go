@@ -372,7 +372,7 @@ func Proxy_net_DialContextCached(ctx context.Context, network string, addr strin
 }
 
 // proxy_net_DialWithResolver 使用指定解析器的网络拨号函数
-func proxy_net_DialWithResolver(ctx context.Context, network string, addr string, proxyoptions options.ProxyOptions, upstreamResolveIPs bool, dnsCache interface{}, resolver NameResolver, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func proxy_net_DialWithResolver(ctx context.Context, network string, addr string, proxyoptions ProxyOptions, upstreamResolveIPs bool, dnsCache interface{}, resolver NameResolver, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
@@ -530,7 +530,7 @@ func proxy_net_DialWithResolver(ctx context.Context, network string, addr string
 }
 
 // proxy_net_DialOriginal 原始的网络拨号函数（不使用缓存）
-func proxy_net_DialOriginal(network string, addr string, proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func proxy_net_DialOriginal(network string, addr string, proxyoptions ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
@@ -634,7 +634,7 @@ func proxy_net_DialOriginal(network string, addr string, proxyoptions options.Pr
 }
 
 // proxy_net_DialContextOriginal 原始的上下文网络拨号函数（不使用缓存）
-func proxy_net_DialContextOriginal(ctx context.Context, network string, address string, proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func proxy_net_DialContextOriginal(ctx context.Context, network string, address string, proxyoptions ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, err
@@ -736,7 +736,7 @@ func proxy_net_DialContextOriginal(ctx context.Context, network string, address 
 }
 
 // ResolveUpstreamDomainToIPs 解析上游代理地址到IP地址
-func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions options.ProxyOptions, dnsCache interface{}) ([]net.IP, error) {
+func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions ProxyOptions, dnsCache interface{}) ([]net.IP, error) {
 	hostname, _, err := net.SplitHostPort(upstreamAddress)
 	if err != nil {
 		return nil, fmt.Errorf("invalid upstream address: %s", upstreamAddress)
