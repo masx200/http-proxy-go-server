@@ -369,6 +369,7 @@ func proxy_net_DialWithResolver(ctx context.Context, network string, addr string
 	// 如果启用了上游IP解析功能，则使用新的解析逻辑
 	if upstreamResolveIPs && len(proxyoptions) > 0 {
 		// 对于上游代理连接，使用IP地址解析
+		log.Printf("upstreamResolveIPs enabled for address: %s", addr)
 		resolvedIPs, err := ResolveUpstreamDomainToIPs(addr, proxyoptions, dnsCache)
 		if err != nil {
 			log.Printf("Failed to resolve upstream domain %s: %v, falling back to domain connection", addr, err)
