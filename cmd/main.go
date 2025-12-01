@@ -31,6 +31,45 @@ import (
 	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
 )
 
+// resolveTargetAddress 解析目标地址的域名为IP地址（如果启用了upstreamResolveIPs）
+func resolveTargetAddress(addr string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) (string, error) {
+	if !upstreamResolveIPs || len(proxyoptions) == 0 || dnsCache == nil {
+		return addr, nil
+	}
+
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return addr, err
+	}
+
+	// 如果已经是IP地址，直接返回
+	if net.ParseIP(host) != nil {
+		return addr, nil
+	}
+
+	log.Printf("Resolving target address %s using DoH infrastructure", host)
+	
+	// 使用DoH解析
+	resolver := dnscache.CreateHostsAndDohResolverCached(proxyoptions, dnsCache)
+	ips, err := resolver.LookupIP(context.Background(), "tcp", host)
+	if err != nil {
+		log.Printf("DoH resolution failed for target %s: %v", host, err)
+		return addr, err
+	}
+
+	if len(ips) == 0 {
+		log.Printf("No IP addresses resolved for target %s", host)
+		return addr, fmt.Errorf("no IP addresses resolved for target %s", host)
+	}
+
+	// 使用第一个解析出的IP
+	resolvedIP := ips[0]
+	resolvedAddr := net.JoinHostPort(resolvedIP.String(), port)
+	log.Printf("Resolved target address %s -> %s via IP %s", addr, resolvedAddr, resolvedIP)
+	
+	return resolvedAddr, nil
+}
+
 // Type aliases for backward compatibility and easier migration
 type Config = config.Config
 type UpStream = config.UpStream
@@ -1026,14 +1065,14 @@ func main() {
 								TYPE:     "websocket",
 								WS_PROXY: proxyURL.String(),
 							}
-							return websocketDialContext(ctx, network, addr, modifiedUpstream)
+							return websocketDialContext(ctx, network, addr, modifiedUpstream, proxyoptions, GetDNSCache(), *upstreamResolveIPs)
 						}
 						if proxyURL.Scheme == "socks5" || proxyURL.Scheme == "socks5s" {
 							var modifiedUpstream = UpStream{
 								TYPE:         "socks5",
 								SOCKS5_PROXY: proxyURL.String(),
 							}
-							return socks5DialContext(ctx, network, addr, modifiedUpstream)
+							return socks5DialContext(ctx, network, addr, modifiedUpstream, proxyoptions, GetDNSCache(), *upstreamResolveIPs)
 						} else {
 							log.Println("未选择代理")
 							var dialer = &net.Dialer{}
@@ -1079,7 +1118,7 @@ func main() {
 }
 
 // websocketDialContext 实现WebSocket代理连接
-func websocketDialContext(ctx context.Context, network, addr string, upstream config.UpStream) (net.Conn, error) {
+func websocketDialContext(ctx context.Context, network, addr string, upstream config.UpStream, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) (net.Conn, error) {
 	// 解析目标地址
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
@@ -1126,10 +1165,29 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream co
 	// 创建WebSocket客户端
 	websocketClient := socks5_websocket_proxy_golang_websocket.NewWebSocketClient(wsConfig)
 
-	// 连接到目标主机
-	err = websocketClient.Connect(host, portNum)
+	// 如果启用了DNS解析，先解析目标地址
+	resolvedAddr, err := resolveTargetAddress(addr, proxyoptions, dnsCache, upstreamResolveIPs)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to %s:%d via WebSocket proxy: %v", host, portNum, err)
+		log.Printf("Failed to resolve target address %s: %v, using original", addr, err)
+		resolvedAddr = addr
+	}
+
+	// 重新解析解析后的地址以获取正确的host和port用于连接
+	resolvedHost, resolvedPort, err := net.SplitHostPort(resolvedAddr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse resolved address %s: %v", resolvedAddr, err)
+	}
+	
+	// 转换端口号为整数
+	resolvedPortNum, err := strconv.Atoi(resolvedPort)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse resolved port %s: %v", resolvedPort, err)
+	}
+
+	// 连接到目标主机（使用解析后的IP）
+	err = websocketClient.Connect(resolvedHost, resolvedPortNum)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to %s:%d via WebSocket proxy: %v", resolvedHost, resolvedPortNum, err)
 	}
 
 	// 创建一个管道连接来处理WebSocket数据转发
@@ -1151,7 +1209,7 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream co
 }
 
 // socks5DialContext 实现SOCKS5代理连接
-func socks5DialContext(ctx context.Context, network, addr string, upstream config.UpStream) (net.Conn, error) {
+func socks5DialContext(ctx context.Context, network, addr string, upstream config.UpStream, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) (net.Conn, error) {
 	// 解析SOCKS5代理地址
 	proxyURL, err := url.Parse(upstream.SOCKS5_PROXY)
 	if err != nil {
@@ -1192,10 +1250,17 @@ func socks5DialContext(ctx context.Context, network, addr string, upstream confi
 	// 创建SOCKS5客户端
 	socks5Client := socks5.NewSOCKS5Client(socks5Config)
 
-	// 使用DialContext连接到目标主机
-	conn, err := socks5Client.DialContext(ctx, network, addr)
+	// 如果启用了DNS解析，先解析目标地址
+	resolvedAddr, err := resolveTargetAddress(addr, proxyoptions, dnsCache, upstreamResolveIPs)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to %s via SOCKS5 proxy: %v", addr, err)
+		log.Printf("Failed to resolve target address %s: %v, using original", addr, err)
+		resolvedAddr = addr
+	}
+
+	// 使用DialContext连接到目标主机（使用解析后的地址）
+	conn, err := socks5Client.DialContext(ctx, network, resolvedAddr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to %s via SOCKS5 proxy: %v", resolvedAddr, err)
 	}
 
 	// 返回连接
