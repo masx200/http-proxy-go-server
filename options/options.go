@@ -165,36 +165,8 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 	}
 }
 
-// Proxy_net_DialContext 是一个支持代理和 DoH 解析的网络连接拨号函数。
-// 它会尝试通过本地 hosts 文件解析域名，如果失败则使用提供的 DoH 配置进行解析，
-// 并尝试连接到解析出的 IP 地址。
-//
-// 参数:
-//   - ctx: 上下文，用于控制连接的生命周期
-//   - network: 网络协议，例如 "tcp"、"udp"
-//   - address: 目标地址，格式为 "host:port"
-//   - proxyoptions: 代理选项列表，包含 DoH 配置
-//   - tranportConfigurations: 可选的 http.Transport 配置函数
-//
-// 返回值:
-//   - net.Conn: 成功建立的网络连接
-//   - error: 连接过程中发生的错误
-// // ResolveUpstreamDomainToIPs 解析上游代理域名到IP地址列表
-// Proxy_net_DialContext 是一个支持代理和 DoH 解析的网络连接拨号函数。
-// 它会尝试通过本地 hosts 文件解析域名，如果失败则使用提供的 DoH 配置进行解析，
-// 并尝试连接到解析出的 IP 地址。
-//
-// 参数:
-//   - ctx: 上下文对象
-//   - network: 网络类型 (如 "tcp", "udp")
-//   - address: 目标地址，格式为 "host:port"
-//   - proxyoptions: 代理配置选项
-//   - dnsCache: DNS缓存实例
-//   - upstreamResolveIPs: 是否启用上游IP解析
-//   - tranportConfigurations: 可选的传输配置函数
-//
-// 返回值:
-//   - net.Conn: 成功建立的网络连接
+n// Proxy_net_DialContext is a network dial function that supports proxy and DoH resolution.
+func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, dnsCache interface{}, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 //   - error: 连接过程中发生的错误
 func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, dnsCache interface{}, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(address)
