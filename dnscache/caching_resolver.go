@@ -12,20 +12,9 @@ import (
 
 	"github.com/masx200/http-proxy-go-server/doh"
 	"github.com/masx200/http-proxy-go-server/hosts"
+	"github.com/masx200/http-proxy-go-server/options"
 	)
 
-// ProxyOptions 代理选项配置结构
-type ProxyOptions []struct {
-	Dohurl   string
-	Dohip    string
-	Dohalpn  string
-	Doturl   string
-	Dotip    string
-	Doqurl   string
-	Doqip    string
-	// 新增DNS协议类型字段，用于标识使用哪种DNS协议
-	Protocol string // "doh", "dot", "doq", "doh3"
-}
 
 // NameResolver 接口定义
 type NameResolver interface {
@@ -103,7 +92,7 @@ func CreateHostsResolverCached(dnsCache *DNSCache) NameResolver {
 }
 
 // CreateDOHResolverCached 创建带缓存的DOH解析器
-func CreateDOHResolverCached(proxyoptions ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
+func CreateDOHResolverCached(proxyoptions options.ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
 	original := &DOHResolver{
 		proxyoptions:           proxyoptions,
 		tranportConfigurations: tranportConfigurations,
@@ -112,7 +101,7 @@ func CreateDOHResolverCached(proxyoptions ProxyOptions, dnsCache *DNSCache, tran
 }
 
 // CreateDOH3ResolverCached 创建带缓存的DOH3解析器
-func CreateDOH3ResolverCached(proxyoptions ProxyOptions, dnsCache *DNSCache) NameResolver {
+func CreateDOH3ResolverCached(proxyoptions options.ProxyOptions, dnsCache *DNSCache) NameResolver {
 	original := &DOH3Resolver{
 		proxyoptions: proxyoptions,
 	}
@@ -120,7 +109,7 @@ func CreateDOH3ResolverCached(proxyoptions ProxyOptions, dnsCache *DNSCache) Nam
 }
 
 // CreateHostsAndDohResolverCached 创建带缓存的Hosts+DOH解析器
-func CreateHostsAndDohResolverCached(proxyoptions ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
+func CreateHostsAndDohResolverCached(proxyoptions options.ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
 	original := &HostsAndDohResolver{
 		proxyoptions:           proxyoptions,
 		tranportConfigurations: tranportConfigurations,
@@ -157,7 +146,7 @@ func (h *HostsResolver) Resolve(ctx context.Context, name string) (context.Conte
 }
 
 type DOHResolver struct {
-	proxyoptions           ProxyOptions
+	proxyoptions           options.ProxyOptions
 	tranportConfigurations []func(*http.Transport) *http.Transport
 }
 
@@ -206,7 +195,7 @@ func (d *DOHResolver) Resolve(ctx context.Context, name string) (context.Context
 }
 
 type DOH3Resolver struct {
-	proxyoptions ProxyOptions
+	proxyoptions options.ProxyOptions
 }
 
 // LookupIP implements NameResolver.
@@ -261,7 +250,7 @@ func (d *DOH3Resolver) Resolve(ctx context.Context, name string) (context.Contex
 }
 
 type HostsAndDohResolver struct {
-	proxyoptions           ProxyOptions
+	proxyoptions           options.ProxyOptions
 	tranportConfigurations []func(*http.Transport) *http.Transport
 }
 
@@ -356,7 +345,7 @@ func IsIP(s string) bool {
 }
 
 // Proxy_net_DialCached 带DNS缓存的网络连接拨号函数
-func Proxy_net_DialCached(network string, addr string, proxyoptions ProxyOptions, upstreamResolveIPs bool, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func Proxy_net_DialCached(network string, addr string, proxyoptions options.ProxyOptions, upstreamResolveIPs bool, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	if dnsCache != nil {
 		return proxy_net_DialWithResolver(nil, network, addr, proxyoptions, upstreamResolveIPs, dnsCache, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...))
 	}
@@ -364,7 +353,7 @@ func Proxy_net_DialCached(network string, addr string, proxyoptions ProxyOptions
 }
 
 // Proxy_net_DialContextCached 带DNS缓存的上下文网络连接拨号函数
-func Proxy_net_DialContextCached(ctx context.Context, network string, addr string, proxyoptions ProxyOptions, dnsCache *DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func Proxy_net_DialContextCached(ctx context.Context, network string, addr string, proxyoptions options.ProxyOptions, dnsCache *DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	if dnsCache != nil {
 		return proxy_net_DialWithResolver(ctx, network, addr, proxyoptions, upstreamResolveIPs, dnsCache, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...))
 	}
@@ -372,7 +361,7 @@ func Proxy_net_DialContextCached(ctx context.Context, network string, addr strin
 }
 
 // proxy_net_DialWithResolver 使用指定解析器的网络拨号函数
-func proxy_net_DialWithResolver(ctx context.Context, network string, addr string, proxyoptions ProxyOptions, upstreamResolveIPs bool, dnsCache interface{}, resolver NameResolver, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func proxy_net_DialWithResolver(ctx context.Context, network string, addr string, proxyoptions options.ProxyOptions, upstreamResolveIPs bool, dnsCache interface{}, resolver NameResolver, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
@@ -530,7 +519,7 @@ func proxy_net_DialWithResolver(ctx context.Context, network string, addr string
 }
 
 // proxy_net_DialOriginal 原始的网络拨号函数（不使用缓存）
-func proxy_net_DialOriginal(network string, addr string, proxyoptions ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func proxy_net_DialOriginal(network string, addr string, proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
@@ -634,7 +623,7 @@ func proxy_net_DialOriginal(network string, addr string, proxyoptions ProxyOptio
 }
 
 // proxy_net_DialContextOriginal 原始的上下文网络拨号函数（不使用缓存）
-func proxy_net_DialContextOriginal(ctx context.Context, network string, address string, proxyoptions ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func proxy_net_DialContextOriginal(ctx context.Context, network string, address string, proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, err
@@ -736,7 +725,7 @@ func proxy_net_DialContextOriginal(ctx context.Context, network string, address 
 }
 
 // ResolveUpstreamDomainToIPs 解析上游代理地址到IP地址
-func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions ProxyOptions, dnsCache interface{}) ([]net.IP, error) {
+func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions options.ProxyOptions, dnsCache interface{}) ([]net.IP, error) {
 	hostname, _, err := net.SplitHostPort(upstreamAddress)
 	if err != nil {
 		return nil, fmt.Errorf("invalid upstream address: %s", upstreamAddress)
