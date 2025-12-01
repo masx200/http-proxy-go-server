@@ -278,17 +278,17 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 					dialer := &net.Dialer{}
 
 					// 添加详细的上游连接日志
-// 					if dnsCache != nil {
-// 						if reflect.ValueOf(dnsCache).Type().String() == "*dnscache.DNSCache" {
-// 							if i == 0 {
-// 								log.Printf("Attempting upstream connection to %s (resolved to %d IPs), trying IP %d/%d: %s", addr, lengthip, i+1, lengthip, serverIP)
-// 							} else {
-// 								log.Printf("Previous IP failed, trying next IP %d/%d for %s: %s", i+1, lengthip, addr, serverIP)
-// 							}
-// 						}
-// 					}
-// 
-// 					connection, err1 := dnscache.Proxy_net_DialContextCached(ctx, network, newAddr, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
+ 					if dnsCache != nil {
+ 						if reflect.ValueOf(dnsCache).Type().String() == "*dnscache.DNSCache" {
+ 							if i == 0 {
+ 								log.Printf("Attempting upstream connection to %s (resolved to %d IPs), trying IP %d/%d: %s", addr, lengthip, i+1, lengthip, serverIP)
+ 							} else {
+ 								log.Printf("Previous IP failed, trying next IP %d/%d for %s: %s", i+1, lengthip, addr, serverIP)
+ 							}
+ 						}
+ 					}
+ 
+ 					connection, err1 := dialer.DialContext(ctx, network, newAddr, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
 // 
 // 					if err1 != nil {
 // 						errorsArray = append(errorsArray, err1)
