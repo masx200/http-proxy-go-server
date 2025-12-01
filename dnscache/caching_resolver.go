@@ -723,7 +723,7 @@ func proxy_net_DialContextOriginal(ctx context.Context, network string, address 
 }
 
 // ResolveUpstreamDomainToIPs 解析上游代理地址到IP地址
-func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions []options.ProxyOptions, dnsCache interface{}) ([]net.IP, error) {
+func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions options.ProxyOptions, dnsCache interface{}) ([]net.IP, error) {
 	hostname, _, err := net.SplitHostPort(upstreamAddress)
 	if err != nil {
 		return nil, fmt.Errorf("invalid upstream address: %s", upstreamAddress)
