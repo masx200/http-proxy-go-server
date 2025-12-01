@@ -340,13 +340,26 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 					// 创建 net.Dialer 实例
 					//				dialer := &net.Dialer{}
 					dialer := &net.Dialer{}
+
+					// 添加详细的上游连接日志
+					if dnsCache != nil {
+						if reflect.ValueOf(dnsCache).Type().String() == "*dnscache.DNSCache" {
+							if i == 0 {
+								log.Printf("Attempting upstream connection to %s (resolved to %d IPs), trying IP %d/%d: %s", address, lengthip, i+1, lengthip, serverIP)
+							} else {
+								log.Printf("Previous IP failed, trying next IP %d/%d for %s: %s", i+1, lengthip, address, serverIP)
+							}
+						}
+					}
+
 					connection, err1 := dialer.DialContext(ctx, network, newAddr)
 
 					if err1 != nil {
 						errorsaray = append(errorsaray, err1)
+						log.Printf("Failed to connect to IP %d/%d (%s) for %s: %v", i+1, lengthip, serverIP, address, err1)
 						continue
 					} else {
-
+						log.Printf("Successfully connected to %s via IP %d/%d: %s (network: %s, protocol: %s)", address, i+1, lengthip, serverIP, network, protocol)
 						log.Println("success connect to address=" + address + " by network=" + network + " by protocol=" + protocol + " by serverIP=" + serverIP)
 						return connection, err1
 					}
