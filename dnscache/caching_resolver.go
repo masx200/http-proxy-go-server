@@ -376,7 +376,7 @@ func proxy_net_DialWithResolver(ctx context.Context, network string, addr string
 		} else if len(resolvedIPs) > 0 {
 			// 使用解析出的IP地址进行连接尝试
 			Shuffle(resolvedIPs)
-			for i, serverIP := range resolvedIPs {
+			for _, serverIP := range resolvedIPs {
 				newAddr := net.JoinHostPort(serverIP.String(), port)
 				dialer := &net.Dialer{}
 				connection, err1 := dialer.DialContext(ctx, network, newAddr)
@@ -724,7 +724,7 @@ func proxy_net_DialContextOriginal(ctx context.Context, network string, address 
 
 // ResolveUpstreamDomainToIPs 解析上游代理地址到IP地址
 func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions []options.ProxyOptions, dnsCache interface{}) ([]net.IP, error) {
-	hostname, port, err := net.SplitHostPort(upstreamAddress)
+	hostname, _, err := net.SplitHostPort(upstreamAddress)
 	if err != nil {
 		return nil, fmt.Errorf("invalid upstream address: %s", upstreamAddress)
 	}
