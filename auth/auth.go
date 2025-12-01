@@ -48,11 +48,11 @@ func Auth(hostname string, port int, username, password string, proxyoptions opt
 			return
 		}
 
-		go Handle(client, username, password, upstreamAddress, proxyoptions, dnsCache, tranportConfigurations...)
+		go Handle(client, username, password, upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
 	}
 }
 
-func Handle(client net.Conn, username, password string, httpUpstreamAddress string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache,
+func Handle(client net.Conn, username, password string, httpUpstreamAddress string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool,
 	tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	if client == nil {
 		return
