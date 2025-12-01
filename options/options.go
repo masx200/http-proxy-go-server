@@ -352,7 +352,7 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 						}
 					}
 
-					connection, err1 := dialer.DialContext(ctx, network, newAddr)
+					connection, err1 := dnscache.Proxy_net_DialContextCached(ctx, network, newAddr, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
 
 					if err1 != nil {
 						errorsArray = append(errorsArray, err1)
