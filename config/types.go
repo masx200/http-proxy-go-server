@@ -80,6 +80,9 @@ type Config struct {
 	// DNS缓存配置
 	DNSCache DNSCacheConfig `json:"dns_cache"`
 
+	// 上游代理IP解析配置
+	UpstreamResolveIPs bool `json:"upstream_resolve_ips"`
+
 	UpStreams map[string]UpStream `json:"upstreams"`
 	Rules     []RoutingRule       `json:"rules"`
 	Filters   map[string]Filter   `json:"filters"`

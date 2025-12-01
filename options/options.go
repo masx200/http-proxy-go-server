@@ -147,7 +147,44 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, tran
 // 返回值:
 //   - net.Conn: 成功建立的网络连接
 //   - error: 连接过程中发生的错误
-func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+// ResolveUpstreamDomainToIPs 解析上游代理域名到IP地址列表
+// 参数:
+//   - upstreamAddress: 上游代理地址，可能是域名或IP
+//   - proxyoptions: DNS/DoH配置选项
+//   - dnsCache: DNS缓存实例
+//
+// 返回值:
+//   - []net.IP: 解析出的IP地址列表
+//   - error: 解析过程中发生的错误
+func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions ProxyOptions, dnsCache interface{}) ([]net.IP, error) {
+	hostname, port, err := net.SplitHostPort(upstreamAddress)
+	if err != nil {
+		return nil, fmt.Errorf("invalid upstream address: %s", upstreamAddress)
+	}
+
+	// 如果已经是IP地址，直接返回
+	if ip := net.ParseIP(hostname); ip != nil {
+		return []net.IP{ip}, nil
+	}
+
+	// 使用现有DNS基础设施解析域名
+	ips, err := hosts.ResolveDomainToIPsWithCache(hostname, dnsCache)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve upstream domain %s: %v", hostname, err)
+	}
+
+	if len(ips) == 0 {
+		return nil, fmt.Errorf("no IP addresses resolved for upstream domain %s", hostname)
+	}
+
+	log.Printf("Resolved upstream domain %s to %d IP addresses: %v", hostname, len(ips), ips)
+	return ips, nil
+}
+
+// Proxy_net_DialContext 是一个支持代理和 DoH 解析的网络连接拨号函数。
+// 它会尝试通过本地 hosts 文件解析域名，如果失败则使用提供的 DoH 配置进行解析，
+// 并尝试连接到解析出的 IP 地址。
+func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport, dnsCache interface{}) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, err

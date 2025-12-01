@@ -516,9 +516,12 @@ func main() {
 		cacheAOFEnabled  = flag.Bool("cache-aof-enabled", true, "enable DNS cache AOF (append-only file) persistence")
 		cacheAOFFile     = flag.String("cache-aof-file", "./dns_cache.aof", "DNS cache AOF file path")
 		cacheAOFInterval = flag.String("cache-aof-interval", "1s", "DNS cache AOF save interval (duration string, e.g., 1s, 5s)")
+		// 上游代理IP解析相关参数
+		upstreamResolveIPs = flag.Bool("upstream-resolve-ips", false, "resolve upstream proxy domains to IP addresses before connection to bypass DNS pollution")
 	)
 	flag.Parse()
 
+	log.Println("upstream-resolve-ips:", *upstreamResolveIPs)
 	log.Println("代理服务器启动中...")
 
 	// 如果指定了配置文件，则从配置文件读取参数
@@ -635,6 +638,11 @@ func main() {
 		if config.DNSCache.AOFInterval != "" {
 			*cacheAOFInterval = config.DNSCache.AOFInterval
 		}
+	}
+	// 加载上游代理IP解析配置
+	if config.UpstreamResolveIPs {
+		*upstreamResolveIPs = config.UpstreamResolveIPs
+	}
 	}
 
 	// 解析DNS缓存配置并初始化
