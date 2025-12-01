@@ -111,36 +111,36 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 		// 如果启用了上游IP解析功能，则使用新的解析逻辑
 		if upstreamResolveIPs {
 			// 对于上游代理连接，使用IP地址解析
-			resolvedIPs, err := ResolveUpstreamDomainToIPs(addr, proxyoptions, dnsCache)
-			if err != nil {
-				log.Printf("Failed to resolve upstream domain %s: %v, falling back to domain connection", addr, err)
-				// 回退到原有的域名连接方式
-			} else if len(resolvedIPs) > 0 {
-				// 使用解析出的IP地址进行连接尝试
-				hostname, port, err := net.SplitHostPort(addr)
-				if err != nil {
-					return nil, err
-				}
+// 			resolvedIPs, err := ResolveUpstreamDomainToIPs(addr, proxyoptions, dnsCache)
+// 			if err != nil {
+// 				log.Printf("Failed to resolve upstream domain %s: %v, falling back to domain connection", addr, err)
+// 				// 回退到原有的域名连接方式
+// 			} else if len(resolvedIPs) > 0 {
+// 				// 使用解析出的IP地址进行连接尝试
+// 				hostname, port, err := net.SplitHostPort(addr)
+// 				if err != nil {
+// 					return nil, err
+// 				}
+// 
+// 				Shuffle(resolvedIPs)
+// 				for i, serverIP := range resolvedIPs {
+// 					newAddr := net.JoinHostPort(serverIP.String(), port)
+// 					dialer := &net.Dialer{}
+// 					connection, err1 := dialer.DialContext(ctx, network, newAddr)
+// 
+// 					if err1 != nil {
+// 						log.Printf("Failed to connect to upstream IP %s: %v", serverIP, err1)
+// 						continue
+// 					} else {
+// 						log.Printf("Successfully connected to upstream address=%s via resolved IP=%s", addr, serverIP)
+// 						return connection, err1
+// 					}
+// 				}
+// 				log.Printf("All resolved upstream IPs failed for address=%s, falling back to domain connection", addr)
+// 			}
+// 		}
 
-				Shuffle(resolvedIPs)
-				for i, serverIP := range resolvedIPs {
-					newAddr := net.JoinHostPort(serverIP.String(), port)
-					dialer := &net.Dialer{}
-					connection, err1 := dialer.DialContext(ctx, network, newAddr)
-
-					if err1 != nil {
-						log.Printf("Failed to connect to upstream IP %s: %v", serverIP, err1)
-						continue
-					} else {
-						log.Printf("Successfully connected to upstream address=%s via resolved IP=%s", addr, serverIP)
-						return connection, err1
-					}
-				}
-				log.Printf("All resolved upstream IPs failed for address=%s, falling back to domain connection", addr)
-			}
-		}
-
-		// 原有的解析逻辑，作为回退选项
+// 		// 原有的解析逻辑，作为回退选项
 		//		_, port, err := net.SplitHostPort(addr)
 		//		if err != nil {
 		//			return nil, err
@@ -179,19 +179,23 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 // 返回值:
 //   - net.Conn: 成功建立的网络连接
 //   - error: 连接过程中发生的错误
-// ResolveUpstreamDomainToIPs 解析上游代理域名到IP地址列表
+// // ResolveUpstreamDomainToIPs 解析上游代理域名到IP地址列表
+// Proxy_net_DialContext 是一个支持代理和 DoH 解析的网络连接拨号函数。
+// 它会尝试通过本地 hosts 文件解析域名，如果失败则使用提供的 DoH 配置进行解析，
+// 并尝试连接到解析出的 IP 地址。
+//
 // 参数:
-//   - upstreamAddress: 上游代理地址，可能是域名或IP
-//   - proxyoptions: DNS/DoH配置选项
+//   - ctx: 上下文对象
+//   - network: 网络类型 (如 "tcp", "udp")
+//   - address: 目标地址，格式为 "host:port"
+//   - proxyoptions: 代理配置选项
 //   - dnsCache: DNS缓存实例
+//   - upstreamResolveIPs: 是否启用上游IP解析
+//   - tranportConfigurations: 可选的传输配置函数
 //
 // 返回值:
 //   - net.Conn: 成功建立的网络连接
 //   - error: 连接过程中发生的错误
-//
-// Proxy_net_DialContext 是一个支持代理和 DoH 解析的网络连接拨号函数。
-// 它会尝试通过本地 hosts 文件解析域名，如果失败则使用提供的 DoH 配置进行解析，
-// 并尝试连接到解析出的 IP 地址。
 func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, dnsCache interface{}, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(address)
 	if err != nil {
