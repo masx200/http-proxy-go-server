@@ -1056,15 +1056,15 @@ func main() {
 	// 	return
 	// }
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) == 0 && len(*server_key) == 0 {
-		auth.Auth(*hostname, *port, *username, *password, proxyoptions, GetDNSCache(), tranportConfigurations..., *upstreamResolveIPs)
+		auth.Auth(*hostname, *port, *username, *password, proxyoptions, GetDNSCache(), *upstreamResolveIPs, tranportConfigurations...)
 		return
 	}
 	if len(*username) == 0 && len(*password) == 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
-		tls.Tls(*server_cert, *server_key, *hostname, *port, proxyoptions, GetDNSCache(), tranportConfigurations..., *upstreamResolveIPs)
+		tls.Tls(*server_cert, *server_key, *hostname, *port, proxyoptions, GetDNSCache(), *upstreamResolveIPs, tranportConfigurations...)
 		return
 	}
 	if len(*username) == 0 && len(*password) == 0 && len(*server_cert) == 0 && len(*server_key) == 0 {
-		simple.Simple(*hostname, *port, proxyoptions, GetDNSCache(), tranportConfigurations..., *upstreamResolveIPs)
+		simple.Simple(*hostname, *port, proxyoptions, GetDNSCache(), *upstreamResolveIPs, tranportConfigurations...)
 		return
 	}
 }
