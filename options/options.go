@@ -287,17 +287,17 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 // 							}
 // 						}
 // 					}
-
-					connection, err1 := dnscache.Proxy_net_DialContextCached(ctx, network, newAddr, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
-
-					if err1 != nil {
-						errorsArray = append(errorsArray, err1)
-						log.Printf("Failed to connect to IP %d/%d (%s) for %s: %v", i+1, lengthip, serverIP, addr, err1)
-						continue
-					} else {
-						log.Printf("Successfully connected to %s via IP %d/%d: %s (network: %s, protocol: %s)", addr, i+1, lengthip, serverIP, network, protocol)
-						log.Println("success connect to addr=" + addr + " by network=" + network + " by protocol=" + protocol + " by serverIP=" + serverIP)
-						return connection, err1
+// 
+// 					connection, err1 := dnscache.Proxy_net_DialContextCached(ctx, network, newAddr, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
+// 
+// 					if err1 != nil {
+// 						errorsArray = append(errorsArray, err1)
+// 						log.Printf("Failed to connect to IP %d/%d (%s) for %s: %v", i+1, lengthip, serverIP, addr, err1)
+// 						continue
+// 					} else {
+// 						log.Printf("Successfully connected to %s via IP %d/%d: %s (network: %s, protocol: %s)", addr, i+1, lengthip, serverIP, network, protocol)
+// 						log.Println("success connect to addr=" + addr + " by network=" + network + " by protocol=" + protocol + " by serverIP=" + serverIP)
+// 						return connection, err1
 					}
 				}
 				// var serverIP = ips[0].String()
