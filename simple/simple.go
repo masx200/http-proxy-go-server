@@ -23,7 +23,7 @@ import (
 	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
 )
 
-func Simple(hostname string, port int, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Simple(hostname string, port int, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	// tcp 连接，监听 8080 端口
 	l, err := net.Listen("tcp", hostname+":"+fmt.Sprint(port))
 	if err != nil {
@@ -218,7 +218,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 		log.Println("连接成功：" + upstreamAddress)
 	} else {
 		// log.Println("upstreamAddress:" + httpUpstreamAddress)
-		server, err = dnscache.Proxy_net_DialCached("tcp", upstreamAddress, proxyoptions, dnsCache, tranportConfigurations...) //net.Dial("tcp", upstreamAddress)
+		server, err = dnscache.Proxy_net_DialCached("tcp", upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...) //net.Dial("tcp", upstreamAddress)
 
 		//	for _, err := range errors {
 		//		if err != nil {

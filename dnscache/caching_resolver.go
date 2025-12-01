@@ -352,27 +352,57 @@ func Proxy_net_DialCached(network string, addr string, proxyoptions options.Prox
 }
 
 // Proxy_net_DialContextCached 带DNS缓存的上下文网络连接拨号函数
-func Proxy_net_DialContextCached(ctx context.Context, network string, addr string, proxyoptions options.ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func Proxy_net_DialContextCached(ctx context.Context, network string, addr string, proxyoptions options.ProxyOptions, dnsCache *DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	if dnsCache != nil {
-		return proxy_net_DialWithResolver(ctx, network, addr, proxyoptions, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...), tranportConfigurations...)
+		return proxy_net_DialWithResolver(ctx, network, addr, proxyoptions, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...), tranportConfigurations..., upstreamResolveIPs)
 	}
 	return proxy_net_DialContextOriginal(ctx, network, addr, proxyoptions, tranportConfigurations...)
 }
 
 // proxy_net_DialWithResolver 使用指定解析器的网络拨号函数
-func proxy_net_DialWithResolver(ctx context.Context, network string, addr string, proxyoptions options.ProxyOptions, resolver NameResolver, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func proxy_net_DialWithResolver(ctx context.Context, network string, addr string, proxyoptions options.ProxyOptions, resolver NameResolver, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
 	}
 
-	if IsIP(hostname) {
-		dialer := &net.Dialer{}
-		if ctx != nil {
-			return dialer.DialContext(ctx, network, addr)
+	// 如果启用了上游IP解析功能，则使用新的解析逻辑
+	if upstreamResolveIPs && len(proxyoptions) > 0 {
+		// 对于上游代理连接，使用IP地址解析
+		import "github.com/masx200/http-proxy-go-server/options"
+		resolvedIPs, err := options.ResolveUpstreamDomainToIPs(addr, proxyoptions, dnsCache)
+		if err != nil {
+			log.Printf("Failed to resolve upstream domain %s: %v, falling back to domain connection", addr, err)
+			// 回退到原有的域名连接方式
+		} else if len(resolvedIPs) > 0 {
+			// 使用解析出的IP地址进行连接尝试
+			Shuffle(resolvedIPs)
+			for i, serverIP := range resolvedIPs {
+				newAddr := net.JoinHostPort(serverIP.String(), port)
+				dialer := &net.Dialer{}
+				connection, err1 := dialer.DialContext(ctx, network, newAddr)
+
+				if err1 != nil {
+					log.Printf("Failed to connect to upstream IP %s: %v", serverIP, err1)
+					continue
+				} else {
+					log.Printf("Successfully connected to upstream address=%s via resolved IP=%s", addr, serverIP)
+					return connection, err1
+				}
+			}
+			log.Printf("All resolved upstream IPs failed for address=%s, falling back to domain connection", addr)
 		}
-		return dialer.Dial(network, addr)
 	}
+
+	// 如果没有启用上游IP解析，或者IP解析失败，则继续使用原有的解析逻辑
+	if !upstreamResolveIPs || len(proxyoptions) == 0 {
+		if IsIP(hostname) {
+			dialer := &net.Dialer{}
+			if ctx != nil {
+				return dialer.DialContext(ctx, network, addr)
+			}
+			return dialer.Dial(network, addr)
+		}
 
 	var ips []net.IP
 	if resolver != nil {
