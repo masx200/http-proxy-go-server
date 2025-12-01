@@ -39,7 +39,7 @@ func Auth(hostname string, port int, username, password string, proxyoptions opt
 	xh := http_server.GenerateRandomLoopbackIP()
 	x1 := http_server.GenerateRandomIntPort()
 	var upstreamAddress string = xh + ":" + fmt.Sprint(rune(x1))
-	go http_server.Http(xh, x1, proxyoptions, dnsCache, username, password, tranportConfigurations...)
+	go http_server.Http(xh, x1, proxyoptions, dnsCache, username, password, upstreamResolveIPs, tranportConfigurations...)
 	// 死循环，每当遇到连接时，调用 handle
 	for {
 		client, err := l.Accept()
@@ -245,7 +245,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		}
 		log.Println("连接成功：" + upstreamAddress)
 	} else {
-		server, err = dnscache.Proxy_net_DialCached("tcp", upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...) // net.Dial("tcp", upstreamAddress)
+		server, err = dnscache.Proxy_net_DialCached("tcp", upstreamAddress, proxyoptions, upstreamResolveIPs, dnsCache, tranportConfigurations...) // net.Dial("tcp", upstreamAddress)
 		if err != nil {
 			log.Println(err)
 			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
