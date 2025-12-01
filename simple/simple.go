@@ -218,7 +218,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 		log.Println("连接成功：" + upstreamAddress)
 	} else {
 		// log.Println("upstreamAddress:" + httpUpstreamAddress)
-		server, err = dnscache.Proxy_net_DialCached("tcp", upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...) //net.Dial("tcp", upstreamAddress)
+		server, err = dnscache.Proxy_net_DialCached("tcp", upstreamAddress, proxyoptions, upstreamResolveIPs, dnsCache, tranportConfigurations...) //net.Dial("tcp", upstreamAddress)
 
 		//	for _, err := range errors {
 		//		if err != nil {
