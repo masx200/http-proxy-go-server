@@ -346,7 +346,7 @@ func IsIP(s string) bool {
 // Proxy_net_DialCached 带DNS缓存的网络连接拨号函数
 func Proxy_net_DialCached(network string, addr string, proxyoptions options.ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	if dnsCache != nil {
-		return proxy_net_DialWithResolver(nil, network, addr, proxyoptions, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...), tranportConfigurations...)
+		return proxy_net_DialWithResolver(nil, network, addr, proxyoptions, upstreamResolveIPs, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...))
 	}
 	return proxy_net_DialOriginal(network, addr, proxyoptions, tranportConfigurations...)
 }
@@ -496,8 +496,7 @@ func proxy_net_DialWithResolver(ctx context.Context, network string, addr string
 		}
 		return nil, ErrorArray(allErrors)
 	}
-
-	// 如果所有方法都失败了，使用原始地址
+}	// 如果所有方法都失败了，使用原始地址
 	dialer := &net.Dialer{}
 	if ctx != nil {
 		connection, err := dialer.DialContext(ctx, network, addr)
