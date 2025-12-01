@@ -42,7 +42,7 @@ func Simple(hostname string, port int, proxyoptions options.ProxyOptions, dnsCac
 			return
 		}
 
-		go Handle(client, upstreamAddress, proxyoptions, dnsCache, tranportConfigurations...)
+		go Handle(client, upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
 	}
 }
 func CheckShouldUseProxy(upstreamAddress string, tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
