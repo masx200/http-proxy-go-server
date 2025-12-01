@@ -857,6 +857,9 @@ func main() {
 		}
 
 		log.Println("HTTP代理配置已添加")
+
+		// 设置UpstreamResolveIPs字段
+		config.UpstreamResolveIPs = *upstreamResolveIPs
 	}
 
 	for i, dohurl := range dohurls {
