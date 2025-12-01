@@ -175,6 +175,11 @@
         }
       }
     },
+    "upstream_resolve_ips": {
+      "type": "boolean",
+      "description": "Resolve upstream proxy domains to IP addresses before connection to bypass DNS pollution",
+      "default": false
+    },
     "upstreams": {
       "type": "object",
       "description": "Upstream proxy configurations",
