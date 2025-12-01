@@ -1,0 +1,166 @@
+package options
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"math/rand"
+	"net"
+	"net/http"
+	"strings"
+	"time"
+
+	dns_experiment "github.com/masx200/http-proxy-go-server/dns_experiment"
+	"github.com/masx200/http-proxy-go-server/doh"
+	"github.com/masx200/http-proxy-go-server/hosts"
+)
+
+type ErrorArray []error
+
+// Error implements error.
+func (e ErrorArray) Error() string {
+	// 将 ErrorArray 中的每个 error 转换为字符串
+	errStrings := make([]string, len(e))
+	for i, err := range e {
+		errStrings[i] = err.Error()
+	}
+	// 使用逗号分隔符连接所有错误字符串
+	return "ErrorArray:[" + strings.Join(errStrings, ", ") + "]"
+}
+
+func init() {
+	var _ error = ErrorArray{}
+}
+
+type ProxyOption struct {
+	Dohurl  string
+	Dohip   string
+	Dohalpn string
+	Doturl  string
+	Dotip   string
+	Doqurl  string
+	Doqip   string
+	// 新增DNS协议类型字段，用于标识使用哪种DNS协议
+	Protocol string // "doh", "dot", "doq", "doh3"
+}
+type ProxyOptions = []ProxyOption
+
+// Proxy_net_Dial 通过指定的网络和地址建立连接，支持代理配置和传输层自定义配置。
+// 如果目标地址是IP，则直接连接；否则尝试解析域名并使用解析出的IP进行连接。
+// 如果本地 hosts 文件中没有解析到IP，且提供了代理选项，则使用代理连接。
+//
+// 参数:
+//   - network: 网络类型，如 "tcp"、"udp" 等
+//   - addr: 目标地址，格式为 "host:port"
+//   - proxyoptions: 代理配置选项，用于指定代理服务器等信息
+//   - tranportConfigurations: 可选的 http.Transport 配置函数，用于自定义传输层行为
+//
+// 返回值:
+//   - net.Conn: 成功建立的网络连接
+//   - error: 连接过程中发生的错误
+func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+	hostname, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return nil, err
+	}
+	var ctx = context.Background()
+	if IsIP(hostname) {
+		dialer := &net.Dialer{}
+		//				// 发起连接
+		return dialer.DialContext(ctx, network, addr)
+	}
+	var ips []net.IP
+	// var errors []error
+	// hostname, _, err := net.SplitHostPort(addr)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	ips, err = hosts.ResolveDomainToIPsWithHosts(hostname)
+
+	if len(ips) > 0 {
+		Shuffle(ips)
+		lengthip := len(ips)
+		var errorsArray = make([]error, 0)
+		for i := 0; i < lengthip; i++ {
+
+			var serverIP = ips[i].String()
+			newAddr := net.JoinHostPort(serverIP, port)
+			// 创建 net.Dialer 实例
+			//				dialer := &net.Dialer{}
+			dialer := &net.Dialer{}
+			connection, err1 := dialer.DialContext(ctx, network, newAddr)
+
+			if err1 != nil {
+				errorsArray = append(errorsArray, err1)
+				continue
+			} else {
+
+				log.Println("success connect to addr=" + addr + " by network=" + network + " by serverIP=" + serverIP)
+				return connection, err1
+			}
+		}
+		return nil, ErrorArray(errorsArray)
+	}
+	// hosts没有找到域名解析ip,可以忽略这个错误
+	if len(ips) == 0 && err != nil {
+		log.Println(err)
+	}
+
+	//调用ResolveDomainToIPsWithHosts函数解析域名
+	if len(proxyoptions) > 0 {
+		// 如果启用了上游IP解析功能，则使用新的解析逻辑
+		if upstreamResolveIPs {
+			// 对于上游代理连接，使用IP地址解析
+// 			resolvedIPs, err := ResolveUpstreamDomainToIPs(addr, proxyoptions, dnsCache)
+// 			if err != nil {
+// 				log.Printf("Failed to resolve upstream domain %s: %v, falling back to domain connection", addr, err)
+// 				// 回退到原有的域名连接方式
+// 			} else if len(resolvedIPs) > 0 {
+// 				// 使用解析出的IP地址进行连接尝试
+// 				hostname, port, err := net.SplitHostPort(addr)
+// 				if err != nil {
+// 					return nil, err
+// 				}
+// 
+// 				Shuffle(resolvedIPs)
+// 				for i, serverIP := range resolvedIPs {
+// 					newAddr := net.JoinHostPort(serverIP.String(), port)
+// 					dialer := &net.Dialer{}
+// 					connection, err1 := dialer.DialContext(ctx, network, newAddr)
+// 
+// 					if err1 != nil {
+// 						log.Printf("Failed to connect to upstream IP %s: %v", serverIP, err1)
+// 						continue
+// 					} else {
+// 						log.Printf("Successfully connected to upstream addr=%s via resolved IP=%s", addr, serverIP)
+// 						return connection, err1
+// 					}
+// 				}
+// 				log.Printf("All resolved upstream IPs failed for addr=%s, falling back to domain connection", addr)
+// 			}
+// 		}
+
+// 		// 原有的解析逻辑，作为回退选项
+		//		_, port, err := net.SplitHostPort(addr)
+		//		if err != nil {
+		//			return nil, err
+		//		}
+		//		// 用指定的 IP 地址和原端口创建新地址
+		//		newAddr := net.JoinHostPort(serverIP, port)
+		//		// 创建 net.Dialer 实例
+		//		dialer := &net.Dialer{}
+		//		// 发起连接
+		//		return dialer.DialContext(ctx, network, newAddr)
+		var ctx = context.Background()
+		return Proxy_net_DialContext(ctx, network, addr, proxyoptions, nil, upstreamResolveIPs, tranportConfigurations...)
+	} else {
+		connection, err1 := net.Dial(network, addr)
+
+		if err1 != nil {
+			log.Println("failure connect to " + addr + " by " + network + "" + err1.Error())
+			return nil, err1
+		}
+		log.Println("success connect to " + addr + " by " + network + "")
+		return connection, err1
+	}
+}

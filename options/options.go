@@ -10,40 +10,98 @@ import (
 	"strings"
 	"time"
 
-	dns_experiment "github.com/masx200/http-proxy-go-server/dns_experiment"
 	"github.com/masx200/http-proxy-go-server/doh"
 	"github.com/masx200/http-proxy-go-server/hosts"
 )
 
 type ErrorArray []error
 
-// Error implements error.
+// Error implements error interface.
 func (e ErrorArray) Error() string {
-	// 将 ErrorArray 中的每个 error 转换为字符串
-	errStrings := make([]string, len(e))
-	for i, err := range e {
-		errStrings[i] = err.Error()
+	var errorMessages []string
+	for _, err := range e {
+		errorMessages = append(errorMessages, err.Error())
 	}
-	// 使用逗号分隔符连接所有错误字符串
-	return "ErrorArray:[" + strings.Join(errStrings, ", ") + "]"
-}
-
-func init() {
-	var _ error = ErrorArray{}
+	return strings.Join(errorMessages, "; ")
 }
 
 type ProxyOption struct {
-	Dohurl  string
-	Dohip   string
-	Dohalpn string
-	Doturl  string
-	Dotip   string
-	Doqurl  string
-	Doqip   string
+	Dohurl   string
+	Dohip    string
+	Dohalpn  string
+	Doturl   string
+	Dotip    string
+	Doqurl   string
+	Doqip    string
 	// 新增DNS协议类型字段，用于标识使用哪种DNS协议
 	Protocol string // "doh", "dot", "doq", "doh3"
 }
+
 type ProxyOptions = []ProxyOption
+
+// Error implements error interface.
+func (e ErrorArray) Error() string {
+	var errorMessages []string
+	for _, err := range e {
+		errorMessages = append(errorMessages, err.Error())
+	}
+	return strings.Join(errorMessages, "; ")
+}
+
+// IsIP 检查给定的字符串是否是有效的IP地址
+func IsIP(domain string) bool {
+	return net.ParseIP(domain) != nil
+}
+
+// formatIPs 将IP地址列表格式化为字符串
+func formatIPs(ips []net.IP) string {
+	var ipStrings []string
+	for _, ip := range ips {
+		ipStrings = append(ipStrings, ip.String())
+	}
+	return strings.Join(ipStrings, ", ")
+}
+
+// Shuffle 对切片进行随机排序
+func Shuffle[T any](slice []T) {
+	rand.Shuffle(len(slice), func(i, j int) {
+		slice[i], slice[j] = slice[j], slice[i]
+	})
+}
+
+// ResolveUpstreamDomainToIPs 解析上游代理域名到IP地址列表
+// 参数:
+//   - upstreamAddress: 上游代理地址，可能是域名或IP
+//   - proxyoptions: DNS/DoH配置选项
+//   - dnsCache: DNS缓存实例
+//
+// 返回值:
+//   - []net.IP: 解析出的IP地址列表
+//   - error: 解析过程中发生的错误
+func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions ProxyOptions, dnsCache interface{}) ([]net.IP, error) {
+	hostname, port, err := net.SplitHostPort(upstreamAddress)
+	if err != nil {
+		return nil, fmt.Errorf("invalid upstream address: %s", upstreamAddress)
+	}
+
+	// 如果已经是IP地址，直接返回
+	if ip := net.ParseIP(hostname); ip != nil {
+		return []net.IP{ip}, nil
+	}
+
+	// 使用现有DNS基础设施解析域名
+	ips, err := hosts.ResolveDomainToIPsWithCache(hostname, dnsCache)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve upstream domain %s: %v", hostname, err)
+	}
+
+	if len(ips) == 0 {
+		return nil, fmt.Errorf("no IP addresses resolved for upstream domain %s", hostname)
+	}
+
+	log.Printf("Resolved upstream domain %s to %d IP addresses: %v", hostname, len(ips), ips)
+	return ips, nil
+}
 
 // Proxy_net_Dial 通过指定的网络和地址建立连接，支持代理配置和传输层自定义配置。
 // 如果目标地址是IP，则直接连接；否则尝试解析域名并使用解析出的IP进行连接。
@@ -53,6 +111,7 @@ type ProxyOptions = []ProxyOption
 //   - network: 网络类型，如 "tcp"、"udp" 等
 //   - addr: 目标地址，格式为 "host:port"
 //   - proxyoptions: 代理配置选项，用于指定代理服务器等信息
+//   - upstreamResolveIPs: 是否启用上游IP解析功能
 //   - tranportConfigurations: 可选的 http.Transport 配置函数，用于自定义传输层行为
 //
 // 返回值:
@@ -71,7 +130,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 	}
 	var ips []net.IP
 	// var errors []error
-	// hostname, _, err := net.SplitHostPort(addr)
+	// hostname, _, err := net.SplitHostPort(address)
 	// if err != nil {
 	// 	return nil, err
 	// }
@@ -100,59 +159,6 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 			}
 		}
 		return nil, ErrorArray(errorsArray)
-	}
-	// hosts没有找到域名解析ip,可以忽略这个错误
-	if len(ips) == 0 && err != nil {
-		log.Println(err)
-	}
-
-	//调用ResolveDomainToIPsWithHosts函数解析域名
-	if len(proxyoptions) > 0 {
-		// 如果启用了上游IP解析功能，则使用新的解析逻辑
-		if upstreamResolveIPs {
-			// 对于上游代理连接，使用IP地址解析
-// 			resolvedIPs, err := ResolveUpstreamDomainToIPs(addr, proxyoptions, dnsCache)
-// 			if err != nil {
-// 				log.Printf("Failed to resolve upstream domain %s: %v, falling back to domain connection", addr, err)
-// 				// 回退到原有的域名连接方式
-// 			} else if len(resolvedIPs) > 0 {
-// 				// 使用解析出的IP地址进行连接尝试
-// 				hostname, port, err := net.SplitHostPort(addr)
-// 				if err != nil {
-// 					return nil, err
-// 				}
-// 
-// 				Shuffle(resolvedIPs)
-// 				for i, serverIP := range resolvedIPs {
-// 					newAddr := net.JoinHostPort(serverIP.String(), port)
-// 					dialer := &net.Dialer{}
-// 					connection, err1 := dialer.DialContext(ctx, network, newAddr)
-// 
-// 					if err1 != nil {
-// 						log.Printf("Failed to connect to upstream IP %s: %v", serverIP, err1)
-// 						continue
-// 					} else {
-// 						log.Printf("Successfully connected to upstream addr=%s via resolved IP=%s", addr, serverIP)
-// 						return connection, err1
-// 					}
-// 				}
-// 				log.Printf("All resolved upstream IPs failed for addr=%s, falling back to domain connection", addr)
-// 			}
-// 		}
-
-// 		// 原有的解析逻辑，作为回退选项
-		//		_, port, err := net.SplitHostPort(addr)
-		//		if err != nil {
-		//			return nil, err
-		//		}
-		//		// 用指定的 IP 地址和原端口创建新地址
-		//		newAddr := net.JoinHostPort(serverIP, port)
-		//		// 创建 net.Dialer 实例
-		//		dialer := &net.Dialer{}
-		//		// 发起连接
-		//		return dialer.DialContext(ctx, network, newAddr)
-		var ctx = context.Background()
-		return Proxy_net_DialContext(ctx, network, addr, proxyoptions, nil, upstreamResolveIPs, tranportConfigurations...)
 	} else {
 		connection, err1 := net.Dial(network, addr)
 
@@ -165,9 +171,36 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 	}
 }
 
+// Proxy_net_DialContext 是一个支持代理和 DoH 解析的网络连接拨号函数。
+// 它会尝试通过本地 hosts 文件解析域名，如果失败则使用提供的 DoH 配置进行解析，
+// 并尝试连接到解析出的 IP 地址。
+//
+// 参数:
+//   - ctx: 上下文对象
+//   - network: 网络类型 (如 "tcp", "udp")
+//   - address: 目标地址，格式为 "host:port"
+//   - proxyoptions: 代理配置选项
+//   - dnsCache: DNS缓存实例
+//   - upstreamResolveIPs: 是否启用上游IP解析
+//   - tranportConfigurations: 可选的传输配置函数
+//
+// 返回值:
+//   - net.Conn: 成功建立的网络连接
+//   - error: 连接过程中发生的错误
+func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, dnsCache interface{}, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+	hostname, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return nil, err
+	}
 
-// Proxy_net_DialContext function
-	// hostname, _, err := net.SplitHostPort(addr)
+	if IsIP(hostname) {
+		dialer := &net.Dialer{}
+		//				// 发起连接
+		return dialer.DialContext(ctx, network, address)
+	}
+	var ips []net.IP
+	// var errors []error
+	// hostname, _, err := net.SplitHostPort(address)
 	// if err != nil {
 	// 	return nil, err
 	// }
@@ -191,7 +224,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 				continue
 			} else {
 
-				log.Println("success connect to addr=" + addr + " by network=" + network + " by serverIP=" + serverIP)
+				log.Println("success connect to addr=" + address + " by network=" + network + " by serverIP=" + serverIP)
 				return connection, err1
 			}
 		}
@@ -203,140 +236,17 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 
 	//调用ResolveDomainToIPsWithHosts函数解析域名
 	if len(proxyoptions) > 0 {
-		var errorsArray = make([]error, 0)
-		Shuffle(proxyoptions)
-		for _, dnsOpt := range proxyoptions {
+		// 注意: upstreamResolveIPs 的逻辑已在 dnscache 包中实现
+		var ctx = context.Background()
+		return Proxy_net_DialContext(ctx, network, address, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
+	} else {
+		connection, err1 := net.Dial(network, address)
 
-			var ips []net.IP
-			var errors []error
-			hostname, port, err := net.SplitHostPort(addr)
-			if err != nil {
-				return nil, err
-			}
-
-			// 根据协议类型选择DNS解析方法
-			protocol := dnsOpt.Protocol
-			if protocol == "" {
-				// 默认使用DoH，保持向后兼容
-				protocol = "doh"
-			}
-
-			switch protocol {
-			case "doh3":
-				if dnsOpt.Dohip == "" {
-					ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, dnsOpt.Dohurl)
-				} else {
-					ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, dnsOpt.Dohurl, dnsOpt.Dohip)
-				}
-				if len(ips) > 0 {
-					log.Println("success resolve " + hostname + " by DoH3 url=" + dnsOpt.Dohurl + " ips=" + formatIPs(ips))
-				}
-			case "doh":
-				if dnsOpt.Dohip == "" {
-					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dnsOpt.Dohurl, "", tranportConfigurations...)
-				} else {
-					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, dnsOpt.Dohurl, dnsOpt.Dohip, tranportConfigurations...)
-				}
-				if len(ips) > 0 {
-					log.Println("success resolve " + hostname + " by DoH url=" + dnsOpt.Dohurl + " ips=" + formatIPs(ips))
-				}
-			case "dot":
-				dotOptions := &dns_experiment.DotDNSOptions{
-					ServerURL: dnsOpt.Doturl,
-					ServerIP:  dnsOpt.Dotip,
-				}
-				ips, errors = dns_experiment.ResolveDomainToIPsWithDoT(hostname, dotOptions)
-				if len(ips) > 0 {
-					log.Println("success resolve " + hostname + " by DoT url=" + dnsOpt.Doturl + " ips=" + formatIPs(ips))
-				}
-			case "doq":
-				doqOptions := &dns_experiment.DoqDNSOptions{
-					ServerURL: dnsOpt.Doqurl,
-					ServerIP:  dnsOpt.Doqip,
-				}
-				ips, errors = dns_experiment.ResolveDomainToIPsWithDoQ(hostname, doqOptions)
-				if len(ips) > 0 {
-					log.Println("success resolve " + hostname + " by DoQ url=" + dnsOpt.Doqurl + " ips=" + formatIPs(ips))
-				}
-			default:
-				// 不支持的协议，跳过
-				errors = []error{fmt.Errorf("unsupported DNS protocol: %s", protocol)}
-			}
-
-			if len(ips) == 0 && len(errors) > 0 {
-				errorsArray = append(errorsArray, errors...)
-				continue
-			} else {
-				lengthip := len(ips)
-				Shuffle(ips)
-				for i := 0; i < lengthip; i++ {
-
-					var serverIP = ips[i].String()
-					newAddr := net.JoinHostPort(serverIP, port)
-					// 创建 net.Dialer 实例
-					//				dialer := &net.Dialer{}
-					dialer := &net.Dialer{}
-
-					// 添加详细的上游连接日志
- 					if dnsCache != nil {
- 						if reflect.ValueOf(dnsCache).Type().String() == "*dnscache.DNSCache" {
- 							if i == 0 {
- 								log.Printf("Attempting upstream connection to %s (resolved to %d IPs), trying IP %d/%d: %s", addr, lengthip, i+1, lengthip, serverIP)
- 							} else {
- 								log.Printf("Previous IP failed, trying next IP %d/%d for %s: %s", i+1, lengthip, addr, serverIP)
- 							}
- 						}
- 					}
- 
- 					connection, err1 := dialer.DialContext(ctx, network, newAddr, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
-// 
-// 					if err1 != nil {
-// 						errorsArray = append(errorsArray, err1)
- 						log.Printf("Failed to connect to IP %d/%d (%s) for %s: %v", i+1, lengthip, serverIP, addr, err1)
- 						continue
- 					} else {
- 						log.Printf("Successfully connected to %s via IP %d/%d: %s (network: %s, protocol: %s)", addr, i+1, lengthip, serverIP, network, protocol)
- 						log.Println("success connect to addr=" + addr + " by network=" + network + " by protocol=" + protocol + " by serverIP=" + serverIP)
- 						return connection, err1
-					}
-				}
-				// var serverIP = ips[0].String()
-				// 用指定的 IP 地址和原端口创建新地址
-
-			}
+		if err1 != nil {
+			log.Println("failure connect to " + address + " by " + network + "" + err1.Error())
+			return nil, err1
 		}
-		return nil, ErrorArray(errorsArray)
+		log.Println("success connect to " + address + " by " + network + "")
+		return connection, err1
 	}
-
-	// 直接连接到原始地址（不使用上游代理）
-	dialer := &net.Dialer{}
-	connection, err1 := dialer.DialContext(ctx, network, addr)
-	if err1 != nil {
-		log.Println("failure connect to " + addr + " by " + network + "" + err1.Error())
-		return nil, err1
-	}
-	log.Println("success connect to " + addr + " by " + network + "")
-	return connection, err1
-}
-
-// Shuffle 对切片进行随机排序
-func Shuffle[T any](slice []T) {
-	var rand1 = rand.New(rand.NewSource(time.Now().UnixNano())) // 使用当前时间作为随机种子
-	rand1.Shuffle(len(slice), func(i, j int) {
-		slice[i], slice[j] = slice[j], slice[i]
-	})
-}
-
-// IsIP 判断给定的字符串是否是有效的 IPv4 或 IPv6 地址。
-func IsIP(s string) bool {
-	return net.ParseIP(s) != nil
-}
-
-// formatIPs 格式化IP地址列表为字符串
-func formatIPs(ips []net.IP) string {
-	var ipStrings []string
-	for _, ip := range ips {
-		ipStrings = append(ipStrings, ip.String())
-	}
-	return strings.Join(ipStrings, ",")
 }
