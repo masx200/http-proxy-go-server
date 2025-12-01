@@ -80,7 +80,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, tran
 	if len(ips) > 0 {
 		Shuffle(ips)
 		lengthip := len(ips)
-		var errorsaray = make([]error, 0)
+		var errorsArray = make([]error, 0)
 		for i := 0; i < lengthip; i++ {
 
 			var serverIP = ips[i].String()
@@ -91,7 +91,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, tran
 			connection, err1 := dialer.DialContext(ctx, network, newAddr)
 
 			if err1 != nil {
-				errorsaray = append(errorsaray, err1)
+				errorsArray = append(errorsArray, err1)
 				continue
 			} else {
 
@@ -99,7 +99,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, tran
 				return connection, err1
 			}
 		}
-		return nil, ErrorArray(errorsaray)
+		return nil, ErrorArray(errorsArray)
 	}
 	// hosts没有找到域名解析ip,可以忽略这个错误
 	if len(ips) == 0 && err != nil {
@@ -141,7 +141,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, tran
 		}
 
 		// 原有的解析逻辑，作为回退选项
-		var errorsaray = make([]error, 0)
+		var errorsArray = make([]error, 0)
 		//		var addr=address
 		//		_, port, err := net.SplitHostPort(addr)
 		//		if err != nil {
@@ -154,7 +154,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, tran
 		//		// 发起连接
 		//		return dialer.DialContext(ctx, network, newAddr)
 		var ctx = context.Background()
-		return Proxy_net_DialContext(ctx, network, addr, proxyoptions, tranportConfigurations...)
+		return proxy_net_DialWithResolver(ctx, network, addr, proxyoptions, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...), upstreamResolveIPs)
 	} else {
 		connection, err1 := net.Dial(network, addr)
 
@@ -218,7 +218,7 @@ func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions ProxyOption
 // Proxy_net_DialContext 是一个支持代理和 DoH 解析的网络连接拨号函数。
 // 它会尝试通过本地 hosts 文件解析域名，如果失败则使用提供的 DoH 配置进行解析，
 // 并尝试连接到解析出的 IP 地址。
-func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport, dnsCache interface{}) (net.Conn, error) {
+func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport, dnsCache interface{}, upstreamResolveIPs bool) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, err
@@ -240,7 +240,7 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 	if len(ips) > 0 {
 		Shuffle(ips)
 		lengthip := len(ips)
-		var errorsaray = make([]error, 0)
+		var errorsArray = make([]error, 0)
 		for i := 0; i < lengthip; i++ {
 
 			var serverIP = ips[i].String()
@@ -251,7 +251,7 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 			connection, err1 := dialer.DialContext(ctx, network, newAddr)
 
 			if err1 != nil {
-				errorsaray = append(errorsaray, err1)
+				errorsArray = append(errorsArray, err1)
 				continue
 			} else {
 
@@ -259,7 +259,7 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 				return connection, err1
 			}
 		}
-		return nil, ErrorArray(errorsaray)
+		return nil, ErrorArray(errorsArray)
 	}
 	if len(ips) == 0 && err != nil {
 		log.Println(err)
@@ -267,7 +267,7 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 
 	//调用ResolveDomainToIPsWithHosts函数解析域名
 	if len(proxyoptions) > 0 {
-		var errorsaray = make([]error, 0)
+		var errorsArray = make([]error, 0)
 		Shuffle(proxyoptions)
 		for _, dnsOpt := range proxyoptions {
 
@@ -355,7 +355,7 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 					connection, err1 := dialer.DialContext(ctx, network, newAddr)
 
 					if err1 != nil {
-						errorsaray = append(errorsaray, err1)
+						errorsArray = append(errorsArray, err1)
 						log.Printf("Failed to connect to IP %d/%d (%s) for %s: %v", i+1, lengthip, serverIP, address, err1)
 						continue
 					} else {
@@ -369,7 +369,7 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string, 
 
 			}
 		}
-		return nil, ErrorArray(errorsaray)
+		return nil, ErrorArray(errorsArray)
 	} else {
 		dialer := &net.Dialer{}
 		connection, err1 := dialer.DialContext(ctx, network, address)
