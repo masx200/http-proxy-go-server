@@ -1048,7 +1048,7 @@ func main() {
 	}
 	log.Println(string(by))
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
-		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, proxyoptions, GetDNSCache(), tranportConfigurations..., *upstreamResolveIPs)
+		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, proxyoptions, GetDNSCache(), *upstreamResolveIPs, tranportConfigurations...)
 		return
 	}
 	// if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
