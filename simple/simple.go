@@ -49,7 +49,7 @@ func CheckShouldUseProxy(upstreamAddress string, tranportConfigurations ...func(
 	return utils.CheckShouldUseProxy(upstreamAddress, tranportConfigurations...)
 }
 
-func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	if client == nil {
 		return
 	}
