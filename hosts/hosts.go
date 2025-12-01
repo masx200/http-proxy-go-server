@@ -97,3 +97,10 @@ func ParseHostsFile(filePath string) (map[string][]string, error) {
 
 	return hostsMap, nil
 }
+
+// ResolveDomainToIPsWithCache 解析域名到 IP 地址，如果提供了缓存则使用缓存
+func ResolveDomainToIPsWithCache(domain string, dnsCache interface{}) ([]net.IP, error) {
+	// 简单的实现，暂时忽略缓存参数，直接调用现有函数
+	// TODO: 实际实现中应该使用 dnsCache 参数
+	return ResolveDomainToIPsWithHosts(domain)
+}

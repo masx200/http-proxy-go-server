@@ -369,8 +369,7 @@ func proxy_net_DialWithResolver(ctx context.Context, network string, addr string
 	// 如果启用了上游IP解析功能，则使用新的解析逻辑
 	if upstreamResolveIPs && len(proxyoptions) > 0 {
 		// 对于上游代理连接，使用IP地址解析
-		import "github.com/masx200/http-proxy-go-server/options"
-		resolvedIPs, err := options.ResolveUpstreamDomainToIPs(addr, proxyoptions, dnsCache)
+		resolvedIPs, err := ResolveUpstreamDomainToIPs(addr, proxyoptions, dnsCache)
 		if err != nil {
 			log.Printf("Failed to resolve upstream domain %s: %v, falling back to domain connection", addr, err)
 			// 回退到原有的域名连接方式
@@ -722,4 +721,30 @@ func proxy_net_DialContextOriginal(ctx context.Context, network string, address 
 		log.Printf("success connect to %s by %s", address, network)
 		return connection, nil
 	}
+}
+
+// ResolveUpstreamDomainToIPs 解析上游代理地址到IP地址
+func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions []options.ProxyOptions, dnsCache interface{}) ([]net.IP, error) {
+	hostname, port, err := net.SplitHostPort(upstreamAddress)
+	if err != nil {
+		return nil, fmt.Errorf("invalid upstream address: %s", upstreamAddress)
+	}
+
+	// 如果已经是IP地址，直接返回
+	if ip := net.ParseIP(hostname); ip != nil {
+		return []net.IP{ip}, nil
+	}
+
+	// 使用现有DNS基础设施解析域名
+	ips, err := hosts.ResolveDomainToIPsWithCache(hostname, dnsCache)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve upstream domain %s: %v", hostname, err)
+	}
+
+	if len(ips) == 0 {
+		return nil, fmt.Errorf("no IP addresses resolved for upstream domain %s", hostname)
+	}
+
+	log.Printf("Resolved upstream domain %s to %d IP addresses: %v", hostname, len(ips), ips)
+	return ips, nil
 }
