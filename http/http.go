@@ -87,7 +87,7 @@ func parseForwardedHeader(header string) ([]ForwardedBy, error) {
 
 	return forwardedByList, nil
 }
-func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, username, password string, tranportConfigurations ...func(*http.Transport) *http.Transport) error {
+func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) error {
 	log.Println("method:", r.Method)
 	log.Println("url:", r.URL)
 	log.Println("host:", r.Host)
@@ -196,7 +196,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 			//				// 发起连接
 			//				return dialer.DialContext(ctx, network, newAddr)
 
-			return dnscache.Proxy_net_DialContextCached(ctx, network, addr, proxyoptions, dnsCache)
+			return dnscache.Proxy_net_DialContextCached(ctx, network, addr, proxyoptions, dnsCache, upstreamResolveIPs)
 		},
 		DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 
@@ -210,7 +210,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 			//				// 创建 net.Dialer 实例
 			//				dialer := &net.Dialer{}
 			//				// 发起连接
-			conn, err := dnscache.Proxy_net_DialContextCached(ctx, network, addr, proxyoptions, dnsCache) //dialer.DialContext(ctx, network, newAddr)
+			conn, err := dnscache.Proxy_net_DialContextCached(ctx, network, addr, proxyoptions, dnsCache, upstreamResolveIPs) //dialer.DialContext(ctx, network, newAddr)
 			if err != nil {
 				return nil, err
 			}
@@ -279,7 +279,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 				log.Println("使用代理：" + proxyUrl.String())
 
 				log.Println("network,addr", network, addr)
-				return websocketDialContext(ctx, network, addr, proxyUrl)
+				return websocketDialContext(ctx, network, addr, proxyUrl, proxyoptions, dnsCache, upstreamResolveIPs)
 			}
 			transport.DialContext = DialContext
 			transport.DialTLSContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
@@ -342,7 +342,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	return nil
 }
 
-func Http(hostname string, port int, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, username, password string, tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Http(hostname string, port int, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
@@ -361,7 +361,7 @@ func Http(hostname string, port int, proxyoptions options.ProxyOptions, dnsCache
 	engine.Use(func(c *gin.Context) {
 		var w = c.Writer
 		var r = c.Request
-		err := proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, dnsCache, username, password, tranportConfigurations...)
+		err := proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, dnsCache, username, password, upstreamResolveIPs, tranportConfigurations...)
 		c.Abort()
 
 		if err != nil {
@@ -438,7 +438,7 @@ func isAuthenticated(proxyAuth, expectedUsername, expectedPassword string) bool 
 
 	return username == expectedUsername && password == expectedPassword
 }
-func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *url.URL) (net.Conn, error) {
+func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *url.URL, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) (net.Conn, error) {
 	// 解析目标地址
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
