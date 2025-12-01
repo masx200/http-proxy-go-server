@@ -51,8 +51,8 @@ func (c *HttpProxyClient) Connect(host string, port int) error {
 	// 构建目标地址
 	targetAddr := net.JoinHostPort(host, strconv.Itoa(port))
 
-	// 使用ConnectViaHttpProxy建立连接
-	conn, err := ConnectViaHttpProxy(proxyURL, targetAddr)
+	// 使用ConnectViaHttpProxy建立连接（注意：这里传递空的proxyoptions和dnsCache，因为这是用于内部HTTP转发的）
+	conn, err := ConnectViaHttpProxy(proxyURL, targetAddr, nil, nil, false)
 	if err != nil {
 		return err
 	}

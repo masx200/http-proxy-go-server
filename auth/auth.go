@@ -237,7 +237,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		server = clientConn
 		log.Println("WebSocket代理连接成功：" + upstreamAddress)
 	} else if method == "CONNECT" && proxyURL != nil {
-		server, err = connect.ConnectViaHttpProxy(proxyURL, upstreamAddress)
+		server, err = connect.ConnectViaHttpProxy(proxyURL, upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs)
 		if err != nil {
 			log.Println(err)
 			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
