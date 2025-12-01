@@ -157,7 +157,7 @@ func (h *HostsResolver) Resolve(ctx context.Context, name string) (context.Conte
 }
 
 type DOHResolver struct {
-	proxyoptions           options.ProxyOptions
+	proxyoptions           ProxyOptions
 	tranportConfigurations []func(*http.Transport) *http.Transport
 }
 
@@ -206,7 +206,7 @@ func (d *DOHResolver) Resolve(ctx context.Context, name string) (context.Context
 }
 
 type DOH3Resolver struct {
-	proxyoptions options.ProxyOptions
+	proxyoptions ProxyOptions
 }
 
 // LookupIP implements NameResolver.
@@ -261,7 +261,7 @@ func (d *DOH3Resolver) Resolve(ctx context.Context, name string) (context.Contex
 }
 
 type HostsAndDohResolver struct {
-	proxyoptions           options.ProxyOptions
+	proxyoptions           ProxyOptions
 	tranportConfigurations []func(*http.Transport) *http.Transport
 }
 
@@ -356,7 +356,7 @@ func IsIP(s string) bool {
 }
 
 // Proxy_net_DialCached 带DNS缓存的网络连接拨号函数
-func Proxy_net_DialCached(network string, addr string, proxyoptions options.ProxyOptions, upstreamResolveIPs bool, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func Proxy_net_DialCached(network string, addr string, proxyoptions ProxyOptions, upstreamResolveIPs bool, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	if dnsCache != nil {
 		return proxy_net_DialWithResolver(nil, network, addr, proxyoptions, upstreamResolveIPs, dnsCache, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...))
 	}
@@ -364,7 +364,7 @@ func Proxy_net_DialCached(network string, addr string, proxyoptions options.Prox
 }
 
 // Proxy_net_DialContextCached 带DNS缓存的上下文网络连接拨号函数
-func Proxy_net_DialContextCached(ctx context.Context, network string, addr string, proxyoptions options.ProxyOptions, dnsCache *DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func Proxy_net_DialContextCached(ctx context.Context, network string, addr string, proxyoptions ProxyOptions, dnsCache *DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	if dnsCache != nil {
 		return proxy_net_DialWithResolver(ctx, network, addr, proxyoptions, upstreamResolveIPs, dnsCache, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...))
 	}
