@@ -12,8 +12,20 @@ import (
 
 	"github.com/masx200/http-proxy-go-server/doh"
 	"github.com/masx200/http-proxy-go-server/hosts"
-	"github.com/masx200/http-proxy-go-server/options"
-)
+	)
+
+// ProxyOptions 代理选项配置结构
+type ProxyOptions []struct {
+	Dohurl   string
+	Dohip    string
+	Dohalpn  string
+	Doturl   string
+	Dotip    string
+	Doqurl   string
+	Doqip    string
+	// 新增DNS协议类型字段，用于标识使用哪种DNS协议
+	Protocol string // "doh", "dot", "doq", "doh3"
+}
 
 // NameResolver 接口定义
 type NameResolver interface {

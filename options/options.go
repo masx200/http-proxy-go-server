@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/masx200/http-proxy-go-server/hosts"
-	"github.com/masx200/http-proxy-go-server/dnscache"
 )
 
 type ErrorArray []error
@@ -122,7 +121,17 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 		dialer := &net.Dialer{}
 		return dialer.DialContext(ctx, network, addr)
 	}
-	var ips []net.IP
+	// 使用基本hosts解析
+	ips, err = hosts.ResolveDomainToIPsWithHosts(hostname)
+	if err != nil {
+		connection, err1 := net.Dial(network, addr)
+		if err1 != nil {
+			log.Println("failure connect to " + addr + " by " + network + ": " + err1.Error())
+			return nil, err1
+		}
+		log.Println("success connect to " + addr + " by " + network + "")
+		return connection, err1
+	}
 
 	if len(ips) > 0 {
 		Shuffle(ips)
