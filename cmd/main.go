@@ -752,6 +752,9 @@ func main() {
 		}
 
 		log.Println("WebSocket代理配置已添加")
+
+		// 设置UpstreamResolveIPs字段
+		config.UpstreamResolveIPs = *upstreamResolveIPs
 	}
 
 	// 处理SOCKS5代理参数
