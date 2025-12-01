@@ -733,19 +733,40 @@ func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions options.Pro
 
 	// 如果已经是IP地址，直接返回
 	if ip := net.ParseIP(hostname); ip != nil {
+		log.Printf("Upstream address %s is already an IP: %s", hostname, ip)
 		return []net.IP{ip}, nil
 	}
 
-	// 使用现有DNS基础设施解析域名
-	ips, err := hosts.ResolveDomainToIPsWithCache(hostname, dnsCache)
+	log.Printf("Resolving upstream domain %s using DoH infrastructure", hostname)
+
+	// 如果有DoH配置，使用DoH解析
+	if len(proxyoptions) > 0 && dnsCache != nil {
+		// 创建DoH解析器
+		if typedCache, ok := dnsCache.(*DNSCache); ok {
+			resolver := CreateHostsAndDohResolverCached(proxyoptions, typedCache)
+			
+			// 使用DoH解析器解析域名
+			ips, err := resolver.LookupIP(context.Background(), "tcp", hostname)
+			if err != nil {
+				log.Printf("DoH resolution failed for upstream domain %s: %v", hostname, err)
+			} else if len(ips) > 0 {
+				log.Printf("Successfully resolved upstream domain %s via DoH to %d IP addresses: %v", hostname, len(ips), ips)
+				return ips, nil
+			}
+		}
+	}
+
+	// 回退到hosts文件解析
+	log.Printf("DoH resolution failed or unavailable, falling back to hosts file for %s", hostname)
+	ips, err := hosts.ResolveDomainToIPsWithHosts(hostname)
 	if err != nil {
-		return nil, fmt.Errorf("failed to resolve upstream domain %s: %v", hostname, err)
+		return nil, fmt.Errorf("failed to resolve upstream domain %s: hosts error: %v, DoH also failed", hostname, err)
 	}
 
 	if len(ips) == 0 {
-		return nil, fmt.Errorf("no IP addresses resolved for upstream domain %s", hostname)
+		return nil, fmt.Errorf("no IP addresses resolved for upstream domain %s via any method", hostname)
 	}
 
-	log.Printf("Resolved upstream domain %s to %d IP addresses: %v", hostname, len(ips), ips)
+	log.Printf("Resolved upstream domain %s via hosts file to %d IP addresses: %v", hostname, len(ips), ips)
 	return ips, nil
 }
