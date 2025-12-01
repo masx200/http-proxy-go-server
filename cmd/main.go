@@ -640,7 +640,7 @@ func main() {
 		}
 	}
 	// 加载上游代理IP解析配置
-	if config.UpstreamResolveIPs {
+	if config != nil && config.UpstreamResolveIPs {
 		*upstreamResolveIPs = config.UpstreamResolveIPs
 	}
 
