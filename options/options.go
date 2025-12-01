@@ -107,12 +107,8 @@ func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions ProxyOption
 func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upstreamResolveIPs bool, dnsCache interface{}, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	var ctx = context.Background()
 
-	// 优先使用dnscache包的缓存版本，支持upstreamResolveIPs逻辑
-	if typedCache, ok := dnsCache.(*dnscache.DNSCache); ok {
-		return dnscache.Proxy_net_DialCached(network, addr, proxyoptions, upstreamResolveIPs, typedCache, tranportConfigurations...)
-	}
-
-	// 回退到基础解析逻辑
+	// DNS缓存功能现在通过interface{}调用，避免循环导入
+	// 实际的DNS解析逻辑在hosts包中处理
 	hostname, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
@@ -122,6 +118,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 		return dialer.DialContext(ctx, network, addr)
 	}
 	// 使用基本hosts解析
+	var ips []net.IP
 	ips, err = hosts.ResolveDomainToIPsWithHosts(hostname)
 	if err != nil {
 		connection, err1 := net.Dial(network, addr)
