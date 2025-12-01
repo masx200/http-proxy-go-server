@@ -12,7 +12,7 @@ import (
 	"github.com/masx200/http-proxy-go-server/simple"
 )
 
-func Tls(server_cert string, server_key, hostname string, port int, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Tls(server_cert string, server_key, hostname string, port int, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 
 	cert, err := tls.LoadX509KeyPair(server_cert, server_key)
 	if err != nil {
