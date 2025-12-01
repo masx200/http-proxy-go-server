@@ -165,22 +165,8 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 	}
 }
 
-n// Proxy_net_DialContext is a network dial function that supports proxy and DoH resolution.
-func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, dnsCache interface{}, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
-//   - error: 连接过程中发生的错误
-func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, dnsCache interface{}, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
-	hostname, port, err := net.SplitHostPort(address)
-	if err != nil {
-		return nil, err
-	}
 
-	if IsIP(hostname) {
-		dialer := &net.Dialer{}
-		//				// 发起连接
-		return dialer.DialContext(ctx, network, address)
-	}
-	var ips []net.IP
-	// var errors []error
+// Proxy_net_DialContext function
 	// hostname, _, err := net.SplitHostPort(address)
 	// if err != nil {
 	// 	return nil, err
