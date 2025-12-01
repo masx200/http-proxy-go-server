@@ -103,7 +103,7 @@ func CreateHostsResolverCached(dnsCache *DNSCache) NameResolver {
 }
 
 // CreateDOHResolverCached 创建带缓存的DOH解析器
-func CreateDOHResolverCached(proxyoptions options.ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
+func CreateDOHResolverCached(proxyoptions ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
 	original := &DOHResolver{
 		proxyoptions:           proxyoptions,
 		tranportConfigurations: tranportConfigurations,
@@ -112,7 +112,7 @@ func CreateDOHResolverCached(proxyoptions options.ProxyOptions, dnsCache *DNSCac
 }
 
 // CreateDOH3ResolverCached 创建带缓存的DOH3解析器
-func CreateDOH3ResolverCached(proxyoptions options.ProxyOptions, dnsCache *DNSCache) NameResolver {
+func CreateDOH3ResolverCached(proxyoptions ProxyOptions, dnsCache *DNSCache) NameResolver {
 	original := &DOH3Resolver{
 		proxyoptions: proxyoptions,
 	}
@@ -120,7 +120,7 @@ func CreateDOH3ResolverCached(proxyoptions options.ProxyOptions, dnsCache *DNSCa
 }
 
 // CreateHostsAndDohResolverCached 创建带缓存的Hosts+DOH解析器
-func CreateHostsAndDohResolverCached(proxyoptions options.ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
+func CreateHostsAndDohResolverCached(proxyoptions ProxyOptions, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
 	original := &HostsAndDohResolver{
 		proxyoptions:           proxyoptions,
 		tranportConfigurations: tranportConfigurations,
