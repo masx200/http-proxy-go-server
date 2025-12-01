@@ -66,7 +66,7 @@ func Shuffle[T any](slice []T) {
 //   - []net.IP: 解析出的IP地址列表
 //   - error: 解析过程中发生的错误
 func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions ProxyOptions, dnsCache interface{}) ([]net.IP, error) {
-	hostname, port, err := net.SplitHostPort(upstreamAddress)
+	hostname, _, err := net.SplitHostPort(upstreamAddress)
 	if err != nil {
 		return nil, fmt.Errorf("invalid upstream address: %s", upstreamAddress)
 	}
