@@ -108,6 +108,40 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, tran
 
 	//调用ResolveDomainToIPsWithHosts函数解析域名
 	if len(proxyoptions) > 0 {
+		// 如果启用了上游IP解析功能，则使用新的解析逻辑
+		if upstreamResolveIPs {
+			// 对于上游代理连接，使用IP地址解析
+			resolvedIPs, err := ResolveUpstreamDomainToIPs(address, proxyoptions, dnsCache)
+			if err != nil {
+				log.Printf("Failed to resolve upstream domain %s: %v, falling back to domain connection", address, err)
+				// 回退到原有的域名连接方式
+			} else if len(resolvedIPs) > 0 {
+				// 使用解析出的IP地址进行连接尝试
+				hostname, port, err := net.SplitHostPort(address)
+				if err != nil {
+					return nil, err
+				}
+
+				Shuffle(resolvedIPs)
+				for i, serverIP := range resolvedIPs {
+					newAddr := net.JoinHostPort(serverIP.String(), port)
+					dialer := &net.Dialer{}
+					connection, err1 := dialer.DialContext(ctx, network, newAddr)
+
+					if err1 != nil {
+						log.Printf("Failed to connect to upstream IP %s: %v", serverIP, err1)
+						continue
+					} else {
+						log.Printf("Successfully connected to upstream address=%s via resolved IP=%s", address, serverIP)
+						return connection, err1
+					}
+				}
+				log.Printf("All resolved upstream IPs failed for address=%s, falling back to domain connection", address)
+			}
+		}
+
+		// 原有的解析逻辑，作为回退选项
+		var errorsaray = make([]error, 0)
 		//		var addr=address
 		//		_, port, err := net.SplitHostPort(addr)
 		//		if err != nil {
@@ -184,7 +218,7 @@ func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions ProxyOption
 // Proxy_net_DialContext 是一个支持代理和 DoH 解析的网络连接拨号函数。
 // 它会尝试通过本地 hosts 文件解析域名，如果失败则使用提供的 DoH 配置进行解析，
 // 并尝试连接到解析出的 IP 地址。
-func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport, dnsCache interface{}) (net.Conn, error) {
+func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport, dnsCache interface{}, upstreamResolveIPs bool) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, err
