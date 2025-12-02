@@ -32,7 +32,7 @@ func Simple(hostname string, port int, proxyoptions options.ProxyOptions, dnsCac
 	log.Printf("Proxy server started on port %s", l.Addr())
 	xh := http_server.GenerateRandomLoopbackIP()
 	x1 := http_server.GenerateRandomIntPort()
-	var upstreamAddress string = xh + ":" + fmt.Sprint(rune(x1))
+	var upstreamAddress string = xh + ":" + fmt.Sprint(x1)
 	go http_server.Http(xh, x1, proxyoptions, dnsCache, "", "", upstreamResolveIPs, tranportConfigurations...)
 	// 死循环，每当遇到连接时，调用 handle
 	for {
