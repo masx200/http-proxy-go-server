@@ -425,3 +425,9 @@ nslookup example.com
 This comprehensive architecture provides a solid foundation for understanding
 and extending the http-proxy-go-server codebase. The modular design allows for
 easy customization and enhancement while maintaining stability and performance.
+
+`@E:\projects\http-proxy-go-server\openspec\changes\add-upstream-ip-resolution\design.md`
+
+`@upstreamResolveIPs_技术分析报告.md`
+
+"@E:\projects\http-proxy-go-server\openspec\changes\add-upstream-ip-resolution\proposal.md"

@@ -17,7 +17,7 @@ require (
 	github.com/masx200/dnsproxy v1.0.4
 	github.com/masx200/doq-go v0.55.0
 	github.com/masx200/http3-reverse-proxy-server-experiment v0.0.0-20251004130120-07f6b38af34d
-	github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20251004130715-0afdf9b68b1f
+	github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20251004132949-7c6ed24bfd07
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/xeipuuv/gojsonschema v1.2.0
 	gopkg.in/yaml.v3 v3.0.1

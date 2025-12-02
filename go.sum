@@ -58,6 +58,8 @@ github.com/masx200/http3-reverse-proxy-server-experiment v0.0.0-20251004130120-0
 github.com/masx200/http3-reverse-proxy-server-experiment v0.0.0-20251004130120-07f6b38af34d/go.mod h1:aNAxtYi35HWK11Lz29nls6Evd9UbEDkA8C+ehIrcgQY=
 github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20251004130715-0afdf9b68b1f h1:a4vABwVsiZc3dnaV2Yz3wrMTP1WPBUkEayfj0fsSRN0=
 github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20251004130715-0afdf9b68b1f/go.mod h1:l38irVHP68BxuTYi4xY5QYIbVS4pzTVRbUDKU4RRzA8=
+github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20251004132949-7c6ed24bfd07 h1:cKlhMhLWabjoy+M35jLrXy0I0cjYQEWqEE/2tQF01Os=
+github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20251004132949-7c6ed24bfd07/go.mod h1:iVGKvw1zmvT0MchJwXAfpqlZWUbSCCVv1zN6npitv2M=
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/miekg/dns v1.1.68 h1:jsSRkNozw7G/mnmXULynzMNIsgY2dHC8LO6U6Ij2JEA=
