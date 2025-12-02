@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"math/rand"
+	"net"
+	"time"
+
 	"github.com/masx200/http-proxy-go-server/dnscache"
 	"github.com/masx200/http-proxy-go-server/options"
-	"log"
-	"net"
 )
 
 // resolveTargetAddress 解析目标地址的域名为IP地址（如果启用了upstreamResolveIPs）
@@ -62,7 +65,7 @@ func resolveTargetAddressWithRoundRobin(addrs []string, target string) string {
 	if len(addrs) == 1 {
 		return addrs[0]
 	}
-
+	addrs = Shuffle(addrs)
 	// 简单轮询：基于目标字符串哈希来选择一个相对稳定的IP
 	// 这样相同的域名总是会选择相同的IP，但如果有多个IP可以实现负载分散
 	hash := 0
@@ -74,4 +77,11 @@ func resolveTargetAddressWithRoundRobin(addrs []string, target string) string {
 	log.Printf("RoundRobin selected address %s from %v for target %s", selectedAddr, addrs, target)
 
 	return selectedAddr
+}
+func Shuffle[T any](slice []T) []T {
+	var rand1 = rand.New(rand.NewSource(time.Now().UnixNano())) // 使用当前时间作为随机种子
+	rand1.Shuffle(len(slice), func(i, j int) {
+		slice[i], slice[j] = slice[j], slice[i]
+	})
+	return slice
 }

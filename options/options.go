@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/masx200/http-proxy-go-server/hosts"
 )
@@ -51,10 +52,12 @@ func formatIPs(ips []net.IP) string {
 }
 
 // Shuffle 对切片进行随机排序
-func Shuffle[T any](slice []T) {
-	rand.Shuffle(len(slice), func(i, j int) {
+func Shuffle[T any](slice []T) []T {
+	var rand1 = rand.New(rand.NewSource(time.Now().UnixNano())) // 使用当前时间作为随机种子
+	rand1.Shuffle(len(slice), func(i, j int) {
 		slice[i], slice[j] = slice[j], slice[i]
 	})
+	return slice
 }
 
 // ResolveUpstreamDomainToIPs 解析上游代理域名到IP地址列表
