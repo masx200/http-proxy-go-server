@@ -1129,11 +1129,14 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream co
 	websocketClient := socks5_websocket_proxy_golang_websocket.NewWebSocketClient(wsConfig)
 
 	// 如果启用了DNS解析，先解析目标地址
-	resolvedAddr, err := resolveTargetAddress(addr, proxyoptions, dnsCache, upstreamResolveIPs)
+	resolvedAddrs, err := resolveTargetAddress(addr, proxyoptions, dnsCache, upstreamResolveIPs)
 	if err != nil {
 		log.Printf("Failed to resolve target address %s: %v, using original", addr, err)
-		resolvedAddr = addr
+		resolvedAddrs = []string{addr}
 	}
+
+	// 使用轮询从解析的地址中选择一个
+	resolvedAddr := resolveTargetAddressWithRoundRobin(resolvedAddrs, addr)
 
 	// 重新解析解析后的地址以获取正确的host和port用于连接
 	resolvedHost, resolvedPort, err := net.SplitHostPort(resolvedAddr)
