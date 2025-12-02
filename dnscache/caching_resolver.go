@@ -13,8 +13,7 @@ import (
 	"github.com/masx200/http-proxy-go-server/doh"
 	"github.com/masx200/http-proxy-go-server/hosts"
 	"github.com/masx200/http-proxy-go-server/options"
-	)
-
+)
 
 // NameResolver 接口定义
 type NameResolver interface {
@@ -366,10 +365,10 @@ func proxy_net_DialWithResolver(ctx context.Context, network string, addr string
 	if err != nil {
 		return nil, err
 	}
-  // 重要：确保 context 不为 nil
-    if ctx == nil {
-        ctx = context.Background()
-    }
+	// 重要：确保 context 不为 nil
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	// 如果启用了上游IP解析功能，则使用新的解析逻辑
 	if upstreamResolveIPs && len(proxyoptions) > 0 {
 		// 对于上游代理连接，使用IP地址解析
@@ -408,100 +407,100 @@ func proxy_net_DialWithResolver(ctx context.Context, network string, addr string
 			return dialer.Dial(network, addr)
 		}
 
-	var ips []net.IP
-	if resolver != nil {
-		ips, err = resolver.LookupIP(ctx, network, hostname)
-		if err != nil {
-			log.Printf("Resolver failed for %s: %v", hostname, err)
-		}
-	}
-
-	// 如果resolver解析失败，尝试使用本地hosts文件解析域名
-	if len(ips) == 0 {
-		ips, err = hosts.ResolveDomainToIPsWithHosts(hostname)
-		if err != nil {
-			log.Printf("Hosts resolution failed for %s: %v", hostname, err)
-		}
-	}
-
-	if len(ips) > 0 {
-		Shuffle(ips)
-		var errorsaray = make([]error, 0)
-		for _, ip := range ips {
-			serverIP := ip.String()
-			newAddr := net.JoinHostPort(serverIP, port)
-			dialer := &net.Dialer{}
-			var connection net.Conn
-			if ctx != nil {
-				connection, err = dialer.DialContext(ctx, network, newAddr)
-			} else {
-				connection, err = dialer.Dial(network, newAddr)
-			}
-
+		var ips []net.IP
+		if resolver != nil {
+			ips, err = resolver.LookupIP(ctx, network, hostname)
 			if err != nil {
-				errorsaray = append(errorsaray, err)
-				continue
-			} else {
-				log.Printf("Successfully connected to %s via IP %s", addr, serverIP)
-				return connection, nil
+				log.Printf("Resolver failed for %s: %v", hostname, err)
 			}
 		}
-		return nil, ErrorArray(errorsaray)
-	}
 
-	// 如果提供了代理选项，尝试使用DOH解析
-	if len(proxyoptions) > 0 {
-		Shuffle(proxyoptions)
-		var allErrors []error
-		for _, opt := range proxyoptions {
-			var ips []net.IP
-			var errors []error
-
-			if opt.Dohalpn == "h3" {
-				if opt.Dohip == "" {
-					ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, opt.Dohurl)
-				} else {
-					ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, opt.Dohurl, opt.Dohip)
-				}
-			} else {
-				if opt.Dohip == "" {
-					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, opt.Dohurl, "", tranportConfigurations...)
-				} else {
-					ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, opt.Dohurl, opt.Dohip, tranportConfigurations...)
-				}
-			}
-
-			if len(ips) == 0 && len(errors) > 0 {
-				allErrors = append(allErrors, errors...)
-				continue
-			} else {
-				lengthip := len(ips)
-				Shuffle(ips)
-				for i := 0; i < lengthip; i++ {
-					var serverIP = ips[i].String()
-					newAddr := net.JoinHostPort(serverIP, port)
-					dialer := &net.Dialer{}
-					var connection net.Conn
-					var err1 error
-					if ctx != nil {
-						connection, err1 = dialer.DialContext(ctx, network, newAddr)
-					} else {
-						connection, err1 = dialer.Dial(network, newAddr)
-					}
-
-					if err1 != nil {
-						allErrors = append(allErrors, err1)
-						continue
-					} else {
-						log.Printf("Successfully connected to %s via DOH %s using IP %s", addr, opt.Dohurl, serverIP)
-						return connection, nil
-					}
-				}
+		// 如果resolver解析失败，尝试使用本地hosts文件解析域名
+		if len(ips) == 0 {
+			ips, err = hosts.ResolveDomainToIPsWithHosts(hostname)
+			if err != nil {
+				log.Printf("Hosts resolution failed for %s: %v", hostname, err)
 			}
 		}
-		return nil, ErrorArray(allErrors)
-	}
-}	// 如果所有方法都失败了，使用原始地址
+
+		if len(ips) > 0 {
+			Shuffle(ips)
+			var errorsaray = make([]error, 0)
+			for _, ip := range ips {
+				serverIP := ip.String()
+				newAddr := net.JoinHostPort(serverIP, port)
+				dialer := &net.Dialer{}
+				var connection net.Conn
+				if ctx != nil {
+					connection, err = dialer.DialContext(ctx, network, newAddr)
+				} else {
+					connection, err = dialer.Dial(network, newAddr)
+				}
+
+				if err != nil {
+					errorsaray = append(errorsaray, err)
+					continue
+				} else {
+					log.Printf("Successfully connected to %s via IP %s", addr, serverIP)
+					return connection, nil
+				}
+			}
+			return nil, ErrorArray(errorsaray)
+		}
+
+		// 如果提供了代理选项，尝试使用DOH解析
+		if len(proxyoptions) > 0 {
+			Shuffle(proxyoptions)
+			var allErrors []error
+			for _, opt := range proxyoptions {
+				var ips []net.IP
+				var errors []error
+
+				if opt.Dohalpn == "h3" {
+					if opt.Dohip == "" {
+						ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, opt.Dohurl)
+					} else {
+						ips, errors = doh.ResolveDomainToIPsWithDoh3(hostname, opt.Dohurl, opt.Dohip)
+					}
+				} else {
+					if opt.Dohip == "" {
+						ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, opt.Dohurl, "", tranportConfigurations...)
+					} else {
+						ips, errors = doh.ResolveDomainToIPsWithDoh(hostname, opt.Dohurl, opt.Dohip, tranportConfigurations...)
+					}
+				}
+
+				if len(ips) == 0 && len(errors) > 0 {
+					allErrors = append(allErrors, errors...)
+					continue
+				} else {
+					lengthip := len(ips)
+					Shuffle(ips)
+					for i := 0; i < lengthip; i++ {
+						var serverIP = ips[i].String()
+						newAddr := net.JoinHostPort(serverIP, port)
+						dialer := &net.Dialer{}
+						var connection net.Conn
+						var err1 error
+						if ctx != nil {
+							connection, err1 = dialer.DialContext(ctx, network, newAddr)
+						} else {
+							connection, err1 = dialer.Dial(network, newAddr)
+						}
+
+						if err1 != nil {
+							allErrors = append(allErrors, err1)
+							continue
+						} else {
+							log.Printf("Successfully connected to %s via DOH %s using IP %s", addr, opt.Dohurl, serverIP)
+							return connection, nil
+						}
+					}
+				}
+			}
+			return nil, ErrorArray(allErrors)
+		}
+	} // 如果所有方法都失败了，使用原始地址
 	dialer := &net.Dialer{}
 	if ctx != nil {
 		connection, err := dialer.DialContext(ctx, network, addr)
@@ -747,7 +746,7 @@ func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions options.Pro
 		// 创建DoH解析器
 		if typedCache, ok := dnsCache.(*DNSCache); ok {
 			resolver := CreateHostsAndDohResolverCached(proxyoptions, typedCache)
-			
+
 			// 使用DoH解析器解析域名
 			ips, err := resolver.LookupIP(context.Background(), "tcp", hostname)
 			if err != nil {

@@ -2,7 +2,7 @@ package connect
 
 import (
 	"bufio"
-	
+
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
@@ -10,12 +10,10 @@ import (
 	"net"
 	"net/url"
 	"strings"
-	
+
 	"github.com/masx200/http-proxy-go-server/dnscache"
 	"github.com/masx200/http-proxy-go-server/options"
 )
-
-
 
 // ConnectViaHttpProxy 通过HTTP代理服务器建立网络连接。
 // 该函数使用HTTP CONNECT方法通过代理服务器连接到目标地址。

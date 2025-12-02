@@ -31,8 +31,6 @@ import (
 	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
 )
 
-
-
 // Type aliases for backward compatibility and easier migration
 type Config = config.Config
 type UpStream = config.UpStream
@@ -1143,7 +1141,7 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream co
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse resolved address %s: %v", resolvedAddr, err)
 	}
-	
+
 	// 转换端口号为整数
 	resolvedPortNum, err := strconv.Atoi(resolvedPort)
 	if err != nil {

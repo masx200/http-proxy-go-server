@@ -24,18 +24,19 @@ func (e ErrorArray) Error() string {
 }
 
 type ProxyOption struct {
-	Dohurl   string
-	Dohip    string
-	Dohalpn  string
-	Doturl   string
-	Dotip    string
-	Doqurl   string
-	Doqip    string
+	Dohurl  string
+	Dohip   string
+	Dohalpn string
+	Doturl  string
+	Dotip   string
+	Doqurl  string
+	Doqip   string
 	// 新增DNS协议类型字段，用于标识使用哪种DNS协议
 	Protocol string // "doh", "dot", "doq", "doh3"
 }
 
 type ProxyOptions = []ProxyOption
+
 func IsIP(domain string) bool {
 	return net.ParseIP(domain) != nil
 }

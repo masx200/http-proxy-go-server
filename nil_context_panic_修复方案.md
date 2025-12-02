@@ -2,11 +2,13 @@
 
 ## 问题概述
 
-在使用 `-upstream-resolve-ips` 功能时，程序出现 `panic: nil context` 错误，导致代理服务器崩溃。
+在使用 `-upstream-resolve-ips` 功能时，程序出现 `panic: nil context`
+错误，导致代理服务器崩溃。
 
 ## 错误分析
 
 ### 堆栈跟踪
+
 ```
 panic: nil context
 
@@ -23,18 +25,21 @@ github.com/masx200/http-proxy-go-server/auth.Handle({0x7ff65b27a7f0, 0xc00008c87
 ### 问题根源
 
 1. **错误位置**: `dnscache/caching_resolver.go:384`
-2. **调用链**: `auth.Handle()` → `dnscache.Proxy_net_DialCached()` → `proxy_net_DialWithResolver(nil, ...)` → `dialer.DialContext(nil, ...)`
+2. **调用链**: `auth.Handle()` → `dnscache.Proxy_net_DialCached()` →
+   `proxy_net_DialWithResolver(nil, ...)` → `dialer.DialContext(nil, ...)`
 
 ### 详细问题
 
 #### 1. 代码问题点
 
 **问题代码位置：**
+
 - `auth/auth.go:248`
 - `simple/simple.go:221`
 - `dnscache/caching_resolver.go:350, 384`
 
 **具体问题：**
+
 ```go
 // auth/auth.go:248
 server, err = dnscache.Proxy_net_DialCached("tcp", upstreamAddress, proxyoptions, upstreamResolveIPs, dnsCache, tranportConfigurations...)
@@ -49,8 +54,10 @@ connection, err1 := dialer.DialContext(ctx, network, newAddr)  // ctx is nil!
 #### 2. 函数设计不一致
 
 - `auth.Handle()` 和 `simple.Handle()` 没有 `context.Context` 参数
-- `http.Handle()` 有 `context.Context` 参数并正确使用 `Proxy_net_DialContextCached`
-- `Proxy_net_DialCached` 内部使用 nil context，但在处理 upstreamResolveIPs 时调用 `DialContext`
+- `http.Handle()` 有 `context.Context` 参数并正确使用
+  `Proxy_net_DialContextCached`
+- `Proxy_net_DialCached` 内部使用 nil context，但在处理 upstreamResolveIPs
+  时调用 `DialContext`
 
 ## 解决方案
 
@@ -83,6 +90,7 @@ func proxy_net_DialWithResolver(ctx context.Context, network string, addr string
 #### 步骤 1: 修改 Handle 函数签名
 
 **auth/auth.go:**
+
 ```go
 // 修改前
 func Handle(client net.Conn, username, password string, httpUpstreamAddress string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) {
@@ -92,6 +100,7 @@ func Handle(ctx context.Context, client net.Conn, username, password string, htt
 ```
 
 **simple/simple.go:**
+
 ```go
 // 修改前
 func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) {
@@ -103,6 +112,7 @@ func Handle(ctx context.Context, client net.Conn, httpUpstreamAddress string, pr
 #### 步骤 2: 修改调用处
 
 **auth/auth.go:248** 和 **simple/simple.go:221**:
+
 ```go
 // 修改前
 server, err = dnscache.Proxy_net_DialCached("tcp", upstreamAddress, proxyoptions, upstreamResolveIPs, dnsCache, tranportConfigurations...)
@@ -114,6 +124,7 @@ server, err = dnscache.Proxy_net_DialContextCached(ctx, "tcp", upstreamAddress, 
 #### 步骤 3: 修改调用 Handle 的地方
 
 **auth/auth.go:51:**
+
 ```go
 // 修改前
 go Handle(client, username, password, upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
@@ -136,12 +147,14 @@ go Handle(context.Background(), client, username, password, upstreamAddress, pro
 ## 建议
 
 **推荐使用方案一**，因为：
+
 1. 修改最小，风险最低
 2. 向后兼容，不需要修改 API
 3. 立即可用，不需要其他调用方修改
 4. 符合 Go 语言的最佳实践
 
 **方案二更适合长期维护**，但需要：
+
 1. 更新所有调用 Handle 函数的地方
 2. 可能需要更新依赖此 API 的其他代码
 3. 进行充分的测试
@@ -149,8 +162,9 @@ go Handle(context.Background(), client, username, password, upstreamAddress, pro
 ## 测试建议
 
 修复后应测试以下场景：
+
 1. 启用 `-upstream-resolve-ips` 时的正常连接
-2. 禁用 `-upstream-resolve-ips` 时的正常连接  
+2. 禁用 `-upstream-resolve-ips` 时的正常连接
 3. 上游代理连接失败时的 fallback 机制
 4. 各种代理协议（HTTP CONNECT, SOCKS5, WebSocket）
 

@@ -10,15 +10,15 @@ import (
 )
 
 const (
-	TestDomain     = "www.baidu.com"
-	AliDNSDoHURL   = "https://dns.alidns.com/dns-query"
-	AliDNSDoH3URL  = "https://dns.alidns.com/dns-query"
-	AliDNSDoTURL   = "tls://dns.alidns.com:853"
-	AliDNSDoQURL   = "quic://dns.alidns.com:853"
-	AliDNSDoTIP    = "223.5.5.5"
-	AliDNSDoQIP    = "223.5.5.5"
-	AliDNSDoHIP    = "223.5.5.5"
-	Timeout        = 10 * time.Second
+	TestDomain    = "www.baidu.com"
+	AliDNSDoHURL  = "https://dns.alidns.com/dns-query"
+	AliDNSDoH3URL = "https://dns.alidns.com/dns-query"
+	AliDNSDoTURL  = "tls://dns.alidns.com:853"
+	AliDNSDoQURL  = "quic://dns.alidns.com:853"
+	AliDNSDoTIP   = "223.5.5.5"
+	AliDNSDoQIP   = "223.5.5.5"
+	AliDNSDoHIP   = "223.5.5.5"
+	Timeout       = 10 * time.Second
 )
 
 func TestDoHResolution(t *testing.T) {

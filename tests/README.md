@@ -1,6 +1,7 @@
 # Tests Directory
 
-This directory contains test files and configurations for the HTTP proxy Go server.
+This directory contains test files and configurations for the HTTP proxy Go
+server.
 
 ## Structure
 
@@ -16,7 +17,8 @@ This directory contains test files and configurations for the HTTP proxy Go serv
 - `config.simple.yaml` - Simple YAML configuration with basic settings
 - `config.example.json` - Complete JSON configuration example with all features
 - `config.example.yaml` - Complete YAML configuration example with all features
-- `config.invalid.json` - Invalid configuration for testing validation error handling
+- `config.invalid.json` - Invalid configuration for testing validation error
+  handling
 
 ### Usage Examples
 
@@ -54,7 +56,8 @@ cd tests/standalone/test_performance && go run .
 
 ## Configuration Validation
 
-The project includes comprehensive JSON Schema validation for configuration files:
+The project includes comprehensive JSON Schema validation for configuration
+files:
 
 - Validates types, formats, and value ranges
 - Enforces conditional requirements (e.g., TLS cert requires key)
@@ -63,4 +66,5 @@ The project includes comprehensive JSON Schema validation for configuration file
 
 ### Schema Location
 
-The JSON Schema is located at `config/config.schema.json` and is embedded in the binary during build.
+The JSON Schema is located at `config/config.schema.json` and is embedded in the
+binary during build.

@@ -1,6 +1,10 @@
 ## Context
 
-The current upstream proxy system connects to upstream proxies using domain names directly. In environments with DNS pollution or censorship, this approach can fail when the upstream proxy's domain name is blocked or resolves to incorrect addresses. The project already has a robust DNS/DoH infrastructure that can reliably resolve domains using multiple DNS over HTTPS services.
+The current upstream proxy system connects to upstream proxies using domain
+names directly. In environments with DNS pollution or censorship, this approach
+can fail when the upstream proxy's domain name is blocked or resolves to
+incorrect addresses. The project already has a robust DNS/DoH infrastructure
+that can reliably resolve domains using multiple DNS over HTTPS services.
 
 ## Goals / Non-Goals
 
@@ -19,28 +23,38 @@ The current upstream proxy system connects to upstream proxies using domain name
 
 ## Decisions
 
-- **Decision**: Add new command-line parameter `-upstream-resolve-ips` to enable IP-based upstream connections
-- **Rationale**: Command-line approach maintains backward compatibility and doesn't require configuration file changes. Opt-in behavior ensures existing deployments continue working without modification.
+- **Decision**: Add new command-line parameter `-upstream-resolve-ips` to enable
+  IP-based upstream connections
+- **Rationale**: Command-line approach maintains backward compatibility and
+  doesn't require configuration file changes. Opt-in behavior ensures existing
+  deployments continue working without modification.
 
-- **Decision**: Implement connection fallback mechanism that tries each resolved IP sequentially
-- **Rationale**: Simple, reliable approach that ensures at least one working IP will be used if DNS resolution succeeds
+- **Decision**: Implement connection fallback mechanism that tries each resolved
+  IP sequentially
+- **Rationale**: Simple, reliable approach that ensures at least one working IP
+  will be used if DNS resolution succeeds
 
 - **Decision**: Use existing DNS/DoH infrastructure for upstream resolution
-- **Rationale**: Leverages proven, tested DNS resolution code with multiple DoH providers and caching
+- **Rationale**: Leverages proven, tested DNS resolution code with multiple DoH
+  providers and caching
 
 - **Decision**: Add detailed logging for connection attempts
-- **Rationale**: Essential for debugging connection issues in censored environments
+- **Rationale**: Essential for debugging connection issues in censored
+  environments
 
 ## Risks / Trade-offs
 
 - **Risk**: Increased connection setup time when resolving upstream domains
-  - **Mitigation**: DNS caching in existing infrastructure reduces resolution overhead
+  - **Mitigation**: DNS caching in existing infrastructure reduces resolution
+    overhead
 
-- **Risk**: Potential connection loops if resolved IPs point to the same failing infrastructure
+- **Risk**: Potential connection loops if resolved IPs point to the same failing
+  infrastructure
   - **Mitigation**: Random IP ordering and connection timeout configuration
 
 - **Trade-off**: Slight complexity increase in upstream connection logic
-  - **Mitigation**: Clear separation of IP-based and domain-based connection paths
+  - **Mitigation**: Clear separation of IP-based and domain-based connection
+    paths
 
 ## Migration Plan
 
@@ -54,6 +68,8 @@ The current upstream proxy system connects to upstream proxies using domain name
 
 ## Open Questions
 
-- Should the IP resolution timeout be configurable separately from general DNS timeouts?
+- Should the IP resolution timeout be configurable separately from general DNS
+  timeouts?
 - Should successful IP connections be cached for faster subsequent connections?
-- Should we support mixed configurations (some upstreams use IP resolution, others don't)?
+- Should we support mixed configurations (some upstreams use IP resolution,
+  others don't)?

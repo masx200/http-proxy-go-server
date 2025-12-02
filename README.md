@@ -66,23 +66,23 @@
 
 13. `-cache-enabled`：启用或禁用DNS缓存功能，默认为启用。启用后可以显著提高DNS解析性能并减少对外部DNS服务器的请求次数。
 
-13. `-cache-file string`：指定DNS缓存文件的存储路径，默认为
+14. `-cache-file string`：指定DNS缓存文件的存储路径，默认为
     "./dns_cache.json"。缓存会在程序启动时自动加载，在运行时定期保存，并在程序关闭时保存最新状态。
 
-14. `-cache-ttl string`：设置DNS缓存的TTL（生存时间），默认为
+15. `-cache-ttl string`：设置DNS缓存的TTL（生存时间），默认为
     "10m"（10分钟）。支持的时间格式包括：5m、10m、1h 等。
 
-15. `-cache-save-interval string`：设置DNS缓存的自动全量保存间隔，默认为
+16. `-cache-save-interval string`：设置DNS缓存的自动全量保存间隔，默认为
     "30s"（30秒）。系统会定期将完整缓存保存到文件中，以防止数据丢失。
 
-16. `-cache-aof-enabled`：启用或禁用DNS缓存AOF（Append Only
+17. `-cache-aof-enabled`：启用或禁用DNS缓存AOF（Append Only
     File）增量持久化功能，默认为启用。AOF模式可以实现更频繁的数据保存，提高数据安全性。
 
-17. `-cache-aof-file string`：指定DNS缓存AOF文件的存储路径，默认为
+18. `-cache-aof-file string`：指定DNS缓存AOF文件的存储路径，默认为
     "./dns_cache.aof"。AOF文件采用JSONL（JSON
     Lines）格式，记录所有的DNS查询操作。
 
-18. `-cache-aof-interval string`：设置DNS缓存AOF的增量保存间隔，默认为
+19. `-cache-aof-interval string`：设置DNS缓存AOF的增量保存间隔，默认为
     "1s"（1秒）。系统会以指定间隔将DNS查询操作追加到AOF文件中，实现近乎实时的数据持久化。
 
 总结来说，`http-proxy-go-server` 提供了一个功能丰富的代理服务器，支持：
@@ -140,7 +140,8 @@ JSON 配置文件支持以下参数：
 - `server_key`: HTTPS 服务所需的 TLS 私钥文件路径
 - `username`: 访问代理服务器所需的用户名
 - `password`: 访问代理服务器所需的密码
-- `upstream_resolve_ips`: 是否启用上游代理域名解析为IP地址功能，默认为 false。启用后会在连接上游代理之前先解析其域名为IP地址，然后依次尝试连接每个解析出的IP地址，直到连接成功为止。这对于解决上游代理存在DNS污染的情况非常有用。
+- `upstream_resolve_ips`: 是否启用上游代理域名解析为IP地址功能，默认为
+  false。启用后会在连接上游代理之前先解析其域名为IP地址，然后依次尝试连接每个解析出的IP地址，直到连接成功为止。这对于解决上游代理存在DNS污染的情况非常有用。
 - `doh`: DOH 配置对象数组，每个对象包含以下字段：
   - `ip`: DOH 服务器 IP 地址，支持 ipv4 和 ipv6 地址
   - `alpn`: DOH ALPN 协议，支持 h2 和 h3 协议
@@ -811,7 +812,8 @@ DNS cache set for lookupip: google.com (tcp) -> [142.250.191.142 142.250.191.78]
 
 ### 功能概述
 
-`-upstream-resolve-ips` 参数提供了一个强大的功能来解决上游代理的DNS污染问题。当启用此功能时：
+`-upstream-resolve-ips`
+参数提供了一个强大的功能来解决上游代理的DNS污染问题。当启用此功能时：
 
 1. **域名解析**：系统会在连接上游代理之前，使用现有的DNS/DoH基础设施解析上游代理的域名为IP地址
 2. **顺序连接**：如果域名解析出多个IP地址，系统会依次尝试连接每个IP地址，直到连接成功为止
@@ -821,6 +823,7 @@ DNS cache set for lookupip: google.com (tcp) -> [142.250.191.142 142.250.191.78]
 ### 使用场景
 
 此功能特别适用于以下场景：
+
 - 上游代理服务器存在DNS污染或被DNS劫持
 - 上游代理域名被网络策略阻拦或解析错误
 - 需要绕过DNS限制直接连接上游代理IP地址
@@ -829,6 +832,7 @@ DNS cache set for lookupip: google.com (tcp) -> [142.250.191.142 142.250.191.78]
 ### 配置示例
 
 #### 命令行参数使用
+
 ```bash
 # 启用上游IP解析功能
 go run -v ./cmd/ -upstream-resolve-ips=true -upstream-type http -upstream-address http://proxy.example.com:8080
@@ -841,6 +845,7 @@ go run -v ./cmd/ -upstream-resolve-ips=true -upstream-type socks5 -upstream-addr
 ```
 
 #### 配置文件使用
+
 ```json
 {
   "upstream_resolve_ips": true,
@@ -857,6 +862,7 @@ go run -v ./cmd/ -upstream-resolve-ips=true -upstream-type socks5 -upstream-addr
 ### 技术实现
 
 该功能通过以下技术实现：
+
 - 使用现有的`Proxy_net_DialContext`函数进行网络连接
 - 集成DNS缓存和DoH解析基础设施
 - 实现顺序连接和故障转移逻辑
