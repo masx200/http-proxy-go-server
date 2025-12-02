@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -385,9 +386,19 @@ func Http(hostname string, port int, proxyoptions options.ProxyOptions, dnsCache
 	}
 }
 func GenerateRandomLoopbackIP() string {
-	randomIP := generateRandomIP()
-	log.Println("Random IP:", randomIP)
-	return randomIP.String()
+	// Check if running on Windows
+	if runtime.GOOS == "windows" {
+		// For Windows compatibility, use 127.0.0.1 instead of random 127.x.x.x
+		// Windows networking may not properly handle all 127.x.x.x addresses
+		ip := net.IPv4(127, 0, 0, 1)
+		log.Println("Using Windows-compatible loopback IP:", ip.String())
+		return ip.String()
+	} else {
+		// For Linux/macOS, use the original random IP generation
+		randomIP := generateRandomIP()
+		log.Println("Random IP:", randomIP)
+		return randomIP.String()
+	}
 }
 
 func generateRandomIP() net.IP {
