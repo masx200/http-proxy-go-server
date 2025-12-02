@@ -24,7 +24,7 @@ jobs:
       - name: Build bundle
         run: |
 
-          GOOS=windows GOARCH=amd64 CGO_ENABLED=0  go build -v -ldflags="-w -s" -o ./dist/windows-amd64/http-proxy-go-server.exe ./cmd/main.go
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0  go build -v -ldflags="-w -s" -o ./dist/windows-amd64/http-proxy-go-server.exe ./cmd/
           cd ./dist/windows-amd64/
           tar  zcvf ../../dist/http-proxy-go-server-windows-amd64.tgz ./*
           cd ../../

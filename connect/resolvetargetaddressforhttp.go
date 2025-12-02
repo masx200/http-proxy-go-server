@@ -48,3 +48,26 @@ func resolveTargetAddressForHttp(addr string, proxyoptions options.ProxyOptions,
 
 	return resolvedAddrs, nil
 }
+
+// resolveTargetAddressForHttpWithRoundRobin 从解析的IP数组中轮询选择一个地址（HTTP代理使用）
+func resolveTargetAddressForHttpWithRoundRobin(addrs []string, target string) string {
+	if len(addrs) == 0 {
+		return target
+	}
+
+	if len(addrs) == 1 {
+		return addrs[0]
+	}
+
+	// 简单轮询：基于目标字符串哈希来选择一个相对稳定的IP
+	// 这样相同的域名总是会选择相同的IP，但如果有多个IP可以实现负载分散
+	hash := 0
+	for _, c := range target {
+		hash = (hash*31 + int(c)) % len(addrs)
+	}
+
+	selectedAddr := addrs[hash]
+	log.Printf("Http RoundRobin selected address %s from %v for target %s", selectedAddr, addrs, target)
+
+	return selectedAddr
+}

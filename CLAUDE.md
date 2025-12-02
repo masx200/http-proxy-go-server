@@ -193,13 +193,13 @@ type UpStream struct {
 
 ```bash
 # Build the main executable
-go build -o main.exe ./cmd/main.go
+go build -o main.exe ./cmd/
 
 # Build with optimizations
-go build -ldflags="-s -w" -o main.exe ./cmd/main.go
+go build -ldflags="-s -w" -o main.exe ./cmd/
 
 # Run directly
-go run ./cmd/main.go [options]
+go run ./cmd/ [options]
 ```
 
 ### Docker Support
@@ -298,22 +298,22 @@ Key external dependencies:
 
 ```bash
 # Basic proxy
-go run ./cmd/main.go -hostname 0.0.0.0 -port 8080
+go run ./cmd/ -hostname 0.0.0.0 -port 8080
 
 # With authentication
-go run ./cmd/main.go -username admin -password secret
+go run ./cmd/ -username admin -password secret
 
 # With TLS
-go run ./cmd/main.go -server_cert cert.pem -server_key key.pem
+go run ./cmd/ -server_cert cert.pem -server_key key.pem
 
 # With upstream proxy
-go run ./cmd/main.go -upstream-type websocket -upstream-address ws://127.0.0.1:1081
+go run ./cmd/ -upstream-type websocket -upstream-address ws://127.0.0.1:1081
 
 # With DoH
-go run ./cmd/main.go -dohurl https://dns.google/dns-query -dohip 8.8.8.8 -dohalpn h2
+go run ./cmd/ -dohurl https://dns.google/dns-query -dohip 8.8.8.8 -dohalpn h2
 
 # From config file
-go run ./cmd/main.go -config config.json
+go run ./cmd/ -config config.json
 ```
 
 ## Testing
@@ -369,7 +369,7 @@ golangci-lint run
 go test ./...
 
 # Build for production
-go build -ldflags="-s -w" -o http-proxy-go-server ./cmd/main.go
+go build -ldflags="-s -w" -o http-proxy-go-server ./cmd/
 
 # Build Docker image
 docker build -t http-proxy-go-server .

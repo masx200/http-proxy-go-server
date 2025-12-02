@@ -6,30 +6,30 @@
 
 ## 命令行参数
 
-| 参数                   | 类型   | 默认值             | 描述                                    |
-| ---------------------- | ------ | ------------------ | --------------------------------------- |
-| `-config`              | string | -                  | JSON配置文件路径                        |
-| `-hostname`            | string | `0.0.0.0`          | 服务器绑定的主机名                      |
-| `-port`                | int    | `8080`             | TCP监听端口                             |
-| `-username`            | string | -                  | 代理服务器用户名                        |
-| `-password`            | string | -                  | 代理服务器密码                          |
-| `-server_cert`         | string | -                  | TLS服务器证书文件路径                   |
-| `-server_key`          | string | -                  | TLS服务器私钥文件路径                   |
-| `-dohurl`              | value  | -                  | DOH服务器URL（可重复）                  |
-| `-dohip`               | value  | -                  | DOH服务器IP地址（可重复）               |
-| `-dohalpn`             | value  | -                  | DOH ALPN协议（可重复，支持h2和h3）      |
-| `-upstream-type`       | string | -                  | 上游代理类型（websocket、socks5、http） |
-| `-upstream-address`    | string | -                  | 上游代理地址                            |
-| `-upstream-username`   | string | -                  | 上游代理用户名                          |
-| `-upstream-password`   | string | -                  | 上游代理密码                            |
-| `-upstream-resolve-ips` | bool   | `false`            | 解析上游代理域名为IP地址以绕过DNS污染 |
-| `-cache-enabled`       | bool   | `true`             | 启用DNS缓存                             |
-| `-cache-file`          | string | `./dns_cache.json` | DNS缓存文件路径                         |
-| `-cache-ttl`           | string | `10m`              | DNS缓存TTL（生存时间）                  |
-| `-cache-save-interval` | string | `30s`              | DNS缓存全量保存间隔                     |
-| `-cache-aof-enabled`   | bool   | `true`             | 启用DNS缓存AOF（增量持久化）            |
-| `-cache-aof-file`      | string | `./dns_cache.aof`  | DNS缓存AOF文件路径                      |
-| `-cache-aof-interval`  | string | `1s`               | DNS缓存AOF增量保存间隔                  |
+| 参数                    | 类型   | 默认值             | 描述                                    |
+| ----------------------- | ------ | ------------------ | --------------------------------------- |
+| `-config`               | string | -                  | JSON配置文件路径                        |
+| `-hostname`             | string | `0.0.0.0`          | 服务器绑定的主机名                      |
+| `-port`                 | int    | `8080`             | TCP监听端口                             |
+| `-username`             | string | -                  | 代理服务器用户名                        |
+| `-password`             | string | -                  | 代理服务器密码                          |
+| `-server_cert`          | string | -                  | TLS服务器证书文件路径                   |
+| `-server_key`           | string | -                  | TLS服务器私钥文件路径                   |
+| `-dohurl`               | value  | -                  | DOH服务器URL（可重复）                  |
+| `-dohip`                | value  | -                  | DOH服务器IP地址（可重复）               |
+| `-dohalpn`              | value  | -                  | DOH ALPN协议（可重复，支持h2和h3）      |
+| `-upstream-type`        | string | -                  | 上游代理类型（websocket、socks5、http） |
+| `-upstream-address`     | string | -                  | 上游代理地址                            |
+| `-upstream-username`    | string | -                  | 上游代理用户名                          |
+| `-upstream-password`    | string | -                  | 上游代理密码                            |
+| `-upstream-resolve-ips` | bool   | `false`            | 解析上游代理域名为IP地址以绕过DNS污染   |
+| `-cache-enabled`        | bool   | `true`             | 启用DNS缓存                             |
+| `-cache-file`           | string | `./dns_cache.json` | DNS缓存文件路径                         |
+| `-cache-ttl`            | string | `10m`              | DNS缓存TTL（生存时间）                  |
+| `-cache-save-interval`  | string | `30s`              | DNS缓存全量保存间隔                     |
+| `-cache-aof-enabled`    | bool   | `true`             | 启用DNS缓存AOF（增量持久化）            |
+| `-cache-aof-file`       | string | `./dns_cache.aof`  | DNS缓存AOF文件路径                      |
+| `-cache-aof-interval`   | string | `1s`               | DNS缓存AOF增量保存间隔                  |
 
 1. `-config string`：指定 JSON 配置文件路径，可以通过配置文件设置所有参数。
 
@@ -158,10 +158,10 @@ JSON 配置文件支持以下参数：
 
 ```bash
 # 使用配置文件启动服务器
-go run -v ./cmd/main.go -config config.json
+go run -v ./cmd/ -config config.json
 
 # 配置文件和命令行参数可以混合使用，命令行参数会覆盖配置文件中的对应值
-go run -v ./cmd/main.go -config config.json -port 9090 -username admin
+go run -v ./cmd/ -config config.json -port 9090 -username admin
 ```
 
 ### 配置文件优先级
@@ -176,12 +176,12 @@ go run -v ./cmd/main.go -config config.json -port 9090 -username admin
 
 ```bash
 # 使用配置文件的示例
-go run -v ./cmd/main.go -config config.json
+go run -v ./cmd/ -config config.json
 ```
 
 ```bash
 # 使用上游IP解析功能的示例（解决DNS污染问题）
-go run -v ./cmd/main.go -upstream-resolve-ips=true -upstream-type http -upstream-address http://proxy.example.com:8080
+go run -v ./cmd/ -upstream-resolve-ips=true -upstream-type http -upstream-address http://proxy.example.com:8080
 ```
 
 ## 使用 curl 测试
@@ -292,7 +292,7 @@ curl -x http://127.0.0.1:8080 http://www.baidu.com
 
 ```bash
 # 使用WebSocket上游代理
-go run -v ./cmd/main.go -upstream-type websocket -upstream-address ws://127.0.0.1:1081 -upstream-username user -upstream-password pass
+go run -v ./cmd/ -upstream-type websocket -upstream-address ws://127.0.0.1:1081 -upstream-username user -upstream-password pass
 ```
 
 #### 配置文件使用
@@ -448,10 +448,10 @@ type UpStream struct {
 
 ```bash
 # 使用SOCKS5上游代理
-go run -v ./cmd/main.go -upstream-type socks5 -upstream-address socks5://127.0.0.1:1080 -upstream-username user -upstream-password pass
+go run -v ./cmd/ -upstream-type socks5 -upstream-address socks5://127.0.0.1:1080 -upstream-username user -upstream-password pass
 
 # 使用SOCKS5 over TLS上游代理
-go run -v ./cmd/main.go -upstream-type socks5 -upstream-address socks5s://127.0.0.1:1080 -upstream-username user -upstream-password pass
+go run -v ./cmd/ -upstream-type socks5 -upstream-address socks5s://127.0.0.1:1080 -upstream-username user -upstream-password pass
 ```
 
 #### 配置文件使用
@@ -622,10 +622,10 @@ SOCKS5 代理支持以下协议前缀：
 
 ```bash
 # 使用HTTP上游代理
-go run -v ./cmd/main.go -upstream-type http -upstream-address http://127.0.0.1:8080 -upstream-username user -upstream-password pass
+go run -v ./cmd/ -upstream-type http -upstream-address http://127.0.0.1:8080 -upstream-username user -upstream-password pass
 
 # 使用带认证的HTTP上游代理
-go run -v ./cmd/main.go -upstream-type http -upstream-address http://user:pass@127.0.0.1:8080
+go run -v ./cmd/ -upstream-type http -upstream-address http://user:pass@127.0.0.1:8080
 ```
 
 #### 配置文件使用
@@ -745,19 +745,19 @@ PatrickMN/go-cache 库实现，具有以下特点：
 
 ```bash
 # 启用DNS缓存（默认）
-go run ./cmd/main.go -cache-enabled
+go run ./cmd/ -cache-enabled
 
 # 自定义缓存文件路径
-go run ./cmd/main.go -cache-file /var/cache/dns_cache.json
+go run ./cmd/ -cache-file /var/cache/dns_cache.json
 
 # 设置缓存TTL为5分钟
-go run ./cmd/main.go -cache-ttl 5m
+go run ./cmd/ -cache-ttl 5m
 
 # 设置缓存保存间隔为1分钟
-go run ./cmd/main.go -cache-save-interval 1m
+go run ./cmd/ -cache-save-interval 1m
 
 # 禁用DNS缓存
-go run ./cmd/main.go -cache-enabled=false
+go run ./cmd/ -cache-enabled=false
 ```
 
 ### 配置文件支持
@@ -831,13 +831,13 @@ DNS cache set for lookupip: google.com (tcp) -> [142.250.191.142 142.250.191.78]
 #### 命令行参数使用
 ```bash
 # 启用上游IP解析功能
-go run -v ./cmd/main.go -upstream-resolve-ips=true -upstream-type http -upstream-address http://proxy.example.com:8080
+go run -v ./cmd/ -upstream-resolve-ips=true -upstream-type http -upstream-address http://proxy.example.com:8080
 
 # 与WebSocket上游代理配合使用
-go run -v ./cmd/main.go -upstream-resolve-ips=true -upstream-type websocket -upstream-address ws://proxy.example.com:1081
+go run -v ./cmd/ -upstream-resolve-ips=true -upstream-type websocket -upstream-address ws://proxy.example.com:1081
 
 # 与SOCKS5上游代理配合使用
-go run -v ./cmd/main.go -upstream-resolve-ips=true -upstream-type socks5 -upstream-address socks5://proxy.example.com:1080
+go run -v ./cmd/ -upstream-resolve-ips=true -upstream-type socks5 -upstream-address socks5://proxy.example.com:1080
 ```
 
 #### 配置文件使用

@@ -22,16 +22,16 @@ This directory contains test files and configurations for the HTTP proxy Go serv
 
 ```bash
 # Test with JSON configuration
-go run ./cmd/main.go -config tests/config/config.simple.json
+go run ./cmd/ -config tests/config/config.simple.json
 
 # Test with YAML configuration
-go run ./cmd/main.go -config tests/config/config.simple.yaml
+go run ./cmd/ -config tests/config/config.simple.yaml
 
 # Test with complex configuration
-go run ./cmd/main.go -config tests/config/config.example.json
+go run ./cmd/ -config tests/config/config.example.json
 
 # Test validation with invalid configuration (should show errors)
-go run ./cmd/main.go -config tests/config/config.invalid.json
+go run ./cmd/ -config tests/config/config.invalid.json
 ```
 
 ## Standalone Tests (`standalone/`)

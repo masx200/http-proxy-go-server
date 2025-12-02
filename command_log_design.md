@@ -11,7 +11,7 @@ exec.Command 命令添加统一的日志记录功能。
 
 #### proxy_test.go (7 个实例)
 
-1. `go build -o main.exe ../cmd/main.go` - 编译代理服务器
+1. `go build -o main.exe ../cmd/` - 编译代理服务器
 2. `./main.exe` - 启动代理服务器
 3. `curl -v -I http://www.baidu.com -x http://localhost:8080` - 测试 1
 4. `curl -v -I -L http://www.so.com -x http://localhost:8080` - 测试 2
@@ -21,7 +21,7 @@ exec.Command 命令添加统一的日志记录功能。
 
 #### proxy_doh_test.go (7 个实例)
 
-1. `go build -o main.exe ../cmd/main.go` - 编译代理服务器
+1. `go build -o main.exe ../cmd/` - 编译代理服务器
 2. `./main.exe -dohurl ...` - 启动 DOH 代理服务器
 3. `curl -v -I http://www.baidu.com -x http://localhost:8080` - 测试 1
 4. `curl -v -I -L http://www.so.com -x http://localhost:8080` - 测试 2
@@ -31,7 +31,7 @@ exec.Command 命令添加统一的日志记录功能。
 
 #### websocket_socks5_test.go (7 个实例)
 
-1. `go build -o main.exe ../cmd/main.go` - 编译代理服务器
+1. `go build -o main.exe ../cmd/` - 编译代理服务器
 2. `./main.exe -mode server -protocol websocket -addr :8080` - 启动 WebSocket
    服务器
 3. `./main.exe -mode server -protocol socks5 -addr :18080 -upstream-type websocket -upstream-address ws://localhost:8080` -
@@ -109,14 +109,14 @@ func (pm *ProcessManager) LogCommandResult(cmd *exec.Cmd, err error, output stri
 
 ```go
 // 原代码
-buildCmd := exec.Command("go", "build", "-o", "main.exe", "../cmd/main.go")
+buildCmd := exec.Command("go", "build", "-o", "main.exe", "../cmd/")
 buildCmd.Stdout = multiWriter
 if err := buildCmd.Run(); err != nil {
     t.Fatalf("编译代理服务器失败: %v", err)
 }
 
 // 修改后
-buildCmd := exec.Command("go", "build", "-o", "main.exe", "../cmd/main.go")
+buildCmd := exec.Command("go", "build", "-o", "main.exe", "../cmd/")
 buildCmd.Stdout = multiWriter
 processManager.LogCommand(buildCmd, "BUILD")
 if err := buildCmd.Run(); err != nil {

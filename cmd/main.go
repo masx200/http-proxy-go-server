@@ -1217,11 +1217,14 @@ func socks5DialContext(ctx context.Context, network, addr string, upstream confi
 	socks5Client := socks5.NewSOCKS5Client(socks5Config)
 
 	// 如果启用了DNS解析，先解析目标地址
-	resolvedAddr, err := resolveTargetAddress(addr, proxyoptions, dnsCache, upstreamResolveIPs)
+	resolvedAddrs, err := resolveTargetAddress(addr, proxyoptions, dnsCache, upstreamResolveIPs)
 	if err != nil {
 		log.Printf("Failed to resolve target address %s: %v, using original", addr, err)
-		resolvedAddr = addr
+		resolvedAddrs = []string{addr}
 	}
+
+	// 使用轮询从解析的地址中选择一个
+	resolvedAddr := resolveTargetAddressWithRoundRobin(resolvedAddrs, addr)
 
 	// 使用DialContext连接到目标主机（使用解析后的地址）
 	conn, err := socks5Client.DialContext(ctx, network, resolvedAddr)

@@ -83,12 +83,12 @@ func runProxyServerDOH(t *testing.T, logfilename string) {
 	var testResults []string
 	testResults = append(testResults, "# DoH HTTP代理服务器测试")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `go build -o main.exe ../cmd/main.go`")
+	testResults = append(testResults, "执行命令: `go build -o main.exe ../cmd/`")
 	testResults = append(testResults, "")
 
 	// 先编译代理服务器
 	testResults = append(testResults, "编译代理服务器...")
-	buildCmd := processManager.Command("go", "build", "-o", "main.exe", "../cmd/main.go")
+	buildCmd := processManager.Command("go", "build", "-o", "main.exe", "../cmd/")
 	buildCmd.Stdout = os.Stdout
 	buildCmd.Stderr = os.Stderr
 

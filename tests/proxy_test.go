@@ -133,12 +133,12 @@ func runProxyServer(t *testing.T, logfilename string) {
 	// 启动代理服务器
 	testResults = append(testResults, "## 1. 启动代理服务器")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `go run -v ../cmd/main.go`")
+	testResults = append(testResults, "执行命令: `go run -v ../cmd/`")
 	testResults = append(testResults, "")
 
 	// 先编译代理服务器
 	testResults = append(testResults, "编译代理服务器...")
-	buildCmd := processManager.Command("go", "build", "-o", "main.exe", "../cmd/main.go")
+	buildCmd := processManager.Command("go", "build", "-o", "main.exe", "../cmd/")
 	buildCmd.Stdout = multiWriter
 	buildCmd.Stderr = multiWriter
 

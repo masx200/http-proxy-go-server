@@ -86,7 +86,7 @@ func runWebSockethttpProxy(t *testing.T, logfilename string) {
 	}
 	processManager.LogCommandResult(buildCmd1, nil, "")
 
-	buildCmd := processManager.Command("go", "build", "-o", "main.exe", "../cmd/main.go")
+	buildCmd := processManager.Command("go", "build", "-o", "main.exe", "../cmd/")
 	buildCmd.Stdout = websocketWriter
 	buildCmd.Stderr = websocketWriter
 
