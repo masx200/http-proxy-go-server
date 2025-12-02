@@ -10,15 +10,16 @@ import (
 )
 
 // resolveTargetAddressForHttp 解析目标地址的域名为IP地址（用于HTTP代理）
-func resolveTargetAddressForHttp(addr string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache) (string, error) {
+// 返回所有解析的IP地址数组，供调用者实现轮询
+func resolveTargetAddressForHttp(addr string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache) ([]string, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
-		return addr, err
+		return []string{addr}, err
 	}
 
 	// 如果已经是IP地址，直接返回
 	if net.ParseIP(host) != nil {
-		return addr, nil
+		return []string{addr}, nil
 	}
 
 	log.Printf("Resolving HTTP target address %s using DoH infrastructure", host)
@@ -28,18 +29,22 @@ func resolveTargetAddressForHttp(addr string, proxyoptions options.ProxyOptions,
 	ips, err := resolver.LookupIP(context.Background(), "tcp", host)
 	if err != nil {
 		log.Printf("DoH resolution failed for HTTP target %s: %v", host, err)
-		return addr, err
+		return []string{addr}, err
 	}
 
 	if len(ips) == 0 {
 		log.Printf("No IP addresses resolved for HTTP target %s", host)
-		return addr, fmt.Errorf("no IP addresses resolved for HTTP target %s", host)
+		return []string{addr}, fmt.Errorf("no IP addresses resolved for HTTP target %s", host)
 	}
 
-	// 使用第一个解析出的IP
-	resolvedIP := ips[0]
-	resolvedAddr := net.JoinHostPort(resolvedIP.String(), port)
-	log.Printf("Resolved HTTP target address %s -> %s via IP %s", addr, resolvedAddr, resolvedIP)
+	// 返回所有解析出的IP地址
+	var resolvedAddrs []string
+	for _, ip := range ips {
+		resolvedAddr := net.JoinHostPort(ip.String(), port)
+		resolvedAddrs = append(resolvedAddrs, resolvedAddr)
+	}
 
-	return resolvedAddr, nil
+	log.Printf("Resolved HTTP target address %s to %d IP addresses: %v", addr, len(resolvedAddrs), resolvedAddrs)
+
+	return resolvedAddrs, nil
 }
