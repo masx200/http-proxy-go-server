@@ -73,8 +73,16 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 
 	var method, URL, address string
 	// 从客户端数据读入 method，url
-	fmt.Sscanf(string(b[:bytes.IndexByte(b[:], '\n')]), "%s%s", &method, &URL)
-	log.Println(string(b[:bytes.IndexByte(b[:], '\n')]))
+	newVar := bytes.IndexByte(b[:], '\n')
+
+	if newVar == -1 {
+		fmt.Fprint(client, "HTTP/1.1 400 Bad Request\r\n\r\n")
+		log.Println("400 Bad Request,not http request")
+		return
+	}
+
+	fmt.Sscanf(string(b[:newVar]), "%s%s", &method, &URL)
+	log.Println(string(b[:newVar]))
 	// hostPortURL, err := url.Parse(URL)
 	// if err != nil {
 	// 	log.Println(err)
@@ -118,7 +126,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 	// 如果方法是 CONNECT，则为 https 协议
 	if method == "CONNECT" {
 		// address = hostPortURL.Scheme + ":" + hostPortURL.Opaque
-		var line = string(b[:bytes.IndexByte(b[:], '\n')])
+		var line = string(b[:newVar])
 		address = simple.ExtractAddressFromConnectRequestLine(line)
 	} else { //否则为 http 协议
 		// address = hostPortURL.Host
@@ -126,7 +134,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		// if !strings.Contains(hostPortURL.Host, ":") { //host 不带端口， 默认 80
 		// 	address = hostPortURL.Host + ":80"
 		// }
-		var line = string(b[:bytes.IndexByte(b[:], '\n')])
+		var line = string(b[:newVar])
 
 		// hostPortURL, err := url.Parse(line[7+1 : len(line)-9-1])
 		// if err != nil {
