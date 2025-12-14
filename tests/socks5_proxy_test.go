@@ -325,11 +325,11 @@ func main() {
 	// 测试2: HTTPS请求通过SOCKS5代理 (等同于用户提供的curl命令)
 	testResults = append(testResults, "### 测试2: HTTPS请求通过SOCKS5代理")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "等效命令: `curl -v -I -X GET https://dns.google -x socks5://g7envpwz14b0u55:juvytdsdzc225pq@127.0.0.1:44444`")
+	testResults = append(testResults, "等效命令: `curl -v -I -X GET https://www.baidu.com -x socks5://g7envpwz14b0u55:juvytdsdzc225pq@127.0.0.1:44444`")
 	testResults = append(testResults, "")
 
 	// 创建HTTPS测试请求
-	req2, err := http.NewRequest("HEAD", "https://dns.google", nil)
+	req2, err := http.NewRequest("HEAD", "https://www.baidu.com", nil)
 	if err != nil {
 		t.Fatalf("创建HTTPS请求失败: %v", err)
 	}

@@ -52,7 +52,7 @@ func TestSOCKS5ClientWithStandaloneServer(t *testing.T) {
 
 	// 测试2: HTTPS请求通过SOCKS5代理 (等同于用户提供的curl命令)
 	t.Log("测试2: HTTPS请求通过SOCKS5代理")
-	req2, err := http.NewRequest("HEAD", "https://dns.google", nil)
+	req2, err := http.NewRequest("HEAD", "https://www.baidu.com", nil)
 	if err != nil {
 		t.Fatalf("创建HTTPS请求失败: %v", err)
 	}
