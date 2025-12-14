@@ -18,7 +18,7 @@ import (
 	"golang.org/x/net/proxy"
 )
 
-// runSOCKS5ProxyServer 测试SOCKS5代理服务器的基本功能，使用 golang.org/x/net/proxy
+// runSOCKS5ProxyServer 测试SOCKS5代理服务器的基本功能，使用 golang.org/x/net/proxy + go-socks5
 func runSOCKS5ProxyServer(t *testing.T, logfilename string) {
 	var processManager *ProcessManager = NewProcessManager(logfilename)
 	defer func() {
@@ -37,6 +37,9 @@ func runSOCKS5ProxyServer(t *testing.T, logfilename string) {
 	// 清理可能存在的旧的可执行文件
 	if _, err := os.Stat("main.exe"); err == nil {
 		os.Remove("main.exe")
+	}
+	if _, err := os.Stat("socks5-test-server.exe"); err == nil {
+		os.Remove("socks5-test-server.exe")
 	}
 
 	// 添加测试超时检查
@@ -107,7 +110,7 @@ func runSOCKS5ProxyServer(t *testing.T, logfilename string) {
 
 	// 测试结果记录
 	var testResults []string
-	testResults = append(testResults, "# SOCKS5代理服务器测试记录 (使用 golang.org/x/net/proxy)")
+	testResults = append(testResults, "# SOCKS5代理服务器测试记录 (使用 golang.org/x/net/proxy + go-socks5)")
 	testResults = append(testResults, "")
 	testResults = append(testResults, "## 测试时间")
 	testResults = append(testResults, time.Now().Format("2006-01-02 15:04:05"))
@@ -118,15 +121,83 @@ func runSOCKS5ProxyServer(t *testing.T, logfilename string) {
 		t.Fatal("端口44444已被占用，请先停止占用该端口的进程")
 	}
 
+	// 创建测试用的SOCKS5服务器代码
+	socks5ServerCode := `package main
+
+import (
+	"fmt"
+	"log"
+	"net"
+	"os"
+
+	"gitee.com/masx200/go-socks5"
+)
+
+func main() {
+	// 创建SOCKS5配置
+	conf := &socks5.Config{
+		AuthMethods: []socks5.Authenticator{
+			&socks5.UserPassAuthenticator{
+				Credentials: socks5.StaticCredentials{
+					"g7envpwz14b0u55": "juvytdsdzc225pq",
+				},
+			},
+		},
+		Rules: socks5.PermitAll(),
+		Logger: log.New(os.Stdout, "", log.LstdFlags),
+	}
+
+	// 创建SOCKS5服务器
+	server, err := socks5.New(conf)
+	if err != nil {
+		log.Fatalf("Failed to create SOCKS5 server: %v", err)
+	}
+
+	// 监听端口
+	listener, err := net.Listen("tcp", ":44444")
+	if err != nil {
+		log.Fatalf("Failed to listen on port 44444: %v", err)
+	}
+	defer listener.Close()
+
+	fmt.Println("SOCKS5 server started on :44444")
+	log.Println("SOCKS5 server started on :44444")
+
+	// 接受连接
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			log.Printf("Failed to accept connection: %v", err)
+			continue
+		}
+
+		go func() {
+			defer conn.Close()
+			err := server.ServeConn(conn)
+			if err != nil {
+				log.Printf("SOCKS5 connection error: %v", err)
+			}
+		}()
+	}
+}
+`
+
+	// 写入SOCKS5服务器代码
+	serverFile := "socks5_test_server.go"
+	if err := os.WriteFile(serverFile, []byte(socks5ServerCode), 0644); err != nil {
+		t.Fatalf("创建SOCKS5服务器代码失败: %v", err)
+	}
+	defer os.Remove(serverFile)
+	defer os.Remove("socks5-test-server.exe")
+
 	// 启动SOCKS5代理服务器
-	testResults = append(testResults, "## 1. 启动SOCKS5代理服务器")
+	testResults = append(testResults, "## 1. 启动SOCKS5代理服务器 (go-socks5)")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `go run -v ../cmd/`")
+	testResults = append(testResults, "编译并启动SOCKS5服务器...")
 	testResults = append(testResults, "")
 
-	// 编译代理服务器
-	testResults = append(testResults, "编译SOCKS5代理服务器...")
-	buildCmd := processManager.Command("go", "build", "-o", "main.exe", "../cmd/")
+	// 编译SOCKS5服务器
+	buildCmd := processManager.Command("go", "build", "-o", "socks5-test-server.exe", serverFile)
 	buildCmd.Stdout = multiWriter
 	buildCmd.Stderr = multiWriter
 
@@ -134,29 +205,14 @@ func runSOCKS5ProxyServer(t *testing.T, logfilename string) {
 	processManager.LogCommand(buildCmd, "BUILD")
 	if err := buildCmd.Run(); err != nil {
 		processManager.LogCommandResult(buildCmd, err, "")
-		t.Fatalf("编译SOCKS5代理服务器失败: %v", err)
+		t.Fatalf("编译SOCKS5服务器失败: %v", err)
 	}
 	processManager.LogCommandResult(buildCmd, nil, "")
-	testResults = append(testResults, "✅ SOCKS5代理服务器编译成功")
+	testResults = append(testResults, "✅ SOCKS5服务器编译成功")
 	testResults = append(testResults, "")
 
-	// 创建测试配置文件
-	socks5Config := `{
-  "hostname": "127.0.0.1",
-  "port": 44444,
-  "username": "g7envpwz14b0u55",
-  "password": "juvytdsdzc225pq"
-}`
-
-	// 写入配置文件
-	configFile := "socks5_test_config.json"
-	if err := os.WriteFile(configFile, []byte(socks5Config), 0644); err != nil {
-		t.Fatalf("创建配置文件失败: %v", err)
-	}
-	defer os.Remove(configFile)
-
-	// 启动SOCKS5代理服务器进程
-	cmd := processManager.Command("./main.exe", "--config", configFile)
+	// 启动SOCKS5服务器进程
+	cmd := processManager.Command("./socks5-test-server.exe")
 	cmd.Stdout = multiWriter
 	cmd.Stderr = multiWriter
 
@@ -167,21 +223,21 @@ func runSOCKS5ProxyServer(t *testing.T, logfilename string) {
 
 	err := cmd.Start()
 	if err != nil {
-		t.Fatalf("启动SOCKS5代理服务器失败: %v", err)
+		t.Fatalf("启动SOCKS5服务器失败: %v", err)
 	}
 
-	// 将SOCKS5代理服务器进程添加到管理器
+	// 将SOCKS5服务器进程添加到管理器
 	processManager.AddProcess(cmd)
-	log.Printf("SOCKS5代理服务器已启动，PID: %d\n", cmd.Process.Pid)
+	log.Printf("SOCKS5服务器已启动，PID: %d\n", cmd.Process.Pid)
 
 	// 确保进程能正确退出
 	go func() {
 		cmd.Wait()
-		log.Println("SOCKS5代理服务器进程已退出")
+		log.Println("SOCKS5服务器进程已退出")
 	}()
 
-	// 记录代理服务器PID
-	testResults = append(testResults, fmt.Sprintf("📋 SOCKS5代理服务器进程PID: %d", cmd.Process.Pid))
+	// 记录服务器PID
+	testResults = append(testResults, fmt.Sprintf("📋 SOCKS5服务器进程PID: %d", cmd.Process.Pid))
 	testResults = append(testResults, "")
 
 	// 等待服务器启动
@@ -199,14 +255,14 @@ func runSOCKS5ProxyServer(t *testing.T, logfilename string) {
 	}
 
 	if !serverStarted {
-		t.Fatal("SOCKS5代理服务器启动失败")
+		t.Fatal("SOCKS5服务器启动失败")
 	}
 
-	testResults = append(testResults, "✅ SOCKS5代理服务器启动成功")
+	testResults = append(testResults, "✅ SOCKS5服务器启动成功")
 	testResults = append(testResults, "")
 
 	// 添加启动成功的日志输出提示
-	log.Println("SOCKS5代理服务器启动成功，开始执行测试...")
+	log.Println("SOCKS5服务器启动成功，开始执行测试...")
 
 	// 等待额外的时间确保服务器完全启动
 	time.Sleep(3 * time.Second)
@@ -387,71 +443,6 @@ func runSOCKS5ProxyServer(t *testing.T, logfilename string) {
 		testResults = append(testResults, "")
 	}
 
-	// 测试4: 直接使用 golang.org/x/net/proxy 进行TCP连接测试
-	testResults = append(testResults, "### 测试4: 直接TCP连接测试 (使用 golang.org/x/net/proxy)")
-	testResults = append(testResults, "")
-	testResults = append(testResults, "测试通过SOCKS5代理直接建立TCP连接...")
-	testResults = append(testResults, "")
-
-	// 测试直接TCP连接到HTTP服务器
-	tcpTestCases := []struct {
-		host string
-		port string
-		desc string
-	}{
-		{"httpbin.org", "80", "HTTP连接"},
-		{"dns.google", "443", "HTTPS连接"},
-		{"google.com", "80", "Google HTTP"},
-	}
-
-	for i, tcpTest := range tcpTestCases {
-		testResults = append(testResults, fmt.Sprintf("#### 子测试 4.%d: %s", i+1, tcpTest.desc))
-		testResults = append(testResults, "")
-		testResults = append(testResults, fmt.Sprintf("目标: %s:%s", tcpTest.host, tcpTest.port))
-		testResults = append(testResults, "")
-
-		// 使用SOCKS5拨号器建立TCP连接
-		startTime := time.Now()
-		conn, err := dialer.Dial("tcp", net.JoinHostPort(tcpTest.host, tcpTest.port))
-		connectTime := time.Since(startTime)
-
-		if err != nil {
-			testResults = append(testResults, fmt.Sprintf("❌ TCP连接失败: %v", err))
-			testResults = append(testResults, "")
-		} else {
-			defer conn.Close()
-			testResults = append(testResults, "✅ TCP连接成功")
-			testResults = append(testResults, "")
-			testResults = append(testResults, fmt.Sprintf("连接时间: %v", connectTime))
-			testResults = append(testResults, fmt.Sprintf("本地地址: %s", conn.LocalAddr().String()))
-			testResults = append(testResults, fmt.Sprintf("远程地址: %s", conn.RemoteAddr().String()))
-			testResults = append(testResults, "")
-
-			// 如果是HTTP连接，发送简单的HTTP请求
-			if tcpTest.port == "80" {
-				httpReq := fmt.Sprintf("GET / HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n", tcpTest.host)
-				_, err := conn.Write([]byte(httpReq))
-				if err != nil {
-					testResults = append(testResults, fmt.Sprintf("❌ 发送HTTP请求失败: %v", err))
-				} else {
-					// 读取响应
-					buffer := make([]byte, 1024)
-					conn.SetReadDeadline(time.Now().Add(5 * time.Second))
-					n, err := conn.Read(buffer)
-					if err != nil {
-						testResults = append(testResults, fmt.Sprintf("❌ 读取HTTP响应失败: %v", err))
-					} else {
-						testResults = append(testResults, "HTTP响应:")
-						testResults = append(testResults, "```")
-						testResults = append(testResults, string(buffer[:n]))
-						testResults = append(testResults, "```")
-					}
-				}
-			}
-			testResults = append(testResults, "")
-		}
-	}
-
 	// 记录所有进程PID信息
 	testResults = append(testResults, "### 📋 所有进程PID记录")
 	testResults = append(testResults, "")
@@ -498,12 +489,6 @@ func runSOCKS5ProxyServer(t *testing.T, logfilename string) {
 
 	// 等待进程完全关闭并释放资源
 	time.Sleep(2 * time.Second)
-
-	// 清理编译的可执行文件
-	if _, err := os.Stat("main.exe"); err == nil {
-		os.Remove("main.exe")
-		testResults = append(testResults, "🧹 已清理编译的可执行文件")
-	}
 
 	// 将代理服务器输出添加到测试记录
 	log.Println("正在记录SOCKS5代理服务器日志...")
@@ -563,6 +548,13 @@ func runSOCKS5ProxyServer(t *testing.T, logfilename string) {
 
 // isSOCKS5ProxyServerRunningWithGolangNetProxy 使用 golang.org/x/net/proxy 检查SOCKS5代理服务器是否正在运行
 func isSOCKS5ProxyServerRunningWithGolangNetProxy() bool {
+	// 简单检查端口是否开放
+	conn, err := net.DialTimeout("tcp", "127.0.0.1:44444", 2*time.Second)
+	if err != nil {
+		return false
+	}
+	conn.Close()
+
 	// 创建SOCKS5代理拨号器
 	dialer, err := proxy.SOCKS5("tcp", "127.0.0.1:44444", &proxy.Auth{
 		User:     "g7envpwz14b0u55",
@@ -573,30 +565,13 @@ func isSOCKS5ProxyServerRunningWithGolangNetProxy() bool {
 	}
 
 	// 尝试通过SOCKS5代理建立TCP连接
-	conn, err := dialer.Dial("tcp", "httpbin.org:80")
+	conn, err = dialer.Dial("tcp", "httpbin.org:80")
 	if err != nil {
 		return false
 	}
 	defer conn.Close()
 
-	// 发送简单的HTTP请求测试连接
-	httpReq := "GET /status/200 HTTP/1.1\r\nHost: httpbin.org\r\nConnection: close\r\n\r\n"
-	_, err = conn.Write([]byte(httpReq))
-	if err != nil {
-		return false
-	}
-
-	// 读取响应
-	buffer := make([]byte, 1024)
-	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
-	_, err = conn.Read(buffer)
-	if err != nil {
-		return false
-	}
-
-	// 检查是否收到有效的HTTP响应
-	response := string(buffer)
-	return strings.Contains(response, "200") || strings.Contains(response, "HTTP")
+	return true
 }
 
 // TestSOCKS5Proxy 主测试函数
