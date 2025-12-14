@@ -20,6 +20,7 @@ import (
 	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/http-proxy-go-server/simple"
 	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
+	"github.com/masx200/socks5-websocket-proxy-golang/pkg/socks5"
 	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
 )
 
@@ -245,13 +246,92 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		server = clientConn
 		log.Println("WebSocket代理连接成功：" + upstreamAddress)
 	} else if method == "CONNECT" && proxyURL != nil {
-		server, err = connect.ConnectViaHttpProxy(proxyURL, upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs)
-		if err != nil {
-			log.Println(err)
-			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
-			return
+		// 检查是否是SOCKS5代理
+		if strings.HasPrefix(proxyURL.String(), "socks5://") {
+			// 使用SOCKS5代理处理CONNECT请求
+			host, port, err := net.SplitHostPort(upstreamAddress)
+			if err != nil {
+				log.Println("failed to parse address:", err)
+				fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+				return
+			}
+
+			// 转换端口号为整数
+			portNum, err := strconv.Atoi(port)
+			if err != nil {
+				log.Println("failed to parse port:", err)
+				fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+				return
+			}
+
+			// 从代理URL中提取主机和端口
+			proxyHost := proxyURL.Hostname()
+			proxyPort := proxyURL.Port()
+			if proxyPort == "" {
+				proxyPort = "1080" // SOCKS5默认端口
+			}
+
+			// 构建SOCKS5服务器地址（不包含用户名密码）
+			socks5ServerAddr := fmt.Sprintf("tcp://%s:%s", proxyHost, proxyPort)
+
+			// 创建SOCKS5客户端配置
+			socks5Config := interfaces.ClientConfig{
+				Username:   proxyURL.User.Username(),
+				Password:   "",
+				ServerAddr: socks5ServerAddr,
+				Protocol:   "socks5",
+				Timeout:    30 * time.Second,
+			}
+			if proxyURL.User != nil {
+				if password, ok := proxyURL.User.Password(); ok {
+					socks5Config.Password = password
+				}
+			}
+
+			// 创建SOCKS5客户端
+			socks5Client := socks5.NewSOCKS5Client(socks5Config)
+			log.Println("SOCKS5 Config Details:")
+			log.Println("host, portNum", host, portNum)
+			log.Printf("  Username: %s", socks5Config.Username)
+			log.Printf("  Password: %s", socks5Config.Password)
+			log.Printf("  ServerAddr: %s", socks5Config.ServerAddr)
+			log.Printf("  Protocol: %s", socks5Config.Protocol)
+			log.Printf("  Timeout: %v", socks5Config.Timeout)
+
+			// 连接到目标主机
+			err = socks5Client.Connect(host, portNum)
+			if err != nil {
+				log.Println("failed to connect via SOCKS5 proxy:", err)
+				fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+				return
+			}
+
+			// 创建一个管道连接来处理SOCKS5数据转发
+			clientConn, serverConn := net.Pipe()
+
+			// 在goroutine中处理SOCKS5数据转发
+			go func() {
+				defer clientConn.Close()
+				defer serverConn.Close()
+				// 使用ForwardData方法处理SOCKS5连接
+				err := socks5Client.ForwardData(serverConn)
+				if err != nil {
+					log.Printf("SOCKS5 ForwardData error: %v\n", err)
+				}
+			}()
+
+			server = clientConn
+			log.Println("SOCKS5代理连接成功：" + upstreamAddress)
+		} else {
+			// 使用HTTP代理处理CONNECT请求
+			server, err = connect.ConnectViaHttpProxy(proxyURL, upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs)
+			if err != nil {
+				log.Println(err)
+				fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+				return
+			}
+			log.Println("连接成功：" + upstreamAddress)
 		}
-		log.Println("连接成功：" + upstreamAddress)
 	} else {
 		server, err = dnscache.Proxy_net_DialCached("tcp", upstreamAddress, proxyoptions, upstreamResolveIPs, dnsCache, tranportConfigurations...) // net.Dial("tcp", upstreamAddress)
 		if err != nil {
