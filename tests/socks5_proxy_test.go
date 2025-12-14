@@ -285,7 +285,7 @@ func main() {
 	// 测试1: 基本HTTP请求通过SOCKS5代理 (等效curl命令)
 	testResults = append(testResults, "### 测试1: HTTP请求通过SOCKS5代理")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "等效命令: `curl -v -X GET http://httpbin.org/ip -x socks5://g7envpwz14b0u55:juvytdsdzc225pq@127.0.0.1:44444`")
+	testResults = append(testResults, "等效命令: `curl -v -X GET https://api.ip.sb/ip -x socks5://g7envpwz14b0u55:juvytdsdzc225pq@127.0.0.1:44444`")
 	testResults = append(testResults, "")
 
 	// 创建HTTP客户端，使用自定义的SOCKS5拨号器
@@ -297,7 +297,7 @@ func main() {
 	}
 
 	// 创建HTTP请求
-	req, err := http.NewRequest("GET", "http://httpbin.org/ip", nil)
+	req, err := http.NewRequest("GET", "https://api.ip.sb/ip", nil)
 	if err != nil {
 		t.Fatalf("创建HTTP请求失败: %v", err)
 	}

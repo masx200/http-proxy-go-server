@@ -35,7 +35,7 @@ func TestSOCKS5ClientWithStandaloneServer(t *testing.T) {
 
 	// 测试1: HTTP请求通过SOCKS5代理
 	t.Log("测试1: HTTP请求通过SOCKS5代理")
-	req1, err := http.NewRequest("GET", "http://httpbin.org/ip", nil)
+	req1, err := http.NewRequest("GET", "https://api.ip.sb/ip", nil)
 	if err != nil {
 		t.Fatalf("创建HTTP请求失败: %v", err)
 	}
@@ -92,7 +92,7 @@ func TestSOCKS5ClientWithStandaloneServer8086(t *testing.T) {
 
 	// 测试1: HTTP请求通过SOCKS5代理
 	t.Log("测试1: HTTP请求通过SOCKS5代理")
-	req1, err := http.NewRequest("GET", "http://httpbin.org/ip", nil)
+	req1, err := http.NewRequest("GET", "https://api.ip.sb/ip", nil)
 	if err != nil {
 		t.Fatalf("创建HTTP请求失败: %v", err)
 	}
