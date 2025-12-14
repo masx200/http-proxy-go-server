@@ -20,7 +20,7 @@ func main() {
 			},
 		},
 		Rules: socks5.PermitAll(),
-		Logger: log.New(os.Stdout, "", log.LstdFlags),
+		Logger: log.New(os.Stdout, "[SOCKS5] ", log.LstdFlags),
 	}
 
 	// 创建SOCKS5服务器
@@ -37,7 +37,9 @@ func main() {
 	defer listener.Close()
 
 	fmt.Println("SOCKS5 server started on :44444")
-	log.Println("SOCKS5 server started on :44444")
+	fmt.Println("Username: g7envpwz14b0u55")
+	fmt.Println("Password: juvytdsdzc225pq")
+	fmt.Println("Press Ctrl+C to stop the server")
 
 	// 接受连接
 	for {
@@ -47,11 +49,17 @@ func main() {
 			continue
 		}
 
+		log.Printf("New connection from: %s", conn.RemoteAddr())
+
 		go func() {
 			defer conn.Close()
+			defer log.Printf("Connection closed: %s", conn.RemoteAddr())
+
 			err := server.ServeConn(conn)
 			if err != nil {
 				log.Printf("SOCKS5 connection error: %v", err)
+			} else {
+				log.Printf("SOCKS5 connection handled successfully: %s", conn.RemoteAddr())
 			}
 		}()
 	}

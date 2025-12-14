@@ -548,29 +548,12 @@ func main() {
 
 // isSOCKS5ProxyServerRunningWithGolangNetProxy 使用 golang.org/x/net/proxy 检查SOCKS5代理服务器是否正在运行
 func isSOCKS5ProxyServerRunningWithGolangNetProxy() bool {
-	// 简单检查端口是否开放
+	// 简单检查端口是否开放，不进行SOCKS5连接测试
 	conn, err := net.DialTimeout("tcp", "127.0.0.1:44444", 2*time.Second)
 	if err != nil {
 		return false
 	}
 	conn.Close()
-
-	// 创建SOCKS5代理拨号器
-	dialer, err := proxy.SOCKS5("tcp", "127.0.0.1:44444", &proxy.Auth{
-		User:     "g7envpwz14b0u55",
-		Password: "juvytdsdzc225pq",
-	}, proxy.Direct)
-	if err != nil {
-		return false
-	}
-
-	// 尝试通过SOCKS5代理建立TCP连接
-	conn, err = dialer.Dial("tcp", "httpbin.org:80")
-	if err != nil {
-		return false
-	}
-	defer conn.Close()
-
 	return true
 }
 
