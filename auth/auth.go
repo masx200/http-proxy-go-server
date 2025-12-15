@@ -39,10 +39,33 @@ func Auth(hostname string, port int, username, password string,  proxyoptions op
 		log.Panic(err)
 	}
 	log.Printf("Proxy server started on port %s", l.Addr())
-	xh := http_server.GenerateRandomLoopbackIP()
-	x1 := http_server.GenerateRandomIntPort()
-	var upstreamAddress string = xh + ":" + fmt.Sprint(rune(x1))
-	go http_server.Http(xh, x1, proxyoptions, dnsCache, username, password, upstreamResolveIPs, Proxy, tranportConfigurations...)
+
+	// 检查是否使用SOCKS5上游代理
+	var useSocks5Directly bool
+	var upstreamAddress string
+
+	if Proxy != nil {
+		// 创建一个测试请求来检查上游代理类型
+		testReq, _ := http.NewRequest("GET", "http://test", nil)
+		if proxyURL, err := Proxy(testReq); err == nil && proxyURL != nil {
+			useSocks5Directly = strings.HasPrefix(proxyURL.String(), "socks5://")
+			if useSocks5Directly {
+				log.Printf("SOCKS5 upstream detected, will handle HTTP requests directly via SOCKS5")
+			}
+		}
+	}
+
+	// 只有在非SOCKS5上游时才启动HTTP代理服务器
+	if !useSocks5Directly {
+		xh := http_server.GenerateRandomLoopbackIP()
+		x1 := http_server.GenerateRandomIntPort()
+		upstreamAddress = xh + ":" + fmt.Sprint(rune(x1))
+		go http_server.Http(xh, x1, proxyoptions, dnsCache, username, password, upstreamResolveIPs, Proxy, tranportConfigurations...)
+		log.Printf("Started HTTP proxy server for upstream routing at %s", upstreamAddress)
+	} else {
+		log.Printf("SOCKS5 upstream mode: bypassing HTTP proxy server for direct SOCKS5 routing")
+	}
+
 	// 死循环，每当遇到连接时，调用 handle
 	for {
 		client, err := l.Accept()
@@ -161,7 +184,16 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 	if method == "CONNECT" {
 		upstreamAddress = address
 	} else {
-		upstreamAddress = httpUpstreamAddress
+		// 对于HTTP请求，检查是否使用SOCKS5直接连接模式
+		if httpUpstreamAddress == "" {
+			// SOCKS5直接模式：直接连接到目标地址
+			upstreamAddress = address
+			log.Printf("HTTP request will be routed directly via SOCKS5 to: %s", upstreamAddress)
+		} else {
+			// 传统模式：通过HTTP代理服务器
+			upstreamAddress = httpUpstreamAddress
+			log.Printf("HTTP request will be routed via HTTP proxy server at: %s", upstreamAddress)
+		}
 	}
 	var server net.Conn
 	proxyURL, err := CheckShouldUseProxy(upstreamAddress, Proxy, tranportConfigurations...)
@@ -247,10 +279,15 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 
 		server = clientConn
 		log.Println("WebSocket代理连接成功：" + upstreamAddress)
-	} else if method == "CONNECT" && proxyURL != nil {
-		// 检查是否是SOCKS5代理
+	} else if proxyURL != nil && (method == "CONNECT" || (method != "CONNECT" && httpUpstreamAddress == "")) {
+		// 检查是否是SOCKS5代理 (适用于CONNECT请求和SOCKS5直接模式的HTTP请求)
 		if strings.HasPrefix(proxyURL.String(), "socks5://") {
-			// 使用SOCKS5代理处理CONNECT请求
+			// 使用SOCKS5代理处理请求（CONNECT请求或SOCKS5直接模式的HTTP请求）
+			requestType := "CONNECT"
+			if method != "CONNECT" {
+				requestType = "HTTP"
+			}
+			log.Printf("Processing %s request via SOCKS5 proxy to: %s", requestType, upstreamAddress)
 			host, port, err := net.SplitHostPort(upstreamAddress)
 			if err != nil {
 				log.Println("failed to parse address:", err)
@@ -354,7 +391,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 			}()
 
 			server = clientConn
-			log.Println("SOCKS5代理连接成功：" + upstreamAddress)
+			log.Printf("SOCKS5代理连接成功 (%s请求): %s", requestType, upstreamAddress)
 		} else {
 			// 使用HTTP代理处理CONNECT请求
 			server, err = connect.ConnectViaHttpProxy(proxyURL, upstreamAddress, Proxy, proxyoptions, dnsCache, upstreamResolveIPs)

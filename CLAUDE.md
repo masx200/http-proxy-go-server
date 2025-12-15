@@ -57,6 +57,8 @@ The server operates in four different modes based on configuration:
 3. **TLS Mode** (`tls/`): HTTPS proxy with TLS encryption
 4. **TLS+Auth Mode** (`tls+auth/`): HTTPS proxy with both TLS and authentication
 
+All proxy modes now support **SOCKS5 Direct Mode** for optimized routing when using SOCKS5 upstream proxies.
+
 #### 3. HTTP Server Component (`http/`)
 
 - **Purpose**: Internal HTTP server for handling HTTP requests
@@ -157,6 +159,7 @@ type UpStream struct {
 - **HTTP/HTTPS Proxy**: Standard HTTP proxy functionality
 - **WebSocket Proxy**: Forward requests through WebSocket upstreams
 - **SOCKS5 Proxy**: SOCKS5 protocol support with authentication
+- **SOCKS5 Direct Mode**: Direct routing for both HTTP and HTTPS requests through SOCKS5 upstreams without intermediate HTTP proxy server
 - **DoH Integration**: DNS over HTTPS for encrypted DNS resolution
 
 ### 2. Advanced Routing
@@ -186,6 +189,7 @@ type UpStream struct {
 - **Connection Pooling**: Efficient connection reuse
 - **Timeout Management**: Configurable timeouts
 - **Graceful Shutdown**: Clean process termination
+- **SOCKS5 Direct Mode**: Optimized routing for SOCKS5 upstream proxies bypassing HTTP proxy server
 
 ## Build & Development
 
@@ -425,6 +429,44 @@ nslookup example.com
 This comprehensive architecture provides a solid foundation for understanding
 and extending the http-proxy-go-server codebase. The modular design allows for
 easy customization and enhancement while maintaining stability and performance.
+
+## Recent Updates
+
+### SOCKS5 Direct Mode Implementation (2025-01-15)
+
+**Overview**: Added SOCKS5 Direct Mode support to the `auth/` module, enabling optimized routing when using SOCKS5 upstream proxies.
+
+**Key Changes**:
+
+1. **Upstream Detection Logic**:
+   - Added automatic detection of SOCKS5 upstream proxies during server startup
+   - Conditional HTTP proxy server initialization based on upstream type
+
+2. **Request Routing Optimization**:
+   - HTTP requests now bypass the internal HTTP proxy server when using SOCKS5 upstreams
+   - Direct routing through SOCKS5 proxy for both HTTP and HTTPS requests
+   - Improved performance by eliminating unnecessary proxy hops
+
+3. **Enhanced Logging**:
+   - Added request type detection (CONNECT vs HTTP) for better monitoring
+   - Key log message: `"SOCKS5 upstream mode: bypassing HTTP proxy server for direct SOCKS5 routing"`
+
+**Performance Benefits**:
+- Reduced latency by eliminating intermediate HTTP proxy server
+- Lower resource consumption
+- More efficient connection handling
+- Better scalability for SOCKS5 deployments
+
+**Implementation Files**:
+- `auth/auth.go`: Added SOCKS5 direct mode support
+- Maintains full backward compatibility with existing configurations
+
+**Technical Details**:
+- Detection uses `strings.HasPrefix(proxyURL.String(), "socks5://")`
+- Conditional logic: `!useSocks5Directly` for HTTP proxy server startup
+- Updated proxy condition: `proxyURL != nil && (method == "CONNECT" || (method != "CONNECT" && httpUpstreamAddress == ""))`
+
+This enhancement brings the auth module to feature parity with the simple module regarding SOCKS5 upstream handling.
 
 `@E:\projects\http-proxy-go-server\openspec\changes\add-upstream-ip-resolution\design.md`
 
