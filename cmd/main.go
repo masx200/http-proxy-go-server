@@ -1057,14 +1057,14 @@ func main() {
 								TYPE:     "websocket",
 								WS_PROXY: proxyURL.String(),
 							}
-							return websocketDialContext(ctx, network, addr, modifiedUpstream, proxyoptions, GetDNSCache(), *upstreamResolveIPs)
+							return websocketDialContext(ctx, network, addr, modifiedUpstream, Proxy, proxyoptions, GetDNSCache(), *upstreamResolveIPs)
 						}
 						if proxyURL.Scheme == "socks5" || proxyURL.Scheme == "socks5s" {
 							var modifiedUpstream = UpStream{
 								TYPE:         "socks5",
 								SOCKS5_PROXY: proxyURL.String(),
 							}
-							return socks5DialContext(ctx, network, addr, modifiedUpstream, proxyoptions, GetDNSCache(), *upstreamResolveIPs)
+							return socks5DialContext(ctx, network, addr, modifiedUpstream, Proxy, proxyoptions, GetDNSCache(), *upstreamResolveIPs)
 						} else {
 							log.Println("未选择代理")
 							var dialer = &net.Dialer{}
@@ -1088,7 +1088,7 @@ func main() {
 	}
 	log.Println(string(by))
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
-		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, proxyoptions, GetDNSCache(), *upstreamResolveIPs, Proxy, tranportConfigurations...)
+		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, Proxy, proxyoptions, GetDNSCache(), *upstreamResolveIPs, tranportConfigurations...)
 		return
 	}
 	// if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
@@ -1100,11 +1100,11 @@ func main() {
 		return
 	}
 	if len(*username) == 0 && len(*password) == 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
-		tls.Tls(*server_cert, *server_key, *hostname, *port, proxyoptions, GetDNSCache(), *upstreamResolveIPs, Proxy, tranportConfigurations...)
+		tls.Tls(*server_cert, *server_key, *hostname, *port, Proxy, proxyoptions, GetDNSCache(), *upstreamResolveIPs, tranportConfigurations...)
 		return
 	}
 	if len(*username) == 0 && len(*password) == 0 && len(*server_cert) == 0 && len(*server_key) == 0 {
-		simple.Simple(*hostname, *port, proxyoptions, GetDNSCache(), *upstreamResolveIPs, Proxy, tranportConfigurations...)
+		simple.Simple(*hostname, *port, Proxy, proxyoptions, GetDNSCache(), *upstreamResolveIPs, tranportConfigurations...)
 		return
 	}
 }
@@ -1161,7 +1161,7 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream co
 	if upstreamResolveIPs {
 		log.Printf("upstream-resolve-ips enabled, resolving target address %s before WebSocket connection", addr)
 	}
-	resolvedAddrs, err := resolveTargetAddress(addr, proxyoptions, dnsCache, upstreamResolveIPs)
+	resolvedAddrs, err := resolveTargetAddress(addr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs)
 	if err != nil {
 		log.Printf("Failed to resolve target address %s: %v, using original", addr, err)
 		resolvedAddrs = []string{addr}
@@ -1255,7 +1255,7 @@ func socks5DialContext(ctx context.Context, network, addr string, upstream confi
 	if upstreamResolveIPs {
 		log.Printf("upstream-resolve-ips enabled, resolving target address %s before SOCKS5 connection", addr)
 	}
-	resolvedAddrs, err := resolveTargetAddress(addr, proxyoptions, dnsCache, upstreamResolveIPs)
+	resolvedAddrs, err := resolveTargetAddress(addr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs)
 	if err != nil {
 		log.Printf("Failed to resolve target address %s: %v, using original", addr, err)
 		resolvedAddrs = []string{addr}
