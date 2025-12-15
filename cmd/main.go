@@ -945,6 +945,12 @@ func main() {
 
 			return nil, nil
 		}
+
+		// Check if config is nil before accessing its fields
+		if config == nil {
+			return nil, nil
+		}
+
 		proxyURL, err := ProxySelector(r, config.UpStreams, config.Rules, config.Filters)
 		if err != nil {
 			log.Printf("ProxySelector 出错: %v\n", err)
