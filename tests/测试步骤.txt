@@ -1,13 +1,10 @@
 
 ```
-go build -v D:/GitHub/http-proxy-go-server/tests/socks5_server/socks5_test_server_standalone.go -o socks5_test_server_standalone.exe
-./socks5_test_server_standalone.exe
+go build -v -o socks5_test_server_standalone.exe D:/GitHub/http-proxy-go-server/tests/socks5_server/socks5_test_server_standalone.go && ./socks5_test_server_standalone.exe
 ```
 
 ```
-go build -v ./cmd -o http-proxy-go-server.exe
-
-./http-proxy-go-server.exe -upstream-resolve-ips  -upstream-type socks5 -upstream-username g7envpwz14b0u55 -upstream-password juvytdsdzc225pq  -upstream-address socks5://127.0.0.1:44444 -dohurl https://dns.alidns.com/dns-query -dohip 223.5.5.5 -dohalpn h3
+go build -v -o http-proxy-go-server.exe  ./cmd  && ./http-proxy-go-server.exe -upstream-resolve-ips  -upstream-type socks5 -upstream-username g7envpwz14b0u55 -upstream-password juvytdsdzc225pq  -upstream-address socks5://127.0.0.1:44444 -dohurl https://dns.alidns.com/dns-query -dohip 223.5.5.5 -dohalpn h3
 ```
 
 ```
