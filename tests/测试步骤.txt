@@ -1,0 +1,18 @@
+
+```
+go run -v D:\GitHub\http-proxy-go-server\tests\socks5_server\socks5_test_server_standalone.go
+```
+
+```
+go run -v ./cmd  -upstream-resolve-ips  -upstream-type socks5 -upstream-username g7envpwz14b0u55 -upstream-password juvytdsdzc225pq  -upstream-address socks5://127.0.0.1:44444 -dohurl https://dns.alidns.com/dns-query -dohip 223.5.5.5 -dohalpn h3
+```
+
+```
+
+curl -v -I -X GET -x http://localhost:8080 http://www.baidu.com
+```
+
+```
+
+curl -v -I -X GET -x http://localhost:8080 https://www.baidu.com
+``` 

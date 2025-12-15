@@ -1127,6 +1127,9 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream co
 	websocketClient := socks5_websocket_proxy_golang_websocket.NewWebSocketClient(wsConfig)
 
 	// 如果启用了DNS解析，先解析目标地址
+	if upstreamResolveIPs {
+		log.Printf("upstream-resolve-ips enabled, resolving target address %s before WebSocket connection", addr)
+	}
 	resolvedAddrs, err := resolveTargetAddress(addr, proxyoptions, dnsCache, upstreamResolveIPs)
 	if err != nil {
 		log.Printf("Failed to resolve target address %s: %v, using original", addr, err)
@@ -1135,6 +1138,9 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream co
 
 	// 使用轮询从解析的地址中选择一个
 	resolvedAddr := resolveTargetAddressWithRoundRobin(resolvedAddrs, addr)
+	if upstreamResolveIPs && resolvedAddr != addr {
+		log.Printf("WebSocket: Using resolved address %s instead of original %s", resolvedAddr, addr)
+	}
 
 	// 重新解析解析后的地址以获取正确的host和port用于连接
 	resolvedHost, resolvedPort, err := net.SplitHostPort(resolvedAddr)
@@ -1215,6 +1221,9 @@ func socks5DialContext(ctx context.Context, network, addr string, upstream confi
 	socks5Client := socks5.NewSOCKS5Client(socks5Config)
 
 	// 如果启用了DNS解析，先解析目标地址
+	if upstreamResolveIPs {
+		log.Printf("upstream-resolve-ips enabled, resolving target address %s before SOCKS5 connection", addr)
+	}
 	resolvedAddrs, err := resolveTargetAddress(addr, proxyoptions, dnsCache, upstreamResolveIPs)
 	if err != nil {
 		log.Printf("Failed to resolve target address %s: %v, using original", addr, err)
@@ -1223,6 +1232,9 @@ func socks5DialContext(ctx context.Context, network, addr string, upstream confi
 
 	// 使用轮询从解析的地址中选择一个
 	resolvedAddr := resolveTargetAddressWithRoundRobin(resolvedAddrs, addr)
+	if upstreamResolveIPs && resolvedAddr != addr {
+		log.Printf("SOCKS5: Using resolved address %s instead of original %s", resolvedAddr, addr)
+	}
 
 	// 使用DialContext连接到目标主机（使用解析后的地址）
 	conn, err := socks5Client.DialContext(ctx, network, resolvedAddr)
