@@ -80,7 +80,7 @@ if config != nil && config.UpstreamResolveIPs {
 // 函数调用分发 (第1099-1115行)
 tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, 
     *username, *password, proxyoptions, GetDNSCache(), 
-    *upstreamResolveIPs, tranportConfigurations...)
+    *upstreamResolveIPs, Proxy,tranportConfigurations...)
 ```
 
 #### config/types.go - 配置结构体
@@ -109,15 +109,15 @@ type Config struct {
 ```go
 // 带缓存的网络拨号函数 (第348行)
 func Proxy_net_DialCached(network string, addr string, proxyoptions options.ProxyOptions, 
-    upstreamResolveIPs bool, dnsCache *DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+    upstreamResolveIPs bool, dnsCache *DNSCache, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
     return proxy_net_DialWithResolver(nil, network, addr, proxyoptions, upstreamResolveIPs, 
-        dnsCache, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, tranportConfigurations...))
+        dnsCache, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, Proxy,tranportConfigurations...))
 }
 
 // 核心解析逻辑 (第364行)
 func proxy_net_DialWithResolver(ctx context.Context, network string, addr string, 
     proxyoptions options.ProxyOptions, upstreamResolveIPs bool, dnsCache interface{}, 
-    resolver NameResolver, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+    resolver NameResolver, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
     if upstreamResolveIPs && len(proxyoptions) > 0 {
         log.Printf("upstreamResolveIPs enabled for address: %s", addr)
         // IP解析逻辑实现
@@ -134,12 +134,12 @@ func proxy_net_DialWithResolver(ctx context.Context, network string, addr string
 ```go
 // 基础网络拨号函数 (第107行)
 func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, 
-    upstreamResolveIPs bool, dnsCache interface{}, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error)
+    upstreamResolveIPs bool, dnsCache interface{}, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error)
 
 // 带上下文的网络拨号函数 (第184行)
 func Proxy_net_DialContext(ctx context.Context, network string, address string, 
     proxyoptions ProxyOptions, dnsCache interface{}, upstreamResolveIPs bool, 
-    tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error)
+    Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error)
 ```
 
 ### 4.3 服务器实现模块 (4个文件)
@@ -151,7 +151,7 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string,
 ```go
 func Auth(hostname string, port int, username, password string, 
     proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, 
-    upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport)
+    upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport)
 ```
 
 **使用示例** (第240行):
@@ -168,7 +168,7 @@ server, err = connect.ConnectViaHttpProxy(proxyURL, upstreamAddress,
 ```go
 func Simple(hostname string, port int, proxyoptions options.ProxyOptions, 
     dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, 
-    tranportConfigurations ...func(*http.Transport) *http.Transport)
+    Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport)
 ```
 
 #### tls/tls.go - TLS服务器
@@ -178,7 +178,7 @@ func Simple(hostname string, port int, proxyoptions options.ProxyOptions,
 ```go
 func Tls(server_cert string, server_key, hostname string, port int, 
     proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, 
-    upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport)
+    upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport)
 ```
 
 #### tls+auth/tls+auth.go - TLS+认证服务器
@@ -189,7 +189,7 @@ func Tls(server_cert string, server_key, hostname string, port int,
 func Tls_auth(server_cert string, server_key, hostname string, port int, 
     username, password string, proxyoptions options.ProxyOptions, 
     dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, 
-    tranportConfigurations ...func(*http.Transport) *http.Transport)
+    Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport)
 ```
 
 ### 4.4 HTTP处理模块 (2个文件)
@@ -203,7 +203,7 @@ func Tls_auth(server_cert string, server_key, hostname string, port int,
 func proxyHandler(w http.ResponseWriter, r *http.Request, LocalAddr string, 
     proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, 
     username, password string, upstreamResolveIPs bool, 
-    tranportConfigurations ...func(*http.Transport) *http.Transport) error
+    Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) error
 
 // 使用示例 (第199行)
 return dnscache.Proxy_net_DialContextCached(ctx, network, addr, 

@@ -926,7 +926,37 @@ func main() {
 			Protocol: "doq",
 		})
 	}
+	var Proxy = func(r *http.Request) (*url.URL, error) {
 
+		log.Println("ProxySelector", r.URL.Host)
+		var addr = r.URL.Host
+
+		var host, _, err = net.SplitHostPort(addr)
+		if err != nil {
+
+			if addrErr, ok := err.(*net.AddrError); ok && addrErr.Err == "missing port in address" {
+				host = addr // 整个字符串就是 host
+			} else {
+				return nil, err
+			}
+
+		}
+		if utils.IsLoopbackIP(host) {
+
+			return nil, nil
+		}
+		proxyURL, err := ProxySelector(r, config.UpStreams, config.Rules, config.Filters)
+		if err != nil {
+			log.Printf("ProxySelector 出错: %v\n", err)
+		} else {
+			if proxyURL != nil {
+				log.Printf("选择的代理 URL: %s\n", proxyURL.String())
+			} else {
+				log.Println("未选择代理")
+			}
+		}
+		return proxyURL, err
+	}
 	var tranportConfigurations = []func(*http.Transport) *http.Transport{}
 	if config != nil {
 		if config.UpStreams != nil && config.Rules != nil && len(config.Rules) > 0 && len(config.UpStreams) > 0 {
@@ -967,38 +997,39 @@ func main() {
 				}
 				config.UpStreams[name] = modifedUpstream
 			}
+
 			tranportConfigurations = append(tranportConfigurations, func(t *http.Transport) *http.Transport {
-				t.Proxy = func(r *http.Request) (*url.URL, error) {
+				// t.Proxy = func(r *http.Request) (*url.URL, error) {
 
-					log.Println("ProxySelector", r.URL.Host)
-					var addr = r.URL.Host
+				// 	log.Println("ProxySelector", r.URL.Host)
+				// 	var addr = r.URL.Host
 
-					var host, _, err = net.SplitHostPort(addr)
-					if err != nil {
+				// 	var host, _, err = net.SplitHostPort(addr)
+				// 	if err != nil {
 
-						if addrErr, ok := err.(*net.AddrError); ok && addrErr.Err == "missing port in address" {
-							host = addr // 整个字符串就是 host
-						} else {
-							return nil, err
-						}
+				// 		if addrErr, ok := err.(*net.AddrError); ok && addrErr.Err == "missing port in address" {
+				// 			host = addr // 整个字符串就是 host
+				// 		} else {
+				// 			return nil, err
+				// 		}
 
-					}
-					if utils.IsLoopbackIP(host) {
+				// 	}
+				// 	if utils.IsLoopbackIP(host) {
 
-						return nil, nil
-					}
-					proxyURL, err := ProxySelector(r, config.UpStreams, config.Rules, config.Filters)
-					if err != nil {
-						log.Printf("ProxySelector 出错: %v\n", err)
-					} else {
-						if proxyURL != nil {
-							log.Printf("选择的代理 URL: %s\n", proxyURL.String())
-						} else {
-							log.Println("未选择代理")
-						}
-					}
-					return proxyURL, err
-				}
+				// 		return nil, nil
+				// 	}
+				// 	proxyURL, err := ProxySelector(r, config.UpStreams, config.Rules, config.Filters)
+				// 	if err != nil {
+				// 		log.Printf("ProxySelector 出错: %v\n", err)
+				// 	} else {
+				// 		if proxyURL != nil {
+				// 			log.Printf("选择的代理 URL: %s\n", proxyURL.String())
+				// 		} else {
+				// 			log.Println("未选择代理")
+				// 		}
+				// 	}
+				// 	return proxyURL, err
+				// }
 				t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 
 					var host, _, err = net.SplitHostPort(addr)
@@ -1057,7 +1088,7 @@ func main() {
 	}
 	log.Println(string(by))
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
-		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, proxyoptions, GetDNSCache(), *upstreamResolveIPs, tranportConfigurations...)
+		tls_auth.Tls_auth(*server_cert, *server_key, *hostname, *port, *username, *password, proxyoptions, GetDNSCache(), *upstreamResolveIPs, Proxy, tranportConfigurations...)
 		return
 	}
 	// if len(*username) > 0 && len(*password) > 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
@@ -1065,15 +1096,15 @@ func main() {
 	// 	return
 	// }
 	if len(*username) > 0 && len(*password) > 0 && len(*server_cert) == 0 && len(*server_key) == 0 {
-		auth.Auth(*hostname, *port, *username, *password, proxyoptions, GetDNSCache(), *upstreamResolveIPs, tranportConfigurations...)
+		auth.Auth(*hostname, *port, *username, *password, proxyoptions, GetDNSCache(), *upstreamResolveIPs, Proxy, tranportConfigurations...)
 		return
 	}
 	if len(*username) == 0 && len(*password) == 0 && len(*server_cert) > 0 && len(*server_key) > 0 {
-		tls.Tls(*server_cert, *server_key, *hostname, *port, proxyoptions, GetDNSCache(), *upstreamResolveIPs, tranportConfigurations...)
+		tls.Tls(*server_cert, *server_key, *hostname, *port, proxyoptions, GetDNSCache(), *upstreamResolveIPs, Proxy, tranportConfigurations...)
 		return
 	}
 	if len(*username) == 0 && len(*password) == 0 && len(*server_cert) == 0 && len(*server_key) == 0 {
-		simple.Simple(*hostname, *port, proxyoptions, GetDNSCache(), *upstreamResolveIPs, tranportConfigurations...)
+		simple.Simple(*hostname, *port, proxyoptions, GetDNSCache(), *upstreamResolveIPs, Proxy, tranportConfigurations...)
 		return
 	}
 }

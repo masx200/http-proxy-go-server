@@ -7,7 +7,7 @@ import (
 	"net/url"
 )
 
-func CheckShouldUseProxy(upstreamAddress string, tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
+func CheckShouldUseProxy(upstreamAddress string, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
 
 	var addr = upstreamAddress
 	var host, _, err = net.SplitHostPort(addr)
@@ -34,18 +34,18 @@ func CheckShouldUseProxy(upstreamAddress string, tranportConfigurations ...func(
 			transport = f(t)
 		}
 	}
-	if t, ok := transport.(*http.Transport); ok {
+	// if t, ok := transport.(*http.Transport); ok {
 
-		var proxy = t.Proxy
-		if proxy != nil {
-			req, err := http.NewRequest("GET", "https://"+upstreamAddress, nil)
-			if err != nil {
-				return nil, err
-			}
-			return proxy(req)
-		} else {
-			return nil, nil
+	var proxy = Proxy
+	if proxy != nil {
+		req, err := http.NewRequest("GET", "https://"+upstreamAddress, nil)
+		if err != nil {
+			return nil, err
 		}
+		return proxy(req)
+	} else {
+		return nil, nil
 	}
+	// }
 	return nil, nil
 }

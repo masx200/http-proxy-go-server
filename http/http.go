@@ -88,7 +88,7 @@ func parseForwardedHeader(header string) ([]ForwardedBy, error) {
 
 	return forwardedByList, nil
 }
-func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) error {
+func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) error {
 	log.Println("method:", r.Method)
 	log.Println("url:", r.URL)
 	log.Println("host:", r.Host)
@@ -296,7 +296,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 		return err
 	}
 
-	proxyUrl, err := utils.CheckShouldUseProxy(proxyReq.Host, tranportConfigurations...)
+	proxyUrl, err := utils.CheckShouldUseProxy(proxyReq.Host, Proxy, tranportConfigurations...)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -388,7 +388,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	return nil
 }
 
-func Http(hostname string, port int, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Http(hostname string, port int, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
@@ -407,7 +407,7 @@ func Http(hostname string, port int, proxyoptions options.ProxyOptions, dnsCache
 	engine.Use(func(c *gin.Context) {
 		var w = c.Writer
 		var r = c.Request
-		err := proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, dnsCache, username, password, upstreamResolveIPs, tranportConfigurations...)
+		err := proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, dnsCache, username, password, upstreamResolveIPs, Proxy, tranportConfigurations...)
 		c.Abort()
 
 		if err != nil {
@@ -555,7 +555,7 @@ func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *u
 		log.Printf("upstream-resolve-ips enabled, resolving WebSocket target address %s before connection", targetAddr)
 	}
 
-	resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, proxyoptions, dnsCache,upstreamResolveIPs)
+	resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, proxyoptions, dnsCache, upstreamResolveIPs)
 
 	if err != nil {
 		log.Printf("Failed to resolve WebSocket target address %s: %v, using original", targetAddr, err)

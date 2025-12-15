@@ -39,7 +39,7 @@ import (
 // 返回值:
 // - []dns.SVCB: 查询到的HTTPS服务记录列表。
 // - error: 查询过程中发生的任何错误。
-func DNSQueryHTTPS(domain string, port string, DOHServer string) ([]dns.SVCB, error) {
+func DNSQueryHTTPS(domain string, port string, DOHServer string,Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) ([]dns.SVCB, error) {
 	var msg = new(dns.Msg)
 	var service_domain = domain
 	if port != "443" {
@@ -47,7 +47,7 @@ func DNSQueryHTTPS(domain string, port string, DOHServer string) ([]dns.SVCB, er
 	}
 	msg.SetQuestion(service_domain+".", dns.TypeHTTPS)
 
-	resp, err := DohClient(msg, DOHServer, "")
+	resp, err := DohClient(msg, DOHServer, "",Proxy,tranportConfigurations...)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -106,7 +106,7 @@ func setPortIfMissing(rawURL string) (string, error) {
 // 返回值:
 // r: 代表DNS应答消息的dns.Msg对象。
 // err: 如果过程中发生错误，则返回错误信息。
-func DohClient(msg *dns.Msg, dohServerURL string, dohip string, tranportConfigurations ...func(*http.Transport) *http.Transport) (r *dns.Msg, err error) {
+func DohClient(msg *dns.Msg, dohServerURL string, dohip string, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (r *dns.Msg, err error) {
 	// var ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 	// defer cancel()
 	/* 为了doh的缓存,需要设置id为0 ,可以缓存*/

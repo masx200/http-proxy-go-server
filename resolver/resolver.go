@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 
 	go_socks5 "gitee.com/masx200/go-socks5"
 	"github.com/masx200/http-proxy-go-server/doh"
@@ -52,7 +53,7 @@ func (h *HostsAndDohResolver) LookupIP(ctx context.Context, network string, host
 				}
 			} else {
 				// 使用 DOH
-				ips, errors = doh.ResolveDomainToIPsWithDoh(host, opt.Dohurl, opt.Dohip, h.tranportConfigurations...)
+				ips, errors = doh.ResolveDomainToIPsWithDoh(host, opt.Dohurl, opt.Dohip, h.Proxy, tranportConfigurations...)
 			}
 
 			if len(ips) > 0 {
@@ -88,13 +89,13 @@ func (h *HostsAndDohResolver) Resolve(ctx context.Context, name string) (context
 	return ctx, ips[0], nil
 }
 
-func CreateHostsAndDohResolver(proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
+func CreateHostsAndDohResolver(proxyoptions options.ProxyOptions, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
 	return &HostsAndDohResolver{
 		proxyoptions:           proxyoptions,
 		tranportConfigurations: tranportConfigurations,
 	}
 }
-func CreateDOHResolver(proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
+func CreateDOHResolver(proxyoptions options.ProxyOptions, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
 	return &DOHResolver{
 		proxyoptions:           proxyoptions,
 		tranportConfigurations: tranportConfigurations,
@@ -122,7 +123,7 @@ func (d *DOHResolver) LookupIP(ctx context.Context, network string, host string)
 			continue
 		}
 
-		ips, errors := doh.ResolveDomainToIPsWithDoh(host, opt.Dohurl, opt.Dohip, d.tranportConfigurations...)
+		ips, errors := doh.ResolveDomainToIPsWithDoh(host, opt.Dohurl, opt.Dohip, d.Proxy, tranportConfigurations...)
 		if len(ips) > 0 {
 			return ips, nil
 		}

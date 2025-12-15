@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -108,7 +109,7 @@ func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions ProxyOption
 // 返回值:
 //   - net.Conn: 成功建立的网络连接
 //   - error: 连接过程中发生的错误
-func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upstreamResolveIPs bool, dnsCache interface{}, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upstreamResolveIPs bool, dnsCache interface{}, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	var ctx = context.Background()
 
 	// DNS缓存功能现在通过interface{}调用，避免循环导入
@@ -185,7 +186,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 // 返回值:
 //   - net.Conn: 成功建立的网络连接
 //   - error: 连接过程中发生的错误
-func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, dnsCache interface{}, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, dnsCache interface{}, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, err

@@ -49,7 +49,7 @@ func CreateHostsResolver() NameResolver
 **创建函数**：
 
 ```go
-func CreateDOHResolver(proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver
+func CreateDOHResolver(proxyoptions options.ProxyOptions, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver
 ```
 
 ### 3. DOH3Resolver
@@ -82,7 +82,7 @@ func CreateDOH3Resolver(proxyoptions options.ProxyOptions) NameResolver
 **创建函数**：
 
 ```go
-func CreateHostsAndDohResolver(proxyoptions options.ProxyOptions, tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver
+func CreateHostsAndDohResolver(proxyoptions options.ProxyOptions, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver
 ```
 
 ## 架构图

@@ -26,7 +26,7 @@ import (
 	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
 )
 
-func Simple(hostname string, port int, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Simple(hostname string, port int, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	// tcp 连接，监听 8080 端口
 	l, err := net.Listen("tcp", hostname+":"+fmt.Sprint(port))
 	if err != nil {
@@ -36,7 +36,7 @@ func Simple(hostname string, port int, proxyoptions options.ProxyOptions, dnsCac
 	xh := http_server.GenerateRandomLoopbackIP()
 	x1 := http_server.GenerateRandomIntPort()
 	var upstreamAddress string = xh + ":" + fmt.Sprint(x1)
-	go http_server.Http(xh, x1, proxyoptions, dnsCache, "", "", upstreamResolveIPs, tranportConfigurations...)
+	go http_server.Http(xh, x1, proxyoptions, dnsCache, "", "", upstreamResolveIPs, Proxy, tranportConfigurations...)
 	// 死循环，每当遇到连接时，调用 handle
 	for {
 		client, err := l.Accept()
@@ -45,14 +45,14 @@ func Simple(hostname string, port int, proxyoptions options.ProxyOptions, dnsCac
 			return
 		}
 
-		go Handle(client, upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
+		go Handle(client, upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs, Proxy, tranportConfigurations...)
 	}
 }
-func CheckShouldUseProxy(upstreamAddress string, tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
-	return utils.CheckShouldUseProxy(upstreamAddress, tranportConfigurations...)
+func CheckShouldUseProxy(upstreamAddress string, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
+	return utils.CheckShouldUseProxy(upstreamAddress, Proxy, tranportConfigurations...)
 }
 
-func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	if client == nil {
 		return
 	}
@@ -128,7 +128,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 		upstreamAddress = httpUpstreamAddress
 	}
 	var server net.Conn
-	proxyURL, err := CheckShouldUseProxy(upstreamAddress, tranportConfigurations...)
+	proxyURL, err := CheckShouldUseProxy(upstreamAddress, Proxy, tranportConfigurations...)
 
 	if err != nil {
 		log.Println(err)
@@ -331,7 +331,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.Pr
 		}
 	} else {
 		// log.Println("upstreamAddress:" + httpUpstreamAddress)
-		server, err = dnscache.Proxy_net_DialCached("tcp", upstreamAddress, proxyoptions, upstreamResolveIPs, dnsCache, tranportConfigurations...) //net.Dial("tcp", upstreamAddress)
+		server, err = dnscache.Proxy_net_DialCached("tcp", upstreamAddress, proxyoptions, upstreamResolveIPs, dnsCache, Proxy, tranportConfigurations...) //net.Dial("tcp", upstreamAddress)
 
 		//	for _, err := range errors {
 		//		if err != nil {

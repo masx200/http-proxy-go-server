@@ -26,13 +26,13 @@ import (
 	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
 )
 
-func CheckShouldUseProxy(upstreamAddress string, tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
+func CheckShouldUseProxy(upstreamAddress string, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
 
-	return simple.CheckShouldUseProxy(upstreamAddress, tranportConfigurations...)
+	return simple.CheckShouldUseProxy(upstreamAddress, Proxy, tranportConfigurations...)
 }
 
 // options.ProxyOptions
-func Auth(hostname string, port int, username, password string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Auth(hostname string, port int, username, password string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	// tcp 连接，监听 8080 端口
 	l, err := net.Listen("tcp", hostname+":"+fmt.Sprint(port))
 	if err != nil {
@@ -42,7 +42,7 @@ func Auth(hostname string, port int, username, password string, proxyoptions opt
 	xh := http_server.GenerateRandomLoopbackIP()
 	x1 := http_server.GenerateRandomIntPort()
 	var upstreamAddress string = xh + ":" + fmt.Sprint(rune(x1))
-	go http_server.Http(xh, x1, proxyoptions, dnsCache, username, password, upstreamResolveIPs, tranportConfigurations...)
+	go http_server.Http(xh, x1, proxyoptions, dnsCache, username, password, upstreamResolveIPs, Proxy, tranportConfigurations...)
 	// 死循环，每当遇到连接时，调用 handle
 	for {
 		client, err := l.Accept()
@@ -51,12 +51,12 @@ func Auth(hostname string, port int, username, password string, proxyoptions opt
 			return
 		}
 
-		go Handle(client, username, password, upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
+		go Handle(client, username, password, upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs, Proxy, tranportConfigurations...)
 	}
 }
 
 func Handle(client net.Conn, username, password string, httpUpstreamAddress string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool,
-	tranportConfigurations ...func(*http.Transport) *http.Transport) {
+	Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	if client == nil {
 		return
 	}
@@ -164,7 +164,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		upstreamAddress = httpUpstreamAddress
 	}
 	var server net.Conn
-	proxyURL, err := CheckShouldUseProxy(upstreamAddress, tranportConfigurations...)
+	proxyURL, err := CheckShouldUseProxy(upstreamAddress, Proxy, tranportConfigurations...)
 
 	if err != nil {
 		log.Println(err)
@@ -366,7 +366,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 			log.Println("连接成功：" + upstreamAddress)
 		}
 	} else {
-		server, err = dnscache.Proxy_net_DialCached("tcp", upstreamAddress, proxyoptions, upstreamResolveIPs, dnsCache, tranportConfigurations...) // net.Dial("tcp", upstreamAddress)
+		server, err = dnscache.Proxy_net_DialCached("tcp", upstreamAddress, proxyoptions, upstreamResolveIPs, dnsCache, Proxy, tranportConfigurations...) // net.Dial("tcp", upstreamAddress)
 		if err != nil {
 			log.Println(err)
 			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")

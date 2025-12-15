@@ -2,5 +2,5 @@
 	if len(proxyoptions) > 0 {
 		// 注意: upstreamResolveIPs 的逻辑已在 dnscache 包中实现
 		var ctx = context.Background()
-		return Proxy_net_DialContext(ctx, network, addr, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
+		return Proxy_net_DialContext(ctx, network, addr, proxyoptions, dnsCache, upstreamResolveIPs, Proxy,tranportConfigurations...)
 	} else {
