@@ -22,7 +22,7 @@ type NameResolver = go_socks5.NameResolver
 	}
 */
 type HostsAndDohResolver struct {
-	proxyoptions           options.ProxyOptions
+	proxyoptions           options.ProxyOptionsDNSSLICE
 	tranportConfigurations []func(*http.Transport) *http.Transport
 }
 
@@ -89,13 +89,13 @@ func (h *HostsAndDohResolver) Resolve(ctx context.Context, name string) (context
 	return ctx, ips[0], nil
 }
 
-func CreateHostsAndDohResolver(proxyoptions options.ProxyOptions, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
+func CreateHostsAndDohResolver(Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
 	return &HostsAndDohResolver{
 		proxyoptions:           proxyoptions,
 		tranportConfigurations: tranportConfigurations,
 	}
 }
-func CreateDOHResolver(proxyoptions options.ProxyOptions, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
+func CreateDOHResolver(Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
 	return &DOHResolver{
 		proxyoptions:           proxyoptions,
 		tranportConfigurations: tranportConfigurations,
@@ -103,7 +103,7 @@ func CreateDOHResolver(proxyoptions options.ProxyOptions, Proxy func(*http.Reque
 }
 
 type DOHResolver struct {
-	proxyoptions           options.ProxyOptions
+	proxyoptions           options.ProxyOptionsDNSSLICE
 	tranportConfigurations []func(*http.Transport) *http.Transport
 }
 
@@ -151,14 +151,14 @@ func (d *DOHResolver) Resolve(ctx context.Context, name string) (context.Context
 	return ctx, ips[0], nil
 }
 
-func CreateDOH3Resolver(proxyoptions options.ProxyOptions) NameResolver {
+func CreateDOH3Resolver(proxyoptions options.ProxyOptionsDNSSLICE) NameResolver {
 	return &DOH3Resolver{
 		proxyoptions: proxyoptions,
 	}
 }
 
 type DOH3Resolver struct {
-	proxyoptions options.ProxyOptions
+	proxyoptions options.ProxyOptionsDNSSLICE
 }
 
 // LookupIP implements NameResolver.

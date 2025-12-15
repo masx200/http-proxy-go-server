@@ -706,7 +706,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	var proxyoptions = options.ProxyOptions{}
+	var proxyoptions = options.ProxyOptionsDNSSLICE{}
 
 	// 处理WebSocket代理参数
 	if *upstreamType == "websocket" && *upstreamAddress != "" {
@@ -887,7 +887,7 @@ func main() {
 		if dohalpn == "h3" {
 			protocol = "doh3"
 		}
-		proxyoptions = append(proxyoptions, options.ProxyOption{
+		proxyoptions = append(proxyoptions, options.ProxyOptionDNS{
 			Dohurl:   dohurl,
 			Dohip:    dohip,
 			Dohalpn:  dohalpn,
@@ -904,7 +904,7 @@ func main() {
 			dotip = ""
 		}
 
-		proxyoptions = append(proxyoptions, options.ProxyOption{
+		proxyoptions = append(proxyoptions, options.ProxyOptionDNS{
 			Doturl:   doturl,
 			Dotip:    dotip,
 			Protocol: "dot",
@@ -920,7 +920,7 @@ func main() {
 			doqip = ""
 		}
 
-		proxyoptions = append(proxyoptions, options.ProxyOption{
+		proxyoptions = append(proxyoptions, options.ProxyOptionDNS{
 			Doqurl:   doqurl,
 			Doqip:    doqip,
 			Protocol: "doq",
@@ -1110,7 +1110,7 @@ func main() {
 }
 
 // websocketDialContext 实现WebSocket代理连接
-func websocketDialContext(ctx context.Context, network, addr string, upstream config.UpStream, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) (net.Conn, error) {
+func websocketDialContext(ctx context.Context, network, addr string, upstream config.UpStream, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) (net.Conn, error) {
 	// 解析目标地址
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
@@ -1210,7 +1210,7 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream co
 }
 
 // socks5DialContext 实现SOCKS5代理连接
-func socks5DialContext(ctx context.Context, network, addr string, upstream config.UpStream, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) (net.Conn, error) {
+func socks5DialContext(ctx context.Context, network, addr string, upstream config.UpStream, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) (net.Conn, error) {
 	// 解析SOCKS5代理地址
 	proxyURL, err := url.Parse(upstream.SOCKS5_PROXY)
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -25,7 +26,7 @@ import (
 //   - net.Conn: 成功时返回与目标地址建立的网络连接。
 //   - error: 如果连接失败或代理响应异常，返回相应的错误信息。
 
-func ConnectViaHttpProxy(proxyURL *url.URL, targetAddr string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) (net.Conn, error) {
+func ConnectViaHttpProxy(proxyURL *url.URL, targetAddr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) (net.Conn, error) {
 	log.Println("开始连接代理服务器", proxyURL, targetAddr)
 	var scheme = proxyURL.Scheme
 

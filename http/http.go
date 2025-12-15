@@ -88,7 +88,7 @@ func parseForwardedHeader(header string) ([]ForwardedBy, error) {
 
 	return forwardedByList, nil
 }
-func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) error {
+func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) error {
 	log.Println("method:", r.Method)
 	log.Println("url:", r.URL)
 	log.Println("host:", r.Host)
@@ -388,7 +388,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	return nil
 }
 
-func Http(hostname string, port int, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Http(hostname string, port int, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
@@ -494,7 +494,7 @@ func isAuthenticated(proxyAuth, expectedUsername, expectedPassword string) bool 
 
 	return username == expectedUsername && password == expectedPassword
 }
-func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *url.URL, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) (net.Conn, error) {
+func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *url.URL, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) (net.Conn, error) {
 	// 解析目标地址
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
@@ -612,7 +612,7 @@ func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *u
 }
 
 // resolveTargetAddressForAuth 解析目标地址的域名为IP地址（用于auth模块）
-func resolveTargetAddressForAuth(addr string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) ([]string, error) {
+func resolveTargetAddressForAuth(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) ([]string, error) {
 	if !upstreamResolveIPs || len(proxyoptions) == 0 || dnsCache == nil {
 		return []string{addr}, nil
 	}

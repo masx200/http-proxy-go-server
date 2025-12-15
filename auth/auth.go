@@ -32,7 +32,7 @@ func CheckShouldUseProxy(upstreamAddress string, Proxy func(*http.Request) (*url
 }
 
 // options.ProxyOptions
-func Auth(hostname string, port int, username, password string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Auth(hostname string, port int, username, password string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	// tcp 连接，监听 8080 端口
 	l, err := net.Listen("tcp", hostname+":"+fmt.Sprint(port))
 	if err != nil {
@@ -55,7 +55,7 @@ func Auth(hostname string, port int, username, password string, proxyoptions opt
 	}
 }
 
-func Handle(client net.Conn, username, password string, httpUpstreamAddress string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool,
+func Handle(client net.Conn, username, password string, httpUpstreamAddress string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool,
 	Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	if client == nil {
 		return
@@ -464,7 +464,7 @@ func isAuthenticated(proxyAuth, expectedUsername, expectedPassword string) bool 
 }
 
 // resolveTargetAddressForAuth 解析目标地址的域名为IP地址（用于auth模块）
-func resolveTargetAddressForAuth(addr string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) ([]string, error) {
+func resolveTargetAddressForAuth(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) ([]string, error) {
 	if !upstreamResolveIPs || len(proxyoptions) == 0 || dnsCache == nil {
 		return []string{addr}, nil
 	}

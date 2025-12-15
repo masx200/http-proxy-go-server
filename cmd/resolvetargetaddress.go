@@ -6,6 +6,8 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/masx200/http-proxy-go-server/dnscache"
@@ -14,7 +16,7 @@ import (
 
 // resolveTargetAddress 解析目标地址的域名为IP地址（如果启用了upstreamResolveIPs）
 // 返回所有解析的IP地址数组，供调用者实现轮询
-func resolveTargetAddress(addr string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) ([]string, error) {
+func resolveTargetAddress(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) ([]string, error) {
 	if !upstreamResolveIPs || len(proxyoptions) == 0 || dnsCache == nil {
 		return []string{addr}, nil
 	}

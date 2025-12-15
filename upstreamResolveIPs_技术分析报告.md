@@ -108,7 +108,7 @@ type Config struct {
 
 ```go
 // 带缓存的网络拨号函数 (第348行)
-func Proxy_net_DialCached(network string, addr string, proxyoptions options.ProxyOptions, 
+func Proxy_net_DialCached(network string, addr string, Proxy func(*http.Request) (*url.URL, error),proxyoptions options.ProxyOptions, 
     upstreamResolveIPs bool, dnsCache *DNSCache, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
     return proxy_net_DialWithResolver(nil, network, addr, proxyoptions, upstreamResolveIPs, 
         dnsCache, CreateHostsAndDohResolverCached(proxyoptions, dnsCache, Proxy,tranportConfigurations...))
@@ -116,7 +116,7 @@ func Proxy_net_DialCached(network string, addr string, proxyoptions options.Prox
 
 // 核心解析逻辑 (第364行)
 func proxy_net_DialWithResolver(ctx context.Context, network string, addr string, 
-    proxyoptions options.ProxyOptions, upstreamResolveIPs bool, dnsCache interface{}, 
+    Proxy func(*http.Request) (*url.URL, error),proxyoptions options.ProxyOptions, upstreamResolveIPs bool, dnsCache interface{}, 
     resolver NameResolver, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
     if upstreamResolveIPs && len(proxyoptions) > 0 {
         log.Printf("upstreamResolveIPs enabled for address: %s", addr)
@@ -150,7 +150,7 @@ func Proxy_net_DialContext(ctx context.Context, network string, address string,
 
 ```go
 func Auth(hostname string, port int, username, password string, 
-    proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, 
+    Proxy func(*http.Request) (*url.URL, error),proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, 
     upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport)
 ```
 
@@ -166,7 +166,7 @@ server, err = connect.ConnectViaHttpProxy(proxyURL, upstreamAddress,
 **函数签名**:
 
 ```go
-func Simple(hostname string, port int, proxyoptions options.ProxyOptions, 
+func Simple(hostname string, port int, Proxy func(*http.Request) (*url.URL, error),proxyoptions options.ProxyOptions, 
     dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, 
     Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport)
 ```
@@ -177,7 +177,7 @@ func Simple(hostname string, port int, proxyoptions options.ProxyOptions,
 
 ```go
 func Tls(server_cert string, server_key, hostname string, port int, 
-    proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, 
+    Proxy func(*http.Request) (*url.URL, error),proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, 
     upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport)
 ```
 
@@ -187,7 +187,7 @@ func Tls(server_cert string, server_key, hostname string, port int,
 
 ```go
 func Tls_auth(server_cert string, server_key, hostname string, port int, 
-    username, password string, proxyoptions options.ProxyOptions, 
+    username, password string, Proxy func(*http.Request) (*url.URL, error),proxyoptions options.ProxyOptions, 
     dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, 
     Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport)
 ```
@@ -201,7 +201,7 @@ func Tls_auth(server_cert string, server_key, hostname string, port int,
 ```go
 // 代理处理器 (第90行)
 func proxyHandler(w http.ResponseWriter, r *http.Request, LocalAddr string, 
-    proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, 
+    Proxy func(*http.Request) (*url.URL, error),proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, 
     username, password string, upstreamResolveIPs bool, 
     Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) error
 
@@ -217,7 +217,7 @@ return dnscache.Proxy_net_DialContextCached(ctx, network, addr,
 ```go
 // HTTP代理连接 (第63行)
 func ConnectViaHttpProxy(proxyURL *url.URL, targetAddr string, 
-    proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, 
+    Proxy func(*http.Request) (*url.URL, error),proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, 
     upstreamResolveIPs bool) (net.Conn, error)
 
 // DNS解析逻辑 (第108行)
@@ -264,7 +264,7 @@ connect/connect.go (具体连接实现)
 
 ```go
 // 主解析函数 (cmd/main.go:35)
-func resolveTargetAddress(addr string, proxyoptions options.ProxyOptions, 
+func resolveTargetAddress(addr string, Proxy func(*http.Request) (*url.URL, error),proxyoptions options.ProxyOptions, 
     dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) (string, error) {
     if !upstreamResolveIPs || len(proxyoptions) == 0 || dnsCache == nil {
         return addr, nil
@@ -300,7 +300,7 @@ func resolveTargetAddress(addr string, proxyoptions options.ProxyOptions,
 ```go
 // WebSocket代理连接 (cmd/main.go:1121)
 func websocketDialContext(ctx context.Context, network, addr string, 
-    upstream config.UpStream, proxyoptions options.ProxyOptions, 
+    upstream config.UpStream, Proxy func(*http.Request) (*url.URL, error),proxyoptions options.ProxyOptions, 
     dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) (net.Conn, error) {
     
     // 如果启用了DNS解析，先解析目标地址

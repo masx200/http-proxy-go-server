@@ -67,7 +67,7 @@ connection, err1 := dialer.DialContext(ctx, network, newAddr)  // ctx is nil!
 
 ```go
 // dnscache/caching_resolver.go 第 364 行后添加
-func proxy_net_DialWithResolver(ctx context.Context, network string, addr string, proxyoptions options.ProxyOptions, upstreamResolveIPs bool, dnsCache interface{}, resolver NameResolver, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func proxy_net_DialWithResolver(ctx context.Context, network string, addr string, Proxy func(*http.Request) (*url.URL, error),proxyoptions options.ProxyOptions, upstreamResolveIPs bool, dnsCache interface{}, resolver NameResolver, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
     hostname, port, err := net.SplitHostPort(addr)
     if err != nil {
         return nil, err
@@ -93,20 +93,20 @@ func proxy_net_DialWithResolver(ctx context.Context, network string, addr string
 
 ```go
 // 修改前
-func Handle(client net.Conn, username, password string, httpUpstreamAddress string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Handle(client net.Conn, username, password string, httpUpstreamAddress string, Proxy func(*http.Request) (*url.URL, error),proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 
 // 修改后  
-func Handle(ctx context.Context, client net.Conn, username, password string, httpUpstreamAddress string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Handle(ctx context.Context, client net.Conn, username, password string, httpUpstreamAddress string, Proxy func(*http.Request) (*url.URL, error),proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 ```
 
 **simple/simple.go:**
 
 ```go
 // 修改前
-func Handle(client net.Conn, httpUpstreamAddress string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Handle(client net.Conn, httpUpstreamAddress string, Proxy func(*http.Request) (*url.URL, error),proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 
 // 修改后
-func Handle(ctx context.Context, client net.Conn, httpUpstreamAddress string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Handle(ctx context.Context, client net.Conn, httpUpstreamAddress string, Proxy func(*http.Request) (*url.URL, error),proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 ```
 
 #### 步骤 2: 修改调用处

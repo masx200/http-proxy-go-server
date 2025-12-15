@@ -25,7 +25,7 @@ func (e ErrorArray) Error() string {
 	return strings.Join(errorMessages, "; ")
 }
 
-type ProxyOption struct {
+type ProxyOptionDNS struct {
 	Dohurl  string
 	Dohip   string
 	Dohalpn string
@@ -37,7 +37,7 @@ type ProxyOption struct {
 	Protocol string // "doh", "dot", "doq", "doh3"
 }
 
-type ProxyOptions = []ProxyOption
+type ProxyOptionsDNSSLICE = []ProxyOptionDNS
 
 func IsIP(domain string) bool {
 	return net.ParseIP(domain) != nil
@@ -70,7 +70,7 @@ func Shuffle[T any](slice []T) []T {
 // 返回值:
 //   - []net.IP: 解析出的IP地址列表
 //   - error: 解析过程中发生的错误
-func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions ProxyOptions, dnsCache interface{}) ([]net.IP, error) {
+func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions ProxyOptionsDNSSLICE, dnsCache interface{}) ([]net.IP, error) {
 	hostname, _, err := net.SplitHostPort(upstreamAddress)
 	if err != nil {
 		return nil, fmt.Errorf("invalid upstream address: %s", upstreamAddress)
@@ -109,7 +109,7 @@ func ResolveUpstreamDomainToIPs(upstreamAddress string, proxyoptions ProxyOption
 // 返回值:
 //   - net.Conn: 成功建立的网络连接
 //   - error: 连接过程中发生的错误
-func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upstreamResolveIPs bool, dnsCache interface{}, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptionsDNSSLICE, upstreamResolveIPs bool, dnsCache interface{}, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	var ctx = context.Background()
 
 	// DNS缓存功能现在通过interface{}调用，避免循环导入
@@ -186,7 +186,7 @@ func Proxy_net_Dial(network string, addr string, proxyoptions ProxyOptions, upst
 // 返回值:
 //   - net.Conn: 成功建立的网络连接
 //   - error: 连接过程中发生的错误
-func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptions, dnsCache interface{}, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
+func Proxy_net_DialContext(ctx context.Context, network string, address string, proxyoptions ProxyOptionsDNSSLICE, dnsCache interface{}, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (net.Conn, error) {
 	hostname, port, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, err
