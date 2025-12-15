@@ -14,3 +14,21 @@ curl -v -I -X GET -x http://localhost:8080 http://www.zhihu.com
 ```
 curl -v -I -X GET -x http://localhost:8080 https://www.zhihu.com
 ``` 
+
+
+```
+taskkill /f /im go.exe
+``` 
+
+```
+taskkill /f /im cmd.exe
+``` 
+
+
+```
+taskkill /f /im socks5_test_server_standalone.exe
+``` 
+
+```
+taskkill /f /im main.exe
+``` 
