@@ -508,7 +508,7 @@ func resolveTargetAddressForSimple(addr string, Proxy func(*http.Request) (*url.
 	log.Printf("Resolving SOCKS5 target address %s using DoH infrastructure", host)
 
 	// 使用DoH解析
-	resolver := dnscache.CreateHostsAndDohResolverCachedSimple(proxyoptions, dnsCache)
+	resolver := dnscache.CreateHostsAndDohResolverCachedSimple(proxyoptions, dnsCache, Proxy, transportConfigurations...)
 	ips, err := resolver.LookupIP(context.Background(), "tcp", host)
 	if err != nil {
 		log.Printf("DoH resolution failed for SOCKS5 target %s: %v", host, err)

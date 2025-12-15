@@ -88,7 +88,7 @@ func parseForwardedHeader(header string) ([]ForwardedBy, error) {
 
 	return forwardedByList, nil
 }
-func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar, */, LocalAddr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) error {
+func proxyHandler(w http.ResponseWriter, r *http.Request, LocalAddr string, proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) error {
 	log.Println("method:", r.Method)
 	log.Println("url:", r.URL)
 	log.Println("host:", r.Host)
@@ -388,7 +388,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 	return nil
 }
 
-func Http(hostname string, port int, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Http(hostname string, port int, proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
@@ -630,7 +630,7 @@ func resolveTargetAddressForAuth(addr string, Proxy func(*http.Request) (*url.UR
 	log.Printf("Resolving SOCKS5 target address %s using DoH infrastructure", host)
 
 	// 使用DoH解析
-	resolver := dnscache.CreateHostsAndDohResolverCachedSimple(proxyoptions, dnsCache)
+	resolver := dnscache.CreateHostsAndDohResolverCachedSimple(proxyoptions, dnsCache, Proxy, transportConfigurations...)
 	ips, err := resolver.LookupIP(context.Background(), "tcp", host)
 	if err != nil {
 		log.Printf("DoH resolution failed for SOCKS5 target %s: %v", host, err)

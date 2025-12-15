@@ -32,7 +32,7 @@ func CheckShouldUseProxy(upstreamAddress string, Proxy func(*http.Request) (*url
 }
 
 // options.ProxyOptions
-func Auth(hostname string, port int, username, password string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Auth(hostname string, port int, username, password string,  proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	// tcp 连接，监听 8080 端口
 	l, err := net.Listen("tcp", hostname+":"+fmt.Sprint(port))
 	if err != nil {
@@ -55,7 +55,7 @@ func Auth(hostname string, port int, username, password string, Proxy func(*http
 	}
 }
 
-func Handle(client net.Conn, username, password string, httpUpstreamAddress string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool,
+func Handle(client net.Conn, username, password string, httpUpstreamAddress string,  proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool,
 	Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	if client == nil {
 		return
@@ -464,7 +464,7 @@ func isAuthenticated(proxyAuth, expectedUsername, expectedPassword string) bool 
 }
 
 // resolveTargetAddressForAuth 解析目标地址的域名为IP地址（用于auth模块）
-func resolveTargetAddressForAuth(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) ([]string, error) {
+func resolveTargetAddressForAuth(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, transportConfigurations ...func(*http.Transport) *http.Transport) ([]string, error) {
 	if !upstreamResolveIPs || len(proxyoptions) == 0 || dnsCache == nil {
 		return []string{addr}, nil
 	}
@@ -482,7 +482,7 @@ func resolveTargetAddressForAuth(addr string, Proxy func(*http.Request) (*url.UR
 	log.Printf("Resolving SOCKS5 target address %s using DoH infrastructure", host)
 
 	// 使用DoH解析
-	resolver := dnscache.CreateHostsAndDohResolverCachedSimple(proxyoptions, dnsCache)
+	resolver := dnscache.CreateHostsAndDohResolverCachedSimple(proxyoptions, dnsCache, Proxy, transportConfigurations...)
 	ips, err := resolver.LookupIP(context.Background(), "tcp", host)
 	if err != nil {
 		log.Printf("DoH resolution failed for SOCKS5 target %s: %v", host, err)
