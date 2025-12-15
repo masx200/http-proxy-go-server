@@ -8,11 +8,9 @@ go run -v ./cmd  -upstream-resolve-ips  -upstream-type socks5 -upstream-username
 ```
 
 ```
-
-curl -v -I -X GET -x http://localhost:8080 http://www.baidu.com
+curl -v -I -X GET -x http://localhost:8080 http://www.zhihu.com
 ```
 
 ```
-
-curl -v -I -X GET -x http://localhost:8080 https://www.baidu.com
+curl -v -I -X GET -x http://localhost:8080 https://www.zhihu.com
 ``` 

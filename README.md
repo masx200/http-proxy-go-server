@@ -188,7 +188,7 @@ go run -v ./cmd/ -upstream-resolve-ips=true -upstream-type http -upstream-addres
 ## 使用 curl 测试
 
 ```
-curl -x http://127.0.0.1:8080 http://www.baidu.com
+curl -x http://127.0.0.1:8080 http://www.zhihu.com
 ```
 
 ## WebSocket 代理支持任务总结

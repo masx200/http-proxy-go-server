@@ -13,9 +13,9 @@ exec.Command 命令添加统一的日志记录功能。
 
 1. `go build -o main.exe ../cmd/` - 编译代理服务器
 2. `./main.exe` - 启动代理服务器
-3. `curl -v -I http://www.baidu.com -x http://localhost:8080` - 测试 1
+3. `curl -v -I http://www.zhihu.com -x http://localhost:8080` - 测试 1
 4. `curl -v -I -L http://www.so.com -x http://localhost:8080` - 测试 2
-5. `curl -v -I https://www.baidu.com -x http://localhost:8080` - 测试 3
+5. `curl -v -I https://www.zhihu.com -x http://localhost:8080` - 测试 3
 6. `taskkill /F /IM go.exe` - 终止 go 进程
 7. `netstat -ano | findstr :1080` - 查找 1080 端口进程
 
@@ -23,9 +23,9 @@ exec.Command 命令添加统一的日志记录功能。
 
 1. `go build -o main.exe ../cmd/` - 编译代理服务器
 2. `./main.exe -dohurl ...` - 启动 DOH 代理服务器
-3. `curl -v -I http://www.baidu.com -x http://localhost:8080` - 测试 1
+3. `curl -v -I http://www.zhihu.com -x http://localhost:8080` - 测试 1
 4. `curl -v -I -L http://www.so.com -x http://localhost:8080` - 测试 2
-5. `curl -v -I https://www.baidu.com -x http://localhost:8080` - 测试 3
+5. `curl -v -I https://www.zhihu.com -x http://localhost:8080` - 测试 3
 6. `taskkill /F /IM go.exe` - 终止 go 进程
 7. `netstat -ano | findstr :1080` - 查找 1080 端口进程
 
@@ -36,8 +36,8 @@ exec.Command 命令添加统一的日志记录功能。
    服务器
 3. `./main.exe -mode server -protocol socks5 -addr :18080 -upstream-type websocket -upstream-address ws://localhost:8080` -
    启动 SOCKS5 服务器
-4. `curl -v -I http://www.baidu.com -x socks5://localhost:18080` - 测试 1
-5. `curl -v -I https://www.baidu.com -x socks5://localhost:18080` - 测试 2
+4. `curl -v -I http://www.zhihu.com -x socks5://localhost:18080` - 测试 1
+5. `curl -v -I https://www.zhihu.com -x socks5://localhost:18080` - 测试 2
 6. `taskkill /F /IM go.exe` - 终止 go 进程
 7. ProcessManager.go 中的 `taskkill /F /T /PID ...` - 终止子进程
 

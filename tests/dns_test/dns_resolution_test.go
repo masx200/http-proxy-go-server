@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	TestDomain    = "www.baidu.com"
+	TestDomain    = "www.zhihu.com"
 	AliDNSDoHURL  = "https://dns.alidns.com/dns-query"
 	AliDNSDoH3URL = "https://dns.alidns.com/dns-query"
 	AliDNSDoTURL  = "tls://dns.alidns.com:853"

@@ -221,11 +221,11 @@ func runProxyServer(t *testing.T, logfilename string) {
 	// 第一个curl测试
 	testResults = append(testResults, "### 测试1: 基本HTTP代理")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `curl -v -I http://www.baidu.com -x http://localhost:18080`")
+	testResults = append(testResults, "执行命令: `curl -v -I http://www.zhihu.com -x http://localhost:18080`")
 	testResults = append(testResults, "")
 
 	// 创建curl进程
-	curlCmd1 := processManager.Command("curl", "-v", "-I", "http://www.baidu.com", "-x", "http://localhost:18080")
+	curlCmd1 := processManager.Command("curl", "-v", "-I", "http://www.zhihu.com", "-x", "http://localhost:18080")
 	// 创建缓冲区来捕获curl输出
 	var curlOutput1 bytes.Buffer
 	curlCmd1.Stdout = &curlOutput1
@@ -301,11 +301,11 @@ func runProxyServer(t *testing.T, logfilename string) {
 	// 测试HTTPS代理功能
 	testResults = append(testResults, "### 测试3: HTTPS代理")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `curl -v -I https://www.baidu.com -x http://localhost:18080`")
+	testResults = append(testResults, "执行命令: `curl -v -I https://www.zhihu.com -x http://localhost:18080`")
 	testResults = append(testResults, "")
 
 	// 创建curl进程
-	curlCmd3 := processManager.Command("curl", "-v", "-I", "https://www.baidu.com", "-x", "http://localhost:18080")
+	curlCmd3 := processManager.Command("curl", "-v", "-I", "https://www.zhihu.com", "-x", "http://localhost:18080")
 	// 创建缓冲区来捕获curl输出
 	var curlOutput3 bytes.Buffer
 	curlCmd3.Stdout = &curlOutput3
@@ -605,7 +605,7 @@ func isProxyServerRunning() bool {
 	}
 
 	// 创建一个测试请求
-	req, err := http.NewRequest("GET", "http://www.baidu.com", nil)
+	req, err := http.NewRequest("GET", "http://www.zhihu.com", nil)
 	if err != nil {
 		return false
 	}

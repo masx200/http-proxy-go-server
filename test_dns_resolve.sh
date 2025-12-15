@@ -29,11 +29,11 @@ sleep 3
 
 echo "3. 发送测试请求..."
 echo "测试HTTP请求（应该显示DNS解析日志）:"
-curl -v -I -X GET -x http://localhost:8080 http://www.baidu.com 2>&1 | grep -E "(upstream-resolve-ips|Resolving|resolved)"
+curl -v -I -X GET -x http://localhost:8080 http://www.zhihu.com 2>&1 | grep -E "(upstream-resolve-ips|Resolving|resolved)"
 
 echo
 echo "测试HTTPS请求（应该显示DNS解析日志）:"
-curl -v -I -X GET -x http://localhost:8080 https://www.baidu.com 2>&1 | grep -E "(upstream-resolve-ips|Resolving|resolved)"
+curl -v -I -X GET -x http://localhost:8080 https://www.zhihu.com 2>&1 | grep -E "(upstream-resolve-ips|Resolving|resolved)"
 
 echo
 echo "4. 清理进程..."

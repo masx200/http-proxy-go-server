@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Before
 ```bash
-curl -x http://127.0.0.1:8080 https://www.baidu.com
+curl -x http://127.0.0.1:8080 https://www.zhihu.com
 # Result: HTTP/1.1 502 Bad Gateway
 # Error: failed to read proxy response: EOF
 # SOCKS5 Error: Unsupported SOCKS version: [67]
@@ -42,7 +42,7 @@ curl -x http://127.0.0.1:8080 https://www.baidu.com
 
 ### After
 ```bash
-curl -x http://127.0.0.1:8080 https://www.baidu.com
+curl -x http://127.0.0.1:8080 https://www.zhihu.com
 # Result: HTTP/1.1 200 Connection established
 # Success: Full HTTPS response received
 # SOCKS5 Log: SOCKS5 connection handled successfully

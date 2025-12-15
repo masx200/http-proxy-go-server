@@ -157,7 +157,7 @@ func runProxyServerDOH(t *testing.T, logfilename string) {
 
 	// 测试1：通过代理访问HTTP网站
 	testResults = append(testResults, "测试1: 通过代理访问HTTP网站 (baidu.com)")
-	curlCmd1 := processManager.Command("curl", "-v", "-I", "http://www.baidu.com", "-x", "http://localhost:18080")
+	curlCmd1 := processManager.Command("curl", "-v", "-I", "http://www.zhihu.com", "-x", "http://localhost:18080")
 
 	var curlOutput1 bytes.Buffer
 	curlCmd1.Stdout = &curlOutput1
@@ -221,7 +221,7 @@ func runProxyServerDOH(t *testing.T, logfilename string) {
 
 	// 测试3：通过代理访问HTTPS网站
 	testResults = append(testResults, "测试3: 通过代理访问HTTPS网站 (baidu.com)")
-	curlCmd3 := processManager.Command("curl", "-v", "-I", "https://www.baidu.com", "-x", "http://localhost:18080")
+	curlCmd3 := processManager.Command("curl", "-v", "-I", "https://www.zhihu.com", "-x", "http://localhost:18080")
 
 	var curlOutput3 bytes.Buffer
 	curlCmd3.Stdout = &curlOutput3
@@ -399,7 +399,7 @@ func isDOHProxyServerRunning() bool {
 	}
 
 	// 创建一个测试请求
-	req, err := http.NewRequest("GET", "http://www.baidu.com", nil)
+	req, err := http.NewRequest("GET", "http://www.zhihu.com", nil)
 	if err != nil {
 		return false
 	}

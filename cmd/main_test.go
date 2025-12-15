@@ -55,13 +55,13 @@ func TestSelectProxyURLWithCIDR(t *testing.T) {
 
 		{
 			name:        "qq域名包含匹配",
-			domain:      "www.qq.com",
+			domain:      "www.zhihu.com",
 			expectedURL: "http://proxy1.example.com:8080", // 非HTTPS域名返回HTTP代理
 			expectError: false,
 		},
 		{
 			name:        "Google域名包含匹配",
-			domain:      "www.baidu.com",
+			domain:      "www.zhihu.com",
 			expectedURL: "http://proxy3.example.com:8080", // 非HTTPS域名返回HTTP代理
 			expectError: false,
 		},
@@ -310,7 +310,7 @@ func TestSelectProxyURLWithCIDR_WebSocketProxy(t *testing.T) {
 		// Fallback到HTTP代理测试
 		{
 			name:        "Fallback到HTTP代理-无WebSocket代理",
-			domain:      "www.baidu.com",
+			domain:      "www.zhihu.com",
 			expectedURL: "http://proxy3.example.com:8080", // proxy3没有WS_PROXY，应该返回HTTP代理
 			expectError: false,
 		},

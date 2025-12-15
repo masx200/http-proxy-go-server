@@ -221,10 +221,10 @@ func runWebSockethttpProxy(t *testing.T, logfilename string) {
 	// 测试HTTP代理
 	testResults = append(testResults, "### 测试1: HTTP代理通过级联")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `curl -v -I http://www.baidu.com -x http://localhost:18080`")
+	testResults = append(testResults, "执行命令: `curl -v -I http://www.zhihu.com -x http://localhost:18080`")
 	testResults = append(testResults, "")
 
-	curlCmd1 := processManager.Command("curl", "-v", "-I", "http://www.baidu.com", "-x", "http://localhost:18080")
+	curlCmd1 := processManager.Command("curl", "-v", "-I", "http://www.zhihu.com", "-x", "http://localhost:18080")
 	var curlOutput1 bytes.Buffer
 	curlCmd1.Stdout = &curlOutput1
 	curlCmd1.Stderr = &curlOutput1
@@ -264,10 +264,10 @@ func runWebSockethttpProxy(t *testing.T, logfilename string) {
 	// 测试HTTPS代理
 	testResults = append(testResults, "### 测试2: HTTPS代理通过级联")
 	testResults = append(testResults, "")
-	testResults = append(testResults, "执行命令: `curl -v -I https://www.baidu.com -x http://localhost:18080`")
+	testResults = append(testResults, "执行命令: `curl -v -I https://www.zhihu.com -x http://localhost:18080`")
 	testResults = append(testResults, "")
 
-	curlCmd2 := processManager.Command("curl", "-v", "-I", "https://www.baidu.com", "-x", "http://localhost:18080")
+	curlCmd2 := processManager.Command("curl", "-v", "-I", "https://www.zhihu.com", "-x", "http://localhost:18080")
 	var curlOutput2 bytes.Buffer
 	curlCmd2.Stdout = &curlOutput2
 	curlCmd2.Stderr = &curlOutput2
@@ -461,7 +461,7 @@ func ishttpProxyRunning() bool {
 	}
 
 	// 创建一个测试请求
-	req, err := http.NewRequest("GET", "http://www.baidu.com", nil)
+	req, err := http.NewRequest("GET", "http://www.zhihu.com", nil)
 	if err != nil {
 		return false
 	}
