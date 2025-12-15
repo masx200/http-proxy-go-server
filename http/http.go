@@ -190,14 +190,28 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 				//				// 发起连接
 				return dialer.DialContext(ctx, network, addr)
 			}
-			//				// 用指定的 IP 地址和原端口创建新地址
-			//				newAddr := net.JoinHostPort(serverIP, port)
-			//				// 创建 net.Dialer 实例
-			//				dialer := &net.Dialer{}
-			//				// 发起连接
-			//				return dialer.DialContext(ctx, network, newAddr)
 
-			return dnscache.Proxy_net_DialContextCached(ctx, network, addr, proxyoptions, dnsCache, upstreamResolveIPs)
+			// 如果启用了上游IP解析，先解析目标地址
+			targetAddr := addr
+			if upstreamResolveIPs {
+				log.Printf("upstream-resolve-ips enabled, resolving target address %s before connection", targetAddr)
+
+				resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, proxyoptions, dnsCache, upstreamResolveIPs)
+				if err != nil {
+					log.Printf("Failed to resolve target address %s: %v, using original", targetAddr, err)
+					resolvedAddrs = []string{targetAddr}
+				}
+
+				// 使用轮询从解析的地址中选择一个
+				resolvedAddr := resolveTargetAddressForAuthWithRoundRobin(resolvedAddrs, targetAddr)
+
+				if upstreamResolveIPs && resolvedAddr != targetAddr {
+					log.Printf("Using resolved address %s instead of original %s", resolvedAddr, targetAddr)
+					targetAddr = resolvedAddr
+				}
+			}
+
+			return dnscache.Proxy_net_DialContextCached(ctx, network, targetAddr, proxyoptions, dnsCache, upstreamResolveIPs)
 		},
 		DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 
@@ -206,12 +220,43 @@ func proxyHandler(w http.ResponseWriter, r *http.Request /*  jar *cookiejar.Jar,
 			if err != nil {
 				return nil, err
 			}
+
+			// 如果启用了上游IP解析，先解析目标地址
+			targetAddr := addr
+			if upstreamResolveIPs {
+				log.Printf("upstream-resolve-ips enabled, resolving TLS target address %s before connection", targetAddr)
+
+				resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, proxyoptions, dnsCache, upstreamResolveIPs)
+				if err != nil {
+					log.Printf("Failed to resolve TLS target address %s: %v, using original", targetAddr, err)
+					resolvedAddrs = []string{targetAddr}
+				}
+
+				// 使用轮询从解析的地址中选择一个
+				resolvedAddr := resolveTargetAddressForAuthWithRoundRobin(resolvedAddrs, targetAddr)
+
+				if upstreamResolveIPs && resolvedAddr != targetAddr {
+					log.Printf("Using resolved TLS address %s instead of original %s", resolvedAddr, targetAddr)
+					targetAddr = resolvedAddr
+
+					// 如果地址被解析为IP，需要更新hostname用于TLS配置
+					resolvedHostname, _, err := net.SplitHostPort(resolvedAddr)
+					if err == nil {
+						// 只有当解析后的hostname不是IP时才更新ServerName
+						// 如果是IP地址，保持原来的hostname作为SNI
+						if net.ParseIP(resolvedHostname) == nil {
+							hostname = resolvedHostname
+						}
+					}
+				}
+			}
+
 			//				// 用指定的 IP 地址和原端口创建新地址
 			//				newAddr := net.JoinHostPort(serverIP, port)
 			//				// 创建 net.Dialer 实例
 			//				dialer := &net.Dialer{}
 			//				// 发起连接
-			conn, err := dnscache.Proxy_net_DialContextCached(ctx, network, addr, proxyoptions, dnsCache, upstreamResolveIPs) //dialer.DialContext(ctx, network, newAddr)
+			conn, err := dnscache.Proxy_net_DialContextCached(ctx, network, targetAddr, proxyoptions, dnsCache, upstreamResolveIPs) //dialer.DialContext(ctx, network, newAddr)
 			if err != nil {
 				return nil, err
 			}
