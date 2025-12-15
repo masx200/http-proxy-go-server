@@ -19,7 +19,7 @@ func main() {
 				},
 			},
 		},
-		Rules: socks5.PermitAll(),
+		Rules:  socks5.PermitAll(),
 		Logger: log.New(os.Stdout, "[SOCKS5] ", log.LstdFlags),
 	}
 

@@ -66,6 +66,7 @@ func TestSOCKS5ClientWithStandaloneServer(t *testing.T) {
 		t.Logf("响应头数量: %d", len(resp2.Header))
 	}
 }
+
 // TestSOCKS5ClientWithStandaloneServer 测试golang.org/x/net/proxy客户端连接到独立SOCKS5服务器
 func TestSOCKS5ClientWithStandaloneServer8086(t *testing.T) {
 	// 等待SOCKS5服务器完全启动
