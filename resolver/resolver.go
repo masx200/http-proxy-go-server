@@ -23,7 +23,8 @@ type NameResolver = go_socks5.NameResolver
 */
 type HostsAndDohResolver struct {
 	proxyoptions           options.ProxyOptionsDNSSLICE
-	tranportConfigurations []func(*http.Transport) *http.Transport
+	Proxy                  func(*http.Request) (*url.URL, error)
+	transportConfigurations []func(*http.Transport) *http.Transport
 }
 
 // LookupIP implements NameResolver.
@@ -53,7 +54,7 @@ func (h *HostsAndDohResolver) LookupIP(ctx context.Context, network string, host
 				}
 			} else {
 				// 使用 DOH
-				ips, errors = doh.ResolveDomainToIPsWithDoh(host, opt.Dohurl, opt.Dohip, h.Proxy, tranportConfigurations...)
+				ips, errors = doh.ResolveDomainToIPsWithDoh(host, opt.Dohurl, opt.Dohip, h.Proxy, h.transportConfigurations...)
 			}
 
 			if len(ips) > 0 {
@@ -89,22 +90,25 @@ func (h *HostsAndDohResolver) Resolve(ctx context.Context, name string) (context
 	return ctx, ips[0], nil
 }
 
-func CreateHostsAndDohResolver(Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
+func CreateHostsAndDohResolver(Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, transportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
 	return &HostsAndDohResolver{
 		proxyoptions:           proxyoptions,
-		tranportConfigurations: tranportConfigurations,
+		Proxy:                  Proxy,
+		transportConfigurations: transportConfigurations,
 	}
 }
-func CreateDOHResolver(Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
+func CreateDOHResolver(Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, transportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
 	return &DOHResolver{
 		proxyoptions:           proxyoptions,
-		tranportConfigurations: tranportConfigurations,
+		Proxy:                  Proxy,
+		transportConfigurations: transportConfigurations,
 	}
 }
 
 type DOHResolver struct {
 	proxyoptions           options.ProxyOptionsDNSSLICE
-	tranportConfigurations []func(*http.Transport) *http.Transport
+	Proxy                  func(*http.Request) (*url.URL, error)
+	transportConfigurations []func(*http.Transport) *http.Transport
 }
 
 // LookupIP implements NameResolver.
@@ -123,7 +127,7 @@ func (d *DOHResolver) LookupIP(ctx context.Context, network string, host string)
 			continue
 		}
 
-		ips, errors := doh.ResolveDomainToIPsWithDoh(host, opt.Dohurl, opt.Dohip, d.Proxy, tranportConfigurations...)
+		ips, errors := doh.ResolveDomainToIPsWithDoh(host, opt.Dohurl, opt.Dohip, d.Proxy, d.transportConfigurations...)
 		if len(ips) > 0 {
 			return ips, nil
 		}

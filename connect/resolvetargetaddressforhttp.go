@@ -16,7 +16,7 @@ import (
 
 // resolveTargetAddressForHttp 解析目标地址的域名为IP地址（用于HTTP代理）
 // 返回所有解析的IP地址数组，供调用者实现轮询
-func resolveTargetAddressForHttp(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, tranportConfigurations ...func(*http.Transport) *http.Transport) ([]string, error) {
+func resolveTargetAddressForHttp(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, transportConfigurations ...func(*http.Transport) *http.Transport) ([]string, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return []string{addr}, err
@@ -30,7 +30,7 @@ func resolveTargetAddressForHttp(addr string, Proxy func(*http.Request) (*url.UR
 	log.Printf("Resolving HTTP target address %s using DoH infrastructure", host)
 
 	// 使用DoH解析
-	resolver := dnscache.CreateHostsAndDohResolverCached(proxyoptions, dnsCache, Proxy, tranportConfigurations...)
+	resolver := dnscache.CreateHostsAndDohResolverCached(proxyoptions, dnsCache, Proxy, transportConfigurations...)
 	ips, err := resolver.LookupIP(context.Background(), "tcp", host)
 	if err != nil {
 		log.Printf("DoH resolution failed for HTTP target %s: %v", host, err)

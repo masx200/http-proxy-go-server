@@ -92,10 +92,11 @@ func CreateHostsResolverCached(dnsCache *DNSCache) NameResolver {
 }
 
 // CreateDOHResolverCached 创建带缓存的DOH解析器
-func CreateDOHResolverCached(Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *DNSCache, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
+func CreateDOHResolverCached(Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *DNSCache, transportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
 	original := &DOHResolver{
 		proxyoptions:           proxyoptions,
-		tranportConfigurations: tranportConfigurations,
+		Proxy:                  Proxy,
+		transportConfigurations: transportConfigurations,
 	}
 	return NewCachingResolver(original, dnsCache)
 }
@@ -109,10 +110,21 @@ func CreateDOH3ResolverCached(Proxy func(*http.Request) (*url.URL, error), proxy
 }
 
 // CreateHostsAndDohResolverCached 创建带缓存的Hosts+DOH解析器
-func CreateHostsAndDohResolverCached(proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *DNSCache, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
+func CreateHostsAndDohResolverCached(proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *DNSCache, Proxy func(*http.Request) (*url.URL, error), transportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
 	original := &HostsAndDohResolver{
 		proxyoptions:           proxyoptions,
-		tranportConfigurations: tranportConfigurations,
+		Proxy:                  Proxy,
+		transportConfigurations: transportConfigurations,
+	}
+	return NewCachingResolver(original, dnsCache)
+}
+
+// CreateHostsAndDohResolverCachedSimple 创建带缓存的Hosts+DOH解析器
+func CreateHostsAndDohResolverCachedSimple(proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *DNSCache, Proxy func(*http.Request) (*url.URL, error), transportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
+	original := &HostsAndDohResolver{
+		proxyoptions:           proxyoptions,
+			Proxy:                  Proxy,
+		transportConfigurations: transportConfigurations,
 	}
 	return NewCachingResolver(original, dnsCache)
 }
@@ -148,12 +160,12 @@ func (h *HostsResolver) Resolve(ctx context.Context, name string) (context.Conte
 type DOHResolver struct {
 	Proxy                  func(*http.Request) (*url.URL, error)
 	proxyoptions           options.ProxyOptionsDNSSLICE
-	tranportConfigurations []func(*http.Transport) *http.Transport
+	transportConfigurations []func(*http.Transport) *http.Transport
 }
 
 // LookupIP implements NameResolver.
 func (d *DOHResolver) LookupIP(ctx context.Context, network string, host string) ([]net.IP, error) {
-	var tranportConfigurations = d.tranportConfigurations
+	var transportConfigurations = d.transportConfigurations
 	if len(d.proxyoptions) == 0 {
 		return nil, fmt.Errorf("no proxy options provided for DOH resolver")
 	}
@@ -168,7 +180,7 @@ func (d *DOHResolver) LookupIP(ctx context.Context, network string, host string)
 			continue
 		}
 
-		ips, errors := doh.ResolveDomainToIPsWithDoh(host, opt.Dohurl, opt.Dohip, d.Proxy, tranportConfigurations...)
+		ips, errors := doh.ResolveDomainToIPsWithDoh(host, opt.Dohurl, opt.Dohip, d.Proxy, transportConfigurations...)
 		if len(ips) > 0 {
 			return ips, nil
 		}
@@ -253,13 +265,13 @@ func (d *DOH3Resolver) Resolve(ctx context.Context, name string) (context.Contex
 
 type HostsAndDohResolver struct {
 	proxyoptions           options.ProxyOptionsDNSSLICE
-	tranportConfigurations []func(*http.Transport) *http.Transport
 	Proxy                  func(*http.Request) (*url.URL, error)
+	transportConfigurations []func(*http.Transport) *http.Transport
 }
 
 // LookupIP implements NameResolver.
 func (h *HostsAndDohResolver) LookupIP(ctx context.Context, network string, host string) ([]net.IP, error) {
-	var tranportConfigurations = h.tranportConfigurations
+	var transportConfigurations = h.transportConfigurations
 	// 首先尝试使用 hosts 解析
 	ips, err := hosts.ResolveDomainToIPsWithHosts(host)
 	if err == nil && len(ips) > 0 {
@@ -285,7 +297,7 @@ func (h *HostsAndDohResolver) LookupIP(ctx context.Context, network string, host
 				}
 			} else {
 				// 使用 DOH
-				ips, errors = doh.ResolveDomainToIPsWithDoh(host, opt.Dohurl, opt.Dohip, h.Proxy, tranportConfigurations...)
+				ips, errors = doh.ResolveDomainToIPsWithDoh(host, opt.Dohurl, opt.Dohip, h.Proxy, transportConfigurations...)
 			}
 
 			if len(ips) > 0 {
