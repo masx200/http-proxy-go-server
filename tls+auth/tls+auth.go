@@ -13,7 +13,7 @@ import (
 	"github.com/masx200/http-proxy-go-server/options"
 )
 
-func Tls_auth(server_cert string, server_key, hostname string, port int, username, password string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Tls_auth(server_cert string, server_key, hostname string, port int, username, password string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 
 	cert, err := tls.LoadX509KeyPair(server_cert, server_key)
 	if err != nil {

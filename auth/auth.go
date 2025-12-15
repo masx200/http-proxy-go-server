@@ -305,7 +305,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 			if upstreamResolveIPs {
 				log.Printf("upstream-resolve-ips enabled, resolving SOCKS5 target address %s before connection", targetAddr)
 			}
-			resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, proxyoptions, dnsCache, upstreamResolveIPs)
+			resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
 			if err != nil {
 				log.Printf("Failed to resolve SOCKS5 target address %s: %v, using original", targetAddr, err)
 				resolvedAddrs = []string{targetAddr}
@@ -357,7 +357,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 			log.Println("SOCKS5代理连接成功：" + upstreamAddress)
 		} else {
 			// 使用HTTP代理处理CONNECT请求
-			server, err = connect.ConnectViaHttpProxy(proxyURL, upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs)
+			server, err = connect.ConnectViaHttpProxy(proxyURL, upstreamAddress, Proxy, proxyoptions, dnsCache, upstreamResolveIPs)
 			if err != nil {
 				log.Println(err)
 				fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")

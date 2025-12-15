@@ -196,7 +196,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, LocalAddr string, prox
 			if upstreamResolveIPs {
 				log.Printf("upstream-resolve-ips enabled, resolving target address %s before connection", targetAddr)
 
-				resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, proxyoptions, dnsCache, upstreamResolveIPs)
+				resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
 				if err != nil {
 					log.Printf("Failed to resolve target address %s: %v, using original", targetAddr, err)
 					resolvedAddrs = []string{targetAddr}
@@ -211,7 +211,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, LocalAddr string, prox
 				}
 			}
 
-			return dnscache.Proxy_net_DialContextCached(ctx, network, targetAddr, proxyoptions, dnsCache, upstreamResolveIPs)
+			return dnscache.Proxy_net_DialContextCached(ctx, network, targetAddr, proxyoptions, dnsCache, upstreamResolveIPs, Proxy, tranportConfigurations...)
 		},
 		DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 
@@ -226,7 +226,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, LocalAddr string, prox
 			if upstreamResolveIPs {
 				log.Printf("upstream-resolve-ips enabled, resolving TLS target address %s before connection", targetAddr)
 
-				resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, proxyoptions, dnsCache, upstreamResolveIPs)
+				resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
 				if err != nil {
 					log.Printf("Failed to resolve TLS target address %s: %v, using original", targetAddr, err)
 					resolvedAddrs = []string{targetAddr}
@@ -256,7 +256,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, LocalAddr string, prox
 			//				// 创建 net.Dialer 实例
 			//				dialer := &net.Dialer{}
 			//				// 发起连接
-			conn, err := dnscache.Proxy_net_DialContextCached(ctx, network, targetAddr, proxyoptions, dnsCache, upstreamResolveIPs) //dialer.DialContext(ctx, network, newAddr)
+			conn, err := dnscache.Proxy_net_DialContextCached(ctx, network, targetAddr, proxyoptions, dnsCache, upstreamResolveIPs, Proxy, tranportConfigurations...) //dialer.DialContext(ctx, network, newAddr)
 			if err != nil {
 				return nil, err
 			}
@@ -325,7 +325,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, LocalAddr string, prox
 				log.Println("使用代理：" + proxyUrl.String())
 
 				log.Println("network,addr", network, addr)
-				return websocketDialContext(ctx, network, addr, proxyUrl, proxyoptions, dnsCache, upstreamResolveIPs)
+				return websocketDialContext(ctx, network, addr, proxyUrl, Proxy, proxyoptions, dnsCache, upstreamResolveIPs)
 			}
 			transport.DialContext = DialContext
 			transport.DialTLSContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
@@ -555,7 +555,7 @@ func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *u
 		log.Printf("upstream-resolve-ips enabled, resolving WebSocket target address %s before connection", targetAddr)
 	}
 
-	resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, proxyoptions, dnsCache, upstreamResolveIPs)
+	resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs)
 
 	if err != nil {
 		log.Printf("Failed to resolve WebSocket target address %s: %v, using original", targetAddr, err)
@@ -612,7 +612,7 @@ func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *u
 }
 
 // resolveTargetAddressForAuth 解析目标地址的域名为IP地址（用于auth模块）
-func resolveTargetAddressForAuth(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) ([]string, error) {
+func resolveTargetAddressForAuth(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, transportConfigurations ...func(*http.Transport) *http.Transport) ([]string, error) {
 	if !upstreamResolveIPs || len(proxyoptions) == 0 || dnsCache == nil {
 		return []string{addr}, nil
 	}

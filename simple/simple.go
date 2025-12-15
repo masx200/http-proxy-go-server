@@ -26,7 +26,7 @@ import (
 	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
 )
 
-func Simple(hostname string, port int, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Simple(hostname string, port int, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	// tcp 连接，监听 8080 端口
 	l, err := net.Listen("tcp", hostname+":"+fmt.Sprint(port))
 	if err != nil {
@@ -45,14 +45,14 @@ func Simple(hostname string, port int, Proxy func(*http.Request) (*url.URL, erro
 			return
 		}
 
-		go Handle(client, upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs, Proxy, tranportConfigurations...)
+		go Handle(client, upstreamAddress, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
 	}
 }
 func CheckShouldUseProxy(upstreamAddress string, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) (*url.URL, error) {
 	return utils.CheckShouldUseProxy(upstreamAddress, Proxy, tranportConfigurations...)
 }
 
-func Handle(client net.Conn, httpUpstreamAddress string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Handle(client net.Conn, httpUpstreamAddress string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	if client == nil {
 		return
 	}
@@ -269,7 +269,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, Proxy func(*http.Reques
 			if upstreamResolveIPs {
 				log.Printf("upstream-resolve-ips enabled, resolving SOCKS5 target address %s before connection", targetAddr)
 			}
-			resolvedAddrs, err := resolveTargetAddressForSimple(targetAddr, proxyoptions, dnsCache, upstreamResolveIPs)
+			resolvedAddrs, err := resolveTargetAddressForSimple(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
 			if err != nil {
 				log.Printf("Failed to resolve SOCKS5 target address %s: %v, using original", targetAddr, err)
 				resolvedAddrs = []string{targetAddr}
@@ -321,7 +321,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, Proxy func(*http.Reques
 			log.Println("SOCKS5代理连接成功：" + upstreamAddress)
 		} else {
 			// 使用HTTP代理处理CONNECT请求
-			server, err = connect.ConnectViaHttpProxy(proxyURL, upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs)
+			server, err = connect.ConnectViaHttpProxy(proxyURL, upstreamAddress, Proxy, proxyoptions, dnsCache, upstreamResolveIPs)
 			if err != nil {
 				log.Println(err)
 				fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
@@ -490,7 +490,7 @@ func IsIPv6(ipStr string) bool {
 }
 
 // resolveTargetAddressForSimple 解析目标地址的域名为IP地址（用于simple模块）
-func resolveTargetAddressForSimple(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) ([]string, error) {
+func resolveTargetAddressForSimple(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, transportConfigurations ...func(*http.Transport) *http.Transport) ([]string, error) {
 	if !upstreamResolveIPs || len(proxyoptions) == 0 || dnsCache == nil {
 		return []string{addr}, nil
 	}
