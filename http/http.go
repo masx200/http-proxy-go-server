@@ -642,14 +642,27 @@ func resolveTargetAddressForAuth(addr string, Proxy func(*http.Request) (*url.UR
 		return []string{addr}, fmt.Errorf("no IP addresses resolved for SOCKS5 target %s", host)
 	}
 
-	// 返回所有解析出的IP地址
+	// 返回所有解析出的IP地址，优先使用IPv4
 	var resolvedAddrs []string
+	var ipv4Addrs []string
+	var ipv6Addrs []string
+
 	for _, ip := range ips {
 		resolvedAddr := net.JoinHostPort(ip.String(), port)
-		resolvedAddrs = append(resolvedAddrs, resolvedAddr)
+		if ip.To4() != nil {
+			// IPv4地址优先添加
+			ipv4Addrs = append(ipv4Addrs, resolvedAddr)
+		} else {
+			// IPv6地址后添加
+			ipv6Addrs = append(ipv6Addrs, resolvedAddr)
+		}
 	}
 
-	log.Printf("Resolved SOCKS5 target address %s to %d IP addresses: %v", addr, len(resolvedAddrs), resolvedAddrs)
+	// IPv4地址在前，IPv6地址在后
+	resolvedAddrs = append(ipv4Addrs, ipv6Addrs...)
+
+	log.Printf("Resolved SOCKS5 target address %s to %d IP addresses (IPv4: %d, IPv6: %d): %v",
+		addr, len(resolvedAddrs), len(ipv4Addrs), len(ipv6Addrs), resolvedAddrs)
 
 	return resolvedAddrs, nil
 }

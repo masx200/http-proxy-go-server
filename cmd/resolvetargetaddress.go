@@ -46,14 +46,27 @@ func resolveTargetAddress(addr string, Proxy func(*http.Request) (*url.URL, erro
 		return []string{addr}, fmt.Errorf("no IP addresses resolved for target %s", host)
 	}
 
-	// 返回所有解析出的IP地址
+	// 返回所有解析出的IP地址，优先使用IPv4
 	var resolvedAddrs []string
+	var ipv4Addrs []string
+	var ipv6Addrs []string
+
 	for _, ip := range ips {
 		resolvedAddr := net.JoinHostPort(ip.String(), port)
-		resolvedAddrs = append(resolvedAddrs, resolvedAddr)
+		if ip.To4() != nil {
+			// IPv4地址优先添加
+			ipv4Addrs = append(ipv4Addrs, resolvedAddr)
+		} else {
+			// IPv6地址后添加
+			ipv6Addrs = append(ipv6Addrs, resolvedAddr)
+		}
 	}
 
-	log.Printf("Resolved target address %s to %d IP addresses: %v", addr, len(resolvedAddrs), resolvedAddrs)
+	// IPv4地址在前，IPv6地址在后
+	resolvedAddrs = append(ipv4Addrs, ipv6Addrs...)
+
+	log.Printf("Resolved target address %s to %d IP addresses (IPv4: %d, IPv6: %d): %v",
+		addr, len(resolvedAddrs), len(ipv4Addrs), len(ipv6Addrs), resolvedAddrs)
 
 	return resolvedAddrs, nil
 }
@@ -67,16 +80,43 @@ func resolveTargetAddressWithRoundRobin(addrs []string, target string) string {
 	if len(addrs) == 1 {
 		return addrs[0]
 	}
-	addrs = Shuffle(addrs)
-	// 简单轮询：基于目标字符串哈希来选择一个相对稳定的IP
-	// 这样相同的域名总是会选择相同的IP，但如果有多个IP可以实现负载分散
-	hash := 0
-	for _, c := range target {
-		hash = (hash*31 + int(c)) % len(addrs)
+
+	// 分离IPv4和IPv6地址
+	var ipv4Addrs []string
+	var ipv6Addrs []string
+
+	for _, addr := range addrs {
+		host, _, err := net.SplitHostPort(addr)
+		if err != nil {
+			continue
+		}
+		if ip := net.ParseIP(host); ip != nil && ip.To4() != nil {
+			ipv4Addrs = append(ipv4Addrs, addr)
+		} else {
+			ipv6Addrs = append(ipv6Addrs, addr)
+		}
 	}
 
-	selectedAddr := addrs[hash]
-	log.Printf("RoundRobin selected address %s from %v for target %s", selectedAddr, addrs, target)
+	// 优先选择IPv4地址
+	var candidateAddrs []string
+	if len(ipv4Addrs) > 0 {
+		candidateAddrs = ipv4Addrs
+		log.Printf("Preferring IPv4 addresses for SOCKS5 compatibility: %v", ipv4Addrs)
+	} else {
+		candidateAddrs = ipv6Addrs
+		log.Printf("No IPv4 addresses available, using IPv6: %v", ipv6Addrs)
+	}
+
+	candidateAddrs = Shuffle(candidateAddrs)
+
+	// 简单轮询：基于目标字符串哈希来选择一个相对稳定的IP
+	hash := 0
+	for _, c := range target {
+		hash = (hash*31 + int(c)) % len(candidateAddrs)
+	}
+
+	selectedAddr := candidateAddrs[hash]
+	log.Printf("RoundRobin selected address %s from %v for target %s", selectedAddr, candidateAddrs, target)
 
 	return selectedAddr
 }
