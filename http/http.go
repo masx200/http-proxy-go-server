@@ -510,7 +510,7 @@ func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *u
 		log.Printf("upstream-resolve-ips enabled, resolving WebSocket target address %s before connection", targetAddr)
 	}
 
-	resolvedAddrs, err := resolveTargetAddressForHttp(targetAddr, proxyoptions, dnsCache)
+	resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, proxyoptions, dnsCache,upstreamResolveIPs)
 
 	if err != nil {
 		log.Printf("Failed to resolve WebSocket target address %s: %v, using original", targetAddr, err)
@@ -520,7 +520,7 @@ func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *u
 
 	// 使用轮询从解析的地址中选择一个
 	//
-	resolvedAddr := resolveTargetAddressForHttpWithRoundRobin(resolvedAddrs, targetAddr)
+	resolvedAddr := resolveTargetAddressForAuthWithRoundRobin(resolvedAddrs, targetAddr)
 
 	if upstreamResolveIPs && resolvedAddr != targetAddr {
 
@@ -564,4 +564,78 @@ func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *u
 
 	// 返回客户端连接
 	return clientConn, nil
+}
+
+// resolveTargetAddressForAuth 解析目标地址的域名为IP地址（用于auth模块）
+func resolveTargetAddressForAuth(addr string, proxyoptions options.ProxyOptions, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) ([]string, error) {
+	if !upstreamResolveIPs || len(proxyoptions) == 0 || dnsCache == nil {
+		return []string{addr}, nil
+	}
+
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return []string{addr}, err
+	}
+
+	// 如果已经是IP地址，直接返回
+	if net.ParseIP(host) != nil {
+		return []string{addr}, nil
+	}
+
+	log.Printf("Resolving SOCKS5 target address %s using DoH infrastructure", host)
+
+	// 使用DoH解析
+	resolver := dnscache.CreateHostsAndDohResolverCached(proxyoptions, dnsCache)
+	ips, err := resolver.LookupIP(context.Background(), "tcp", host)
+	if err != nil {
+		log.Printf("DoH resolution failed for SOCKS5 target %s: %v", host, err)
+		return []string{addr}, err
+	}
+
+	if len(ips) == 0 {
+		log.Printf("No IP addresses resolved for SOCKS5 target %s", host)
+		return []string{addr}, fmt.Errorf("no IP addresses resolved for SOCKS5 target %s", host)
+	}
+
+	// 返回所有解析出的IP地址
+	var resolvedAddrs []string
+	for _, ip := range ips {
+		resolvedAddr := net.JoinHostPort(ip.String(), port)
+		resolvedAddrs = append(resolvedAddrs, resolvedAddr)
+	}
+
+	log.Printf("Resolved SOCKS5 target address %s to %d IP addresses: %v", addr, len(resolvedAddrs), resolvedAddrs)
+
+	return resolvedAddrs, nil
+}
+
+// resolveTargetAddressForAuthWithRoundRobin 从解析的IP数组中轮询选择一个地址（auth模块使用）
+func resolveTargetAddressForAuthWithRoundRobin(addrs []string, target string) string {
+	if len(addrs) == 0 {
+		return target
+	}
+
+	if len(addrs) == 1 {
+		return addrs[0]
+	}
+	addrs = shuffleAuth(addrs)
+	// 简单轮询：基于目标字符串哈希来选择一个相对稳定的IP
+	hash := 0
+	for _, c := range target {
+		hash = (hash*31 + int(c)) % len(addrs)
+	}
+
+	selectedAddr := addrs[hash]
+	log.Printf("SOCKS5 RoundRobin selected address %s from %v for target %s", selectedAddr, addrs, target)
+
+	return selectedAddr
+}
+
+// shuffleAuth 对切片进行随机排序（auth模块使用）
+func shuffleAuth[T any](slice []T) []T {
+	rand1 := rand.New(rand.NewSource(time.Now().UnixNano())) // 使用当前时间作为随机种子
+	rand1.Shuffle(len(slice), func(i, j int) {
+		slice[i], slice[j] = slice[j], slice[i]
+	})
+	return slice
 }
