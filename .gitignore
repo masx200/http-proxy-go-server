@@ -21,10 +21,12 @@
 go.work
 main
 .kilocode
-.claude
+
+settings.local.json
 *.log
 dns_cache.aof
 test_dns_cache.aof
 dns_cache.json
 *.backup
 *.temp
+.claude/settings.local.json
