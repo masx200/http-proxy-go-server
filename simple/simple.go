@@ -34,30 +34,40 @@ func Simple(hostname string, port int, Proxy func(*http.Request) (*url.URL, erro
 	}
 	log.Printf("Proxy server started on port %s", l.Addr())
 
-	// 检查是否使用SOCKS5上游代理
+	// 检查是否使用SOCKS5或HTTP上游代理
 	var useSocks5Directly bool
+	var useHttpUpstreamDirectly bool
 	var upstreamAddress string
 
 	if Proxy != nil {
 		// 创建一个测试请求来检查上游代理类型
 		testReq, _ := http.NewRequest("GET", "http://test", nil)
 		if proxyURL, err := Proxy(testReq); err == nil && proxyURL != nil {
-			useSocks5Directly = strings.HasPrefix(proxyURL.String(), "socks5://")
+			proxyScheme := proxyURL.String()
+			useSocks5Directly = strings.HasPrefix(proxyScheme, "socks5://")
+			useHttpUpstreamDirectly = strings.HasPrefix(proxyScheme, "http://") || strings.HasPrefix(proxyScheme, "https://")
+
 			if useSocks5Directly {
 				log.Printf("SOCKS5 upstream detected, will handle HTTP requests directly via SOCKS5")
+			} else if useHttpUpstreamDirectly {
+				log.Printf("HTTP upstream detected, will handle requests directly via HTTP proxy (bypassing internal HTTP proxy server)")
 			}
 		}
 	}
 
-	// 只有在非SOCKS5上游时才启动HTTP代理服务器
-	if !useSocks5Directly {
+	// 只有在非SOCKS5上游且非HTTP上游时才启动HTTP代理服务器
+	if !useSocks5Directly && !useHttpUpstreamDirectly {
 		xh := http_server.GenerateRandomLoopbackIP()
 		x1 := http_server.GenerateRandomIntPort()
 		upstreamAddress = xh + ":" + fmt.Sprint(x1)
 		go http_server.Http(xh, x1, proxyoptions, dnsCache, "", "", upstreamResolveIPs, Proxy, tranportConfigurations...)
 		log.Printf("Started HTTP proxy server for upstream routing at %s", upstreamAddress)
 	} else {
-		log.Printf("SOCKS5 upstream mode: bypassing HTTP proxy server for direct SOCKS5 routing")
+		if useSocks5Directly {
+			log.Printf("SOCKS5 upstream mode: bypassing HTTP proxy server for direct SOCKS5 routing")
+		} else if useHttpUpstreamDirectly {
+			log.Printf("HTTP upstream mode: bypassing internal HTTP proxy server for direct HTTP proxy routing")
+		}
 	}
 
 	// 死循环，每当遇到连接时，调用 handle

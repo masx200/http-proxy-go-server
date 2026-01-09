@@ -39,7 +39,7 @@ import (
 // 返回值:
 // - []dns.SVCB: 查询到的HTTPS服务记录列表。
 // - error: 查询过程中发生的任何错误。
-func DNSQueryHTTPS(domain string, port string, DOHServer string,Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) ([]dns.SVCB, error) {
+func DNSQueryHTTPS(domain string, port string, DOHServer string, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) ([]dns.SVCB, error) {
 	var msg = new(dns.Msg)
 	var service_domain = domain
 	if port != "443" {
@@ -47,7 +47,7 @@ func DNSQueryHTTPS(domain string, port string, DOHServer string,Proxy func(*http
 	}
 	msg.SetQuestion(service_domain+".", dns.TypeHTTPS)
 
-	resp, err := DohClient(msg, DOHServer, "",Proxy,tranportConfigurations...)
+	resp, err := DohClient(msg, DOHServer, "", Proxy, tranportConfigurations...)
 	if err != nil {
 		log.Println(err)
 		return nil, err

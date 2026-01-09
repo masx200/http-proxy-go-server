@@ -22,8 +22,8 @@ type NameResolver = go_socks5.NameResolver
 	}
 */
 type HostsAndDohResolver struct {
-	proxyoptions           options.ProxyOptionsDNSSLICE
-	Proxy                  func(*http.Request) (*url.URL, error)
+	proxyoptions            options.ProxyOptionsDNSSLICE
+	Proxy                   func(*http.Request) (*url.URL, error)
 	transportConfigurations []func(*http.Transport) *http.Transport
 }
 
@@ -92,22 +92,22 @@ func (h *HostsAndDohResolver) Resolve(ctx context.Context, name string) (context
 
 func CreateHostsAndDohResolver(Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, transportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
 	return &HostsAndDohResolver{
-		proxyoptions:           proxyoptions,
-		Proxy:                  Proxy,
+		proxyoptions:            proxyoptions,
+		Proxy:                   Proxy,
 		transportConfigurations: transportConfigurations,
 	}
 }
 func CreateDOHResolver(Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, transportConfigurations ...func(*http.Transport) *http.Transport) NameResolver {
 	return &DOHResolver{
-		proxyoptions:           proxyoptions,
-		Proxy:                  Proxy,
+		proxyoptions:            proxyoptions,
+		Proxy:                   Proxy,
 		transportConfigurations: transportConfigurations,
 	}
 }
 
 type DOHResolver struct {
-	proxyoptions           options.ProxyOptionsDNSSLICE
-	Proxy                  func(*http.Request) (*url.URL, error)
+	proxyoptions            options.ProxyOptionsDNSSLICE
+	Proxy                   func(*http.Request) (*url.URL, error)
 	transportConfigurations []func(*http.Transport) *http.Transport
 }
 
