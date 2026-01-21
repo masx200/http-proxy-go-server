@@ -382,8 +382,32 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 			err = socks5Client.Connect(host, portNum)
 			if err != nil {
 				log.Println("failed to connect via SOCKS5 proxy:", err)
-				fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
-				return
+				// 如果启用了DNS解析且使用了解析后的地址，尝试使用原始地址重试
+				if upstreamResolveIPs && resolvedAddr != targetAddr {
+					log.Printf("SOCKS5 connection failed with resolved address %s, retrying with original address %s", resolvedAddr, targetAddr)
+					originalHost, originalPort, err := net.SplitHostPort(targetAddr)
+					if err != nil {
+						log.Println("failed to parse original address:", err)
+						fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+						return
+					}
+					originalPortNum, err := strconv.Atoi(originalPort)
+					if err != nil {
+						log.Println("failed to parse original port:", err)
+						fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+						return
+					}
+					err = socks5Client.Connect(originalHost, originalPortNum)
+					if err != nil {
+						log.Println("failed to connect via SOCKS5 proxy with original address:", err)
+						fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+						return
+					}
+					log.Printf("SOCKS5 connection succeeded with original address %s", targetAddr)
+				} else {
+					fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
+					return
+				}
 			}
 
 			// 创建一个管道连接来处理SOCKS5数据转发
