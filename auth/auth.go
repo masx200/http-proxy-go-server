@@ -88,7 +88,7 @@ func Auth(hostname string, port int, username, password string, proxyoptions opt
 	}
 }
 
-func Handle(client net.Conn, username, password string, httpUpstreamAddress string, proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool,
+func Handle(client net.Conn, username, password string, httpUpstreamAddress string, proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, ipPriority options.IPPriority,
 	Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	if client == nil {
 		return
@@ -352,7 +352,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 			if upstreamResolveIPs {
 				log.Printf("upstream-resolve-ips enabled, resolving SOCKS5 target address %s before connection", targetAddr)
 			}
-			resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, options.IPPv4Priority, tranportConfigurations...)
+			resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, ipPriority, tranportConfigurations...)
 			if err != nil {
 				log.Printf("Failed to resolve SOCKS5 target address %s: %v, using original", targetAddr, err)
 				resolvedAddrs = []string{targetAddr}
