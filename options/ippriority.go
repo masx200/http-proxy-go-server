@@ -9,8 +9,8 @@ import (
 type IPPriority string
 
 const (
-	IPPv4Priority  IPPriority = "ipv4"  // IPv4 优先
-	IPPv6Priority  IPPriority = "ipv6"  // IPv6 优先
+	IPPv4Priority    IPPriority = "ipv4"   // IPv4 优先
+	IPPv6Priority    IPPriority = "ipv6"   // IPv6 优先
 	IPRandomPriority IPPriority = "random" // IPv4 和 IPv6 随机
 )
 

@@ -7,11 +7,14 @@ license: MIT
 
 # GitHub Release Creation Skill
 
-This skill helps you create professional, comprehensive GitHub releases using the `gh` CLI tool. It covers release notes drafting, version management, and best practices for open-source release communication.
+This skill helps you create professional, comprehensive GitHub releases using
+the `gh` CLI tool. It covers release notes drafting, version management, and
+best practices for open-source release communication.
 
 ## When to Use This Skill
 
 Trigger this skill when you encounter requests like:
+
 - "Create a GitHub release for version X.Y.Z"
 - "Help me draft release notes"
 - "Publish a release with these changes"
@@ -63,6 +66,7 @@ git log v3.3.0..HEAD --pretty=format:"%h|%ad|%s" --date=short
 ```
 
 Key information to extract:
+
 - Commit count since last release
 - Major features added
 - Bug fixes and improvements
@@ -74,14 +78,15 @@ Key information to extract:
 
 **Guidelines for choosing version numbers:**
 
-| Scenario | Version Bump | Example |
-|----------|-------------|---------|
-| New major features or breaking changes | Major | v3.3.0 → v4.0.0 |
-| New backward-compatible features | Minor | v3.3.0 → v3.4.0 |
-| Bug fixes and minor improvements | Patch | v3.3.0 → v3.3.1 |
-| Pre-release versions | Suffix | v4.0.0-beta.1, v4.0.0-rc.1 |
+| Scenario                               | Version Bump | Example                    |
+| -------------------------------------- | ------------ | -------------------------- |
+| New major features or breaking changes | Major        | v3.3.0 → v4.0.0            |
+| New backward-compatible features       | Minor        | v3.3.0 → v3.4.0            |
+| Bug fixes and minor improvements       | Patch        | v3.3.0 → v3.3.1            |
+| Pre-release versions                   | Suffix       | v4.0.0-beta.1, v4.0.0-rc.1 |
 
 **Questions to ask:**
+
 - Does this introduce breaking changes? → Major bump
 - Are there significant new features? → Minor bump
 - Is it primarily bug fixes? → Patch bump
@@ -91,12 +96,15 @@ Key information to extract:
 Structure professional release notes with these sections:
 
 #### 1. **Overview** (2-3 sentences)
+
 - High-level summary of the release
 - Key theme or focus area
 - Version significance (major/minor/patch)
 
 #### 2. **What's New** (categorized changes)
+
 Organize changes by type:
+
 - ✨ **Features**: New functionality
 - 🔧 **Performance**: Speed/resource improvements
 - 🐛 **Bug Fixes**: Resolved issues
@@ -105,19 +113,23 @@ Organize changes by type:
 - ♻️ **Refactoring**: Code quality improvements
 
 #### 3. **Comparison with Previous Version**
+
 Create comparison tables showing behavior changes:
+
 - Before (vX.Y.Z) → After (vX.Y.Z)
 - Performance metrics
 - Feature additions
 - Configuration changes
 
 #### 4. **Migration Guide** (if applicable)
+
 - Configuration changes needed
 - Breaking changes and how to adapt
 - Deprecated features
 - Upgrade steps
 
 #### 5. **Installation Instructions**
+
 ```bash
 # Docker
 docker pull user/repo:version
@@ -133,14 +145,18 @@ go build -o binary ./cmd/
 ```
 
 #### 6. **Full Changelog**
+
 List all commits with hashes and dates:
+
 ```markdown
 ### Commits since v3.3.0
+
 - `9a8ebda` - Fix: Bypass internal HTTP proxy server (2026-01-09)
 - `680f785` - Feat: Add SOCKS5 Direct Mode (2025-12-15)
 ```
 
 #### 7. **Additional Sections** (as needed)
+
 - Known Issues
 - Credits/Contributors
 - License information
@@ -240,7 +256,7 @@ gh release edit v4.0.0 --notes "Updated notes"
 
 ## Release Notes Template
 
-```markdown
+````markdown
 # [Project Name] v[VERSION]
 
 ## 🎉 Overview
@@ -257,10 +273,10 @@ gh release edit v4.0.0 --notes "Updated notes"
 
 ### 🔧 Performance Improvements
 
-| Metric | Previous Version | This Version | Improvement |
-|--------|-----------------|--------------|-------------|
-| Latency | ~100ms | ~50ms | 50% ↓ |
-| Memory | 100MB | 85MB | 15% ↓ |
+| Metric  | Previous Version | This Version | Improvement |
+| ------- | ---------------- | ------------ | ----------- |
+| Latency | ~100ms           | ~50ms        | 50% ↓       |
+| Memory  | 100MB            | 85MB         | 15% ↓       |
 
 ### 🐛 Bug Fixes
 
@@ -276,8 +292,8 @@ gh release edit v4.0.0 --notes "Updated notes"
 
 ### Behavior Changes
 
-| Scenario | v[PREVIOUS] | v[CURRENT] |
-|----------|-------------|------------|
+| Scenario  | v[PREVIOUS]  | v[CURRENT]       |
+| --------- | ------------ | ---------------- |
 | Feature A | Old behavior | **New behavior** |
 
 ### Technical Details
@@ -300,11 +316,14 @@ gh release edit v4.0.0 --notes "Updated notes"
 ## 🛠️ Installation
 
 ### Docker
+
 ```bash
 docker pull user/repo:v[VERSION]
 ```
+````
 
 ### Build from Source
+
 ```bash
 git clone https://github.com/user/repo.git
 cd repo
@@ -330,6 +349,7 @@ Download from [Releases](https://github.com/user/repo/releases) page.
 ## 🙏 Credits
 
 Contributors:
+
 - @username1
 - @username2
 
@@ -345,9 +365,10 @@ Contributors:
 
 ---
 
-**Full Changelog**: https://github.com/user/repo/compare/v[PREVIOUS]...v[CURRENT]
-```
+**Full Changelog**:
+https://github.com/user/repo/compare/v[PREVIOUS]...v[CURRENT]
 
+````
 ## Best Practices
 
 ### DO ✅
@@ -399,7 +420,7 @@ git push origin v3.4.0
 gh release create v3.4.0 \
   --title "v3.4.0 - New Features" \
   --notes-file RELEASE_NOTES.md
-```
+````
 
 ### Workflow 2: Hotfix Patch Release
 
@@ -478,14 +499,18 @@ gh release create v4.0.0 --notes "Final release notes"
 ## Troubleshooting
 
 ### Issue: "gh not authenticated"
+
 **Solution:**
+
 ```bash
 gh auth login
 gh auth status  # Verify
 ```
 
 ### Issue: "Tag not found"
+
 **Solution:**
+
 ```bash
 # Push tag first
 git push origin <tag-name>
@@ -495,7 +520,9 @@ git tag -l | grep <tag-name>
 ```
 
 ### Issue: "Release already exists"
+
 **Solution:**
+
 ```bash
 # Delete existing release
 gh release delete <tag-name> --yes
@@ -505,7 +532,9 @@ gh release edit <tag-name> --notes "New notes"
 ```
 
 ### Issue: "Permission denied"
+
 **Solution:**
+
 - Verify repository permissions: `gh repo view`
 - Check authentication: `gh auth status`
 - Ensure you have admin/write access
@@ -559,4 +588,5 @@ gh release list \
 
 ---
 
-**Remember**: Good releases communicate value, build trust, and make users excited about your project!
+**Remember**: Good releases communicate value, build trust, and make users
+excited about your project!

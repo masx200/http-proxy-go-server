@@ -7,11 +7,14 @@ license: MIT
 
 # GitHub CLI (gh) Comprehensive Skill
 
-Master the GitHub CLI (`gh`) to seamlessly work with GitHub from the command line. This skill covers all major GitHub operations including repository management, issues, pull requests, releases, authentication, and more.
+Master the GitHub CLI (`gh`) to seamlessly work with GitHub from the command
+line. This skill covers all major GitHub operations including repository
+management, issues, pull requests, releases, authentication, and more.
 
 ## When to Use This Skill
 
 Trigger this skill when the user asks to:
+
 - "Create a PR/issue/release"
 - "Manage GitHub repository"
 - "Clone/fork/update a repo"
@@ -26,11 +29,13 @@ Trigger this skill when the user asks to:
 ### Installation & Authentication
 
 **Check if gh is installed:**
+
 ```bash
 gh --version
 ```
 
 **Install gh (if not installed):**
+
 ```bash
 # macOS
 brew install gh
@@ -46,6 +51,7 @@ sudo apt install gh
 ```
 
 **Authenticate with GitHub:**
+
 ```bash
 gh auth login
 # Follow prompts:
@@ -55,11 +61,13 @@ gh auth login
 ```
 
 **Verify authentication:**
+
 ```bash
 gh auth status
 ```
 
 Expected output:
+
 ```
 github.com
   ✓ Logged in to github.com account <username> (keyring)
@@ -1358,6 +1366,7 @@ gh pr list --state open --label "ready-to-merge" --json number --jq '.[].number'
 ### Issue: "gh not found"
 
 **Solution:**
+
 ```bash
 # Check if gh is installed
 which gh
@@ -1369,6 +1378,7 @@ which gh
 ### Issue: "gh: not logged in"
 
 **Solution:**
+
 ```bash
 gh auth login
 gh auth status  # Verify
@@ -1377,6 +1387,7 @@ gh auth status  # Verify
 ### Issue: "Permission denied"
 
 **Solution:**
+
 ```bash
 # Check permissions
 gh repo view
@@ -1388,6 +1399,7 @@ gh auth refresh
 ### Issue: "Repository not found"
 
 **Solution:**
+
 ```bash
 # Check current repo
 git remote -v
@@ -1399,6 +1411,7 @@ git remote set-url origin https://github.com/owner/repo.git
 ### Issue: "gh is slow"
 
 **Solution:**
+
 ```bash
 # Check git protocol
 gh config get git_protocol
@@ -1410,6 +1423,7 @@ gh config set git_protocol ssh
 ### Issue: "API rate limit exceeded"
 
 **Solution:**
+
 ```bash
 # Check rate limit
 gh api /rate_limit
@@ -1497,4 +1511,5 @@ gh issue create --title "$1" --body "$(cat issue-template.md)"
 
 ---
 
-**Remember**: The GitHub CLI is a powerful tool - use it wisely to automate your GitHub workflows and boost your productivity! 🚀
+**Remember**: The GitHub CLI is a powerful tool - use it wisely to automate your
+GitHub workflows and boost your productivity! 🚀
