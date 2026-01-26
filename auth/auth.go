@@ -428,7 +428,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 			log.Printf("SOCKS5代理连接成功 (%s请求): %s", requestType, upstreamAddress)
 		} else {
 			// 使用HTTP代理处理CONNECT请求
-			server, err = connect.ConnectViaHttpProxy(proxyURL, upstreamAddress, Proxy, proxyoptions, dnsCache, upstreamResolveIPs)
+			server, err = connect.ConnectViaHttpProxy(proxyURL, upstreamAddress, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, ipPriority)
 			if err != nil {
 				log.Println(err)
 				fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")

@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/http-proxy-go-server/utils"
 	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
 )
@@ -52,7 +53,8 @@ func (c *HttpProxyClient) Connect(host string, port int) error {
 	targetAddr := net.JoinHostPort(host, strconv.Itoa(port))
 
 	// 使用ConnectViaHttpProxy建立连接（注意：这里传递空的proxyoptions和dnsCache，因为这是用于内部HTTP转发的）
-	conn, err := ConnectViaHttpProxy(proxyURL, targetAddr, nil, nil, nil, false)
+	// 使用默认的IPv4优先策略
+	conn, err := ConnectViaHttpProxy(proxyURL, targetAddr, nil, nil, nil, false, options.ParseIPPriority("ipv4"))
 	if err != nil {
 		return err
 	}
