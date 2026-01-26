@@ -32,7 +32,7 @@ func CheckShouldUseProxy(upstreamAddress string, Proxy func(*http.Request) (*url
 }
 
 // options.ProxyOptions
-func Auth(hostname string, port int, username, password string, proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Auth(hostname string, port int, username, password string, proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, ipPriority options.IPPriority, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	// tcp 连接，监听 8080 端口
 	l, err := net.Listen("tcp", hostname+":"+fmt.Sprint(port))
 	if err != nil {
@@ -66,7 +66,7 @@ func Auth(hostname string, port int, username, password string, proxyoptions opt
 		xh := http_server.GenerateRandomLoopbackIP()
 		x1 := http_server.GenerateRandomIntPort()
 		upstreamAddress = xh + ":" + fmt.Sprint(rune(x1))
-		go http_server.Http(xh, x1, proxyoptions, dnsCache, username, password, upstreamResolveIPs, Proxy, tranportConfigurations...)
+		go http_server.Http(xh, x1, proxyoptions, dnsCache, username, password, upstreamResolveIPs, ipPriority, Proxy, tranportConfigurations...)
 		log.Printf("Started HTTP proxy server for upstream routing at %s", upstreamAddress)
 	} else {
 		if useSocks5Directly {
@@ -84,7 +84,7 @@ func Auth(hostname string, port int, username, password string, proxyoptions opt
 			return
 		}
 
-		go Handle(client, username, password, upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs, Proxy, tranportConfigurations...)
+		go Handle(client, username, password, upstreamAddress, proxyoptions, dnsCache, upstreamResolveIPs, ipPriority, Proxy, tranportConfigurations...)
 	}
 }
 

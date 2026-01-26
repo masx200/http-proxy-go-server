@@ -226,7 +226,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, LocalAddr string, prox
 			if upstreamResolveIPs {
 				log.Printf("upstream-resolve-ips enabled, resolving TLS target address %s before connection", targetAddr)
 
-				resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, options.IPPv4Priority, tranportConfigurations...)
+				resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, ipPriority, tranportConfigurations...)
 				if err != nil {
 					log.Printf("Failed to resolve TLS target address %s: %v, using original", targetAddr, err)
 					resolvedAddrs = []string{targetAddr}
@@ -325,7 +325,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, LocalAddr string, prox
 				log.Println("使用代理：" + proxyUrl.String())
 
 				log.Println("network,addr", network, addr)
-				return websocketDialContext(ctx, network, addr, proxyUrl, Proxy, proxyoptions, dnsCache, upstreamResolveIPs)
+				return websocketDialContext(ctx, network, addr, proxyUrl, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, ipPriority)
 			}
 			transport.DialContext = DialContext
 			transport.DialTLSContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
@@ -494,7 +494,7 @@ func isAuthenticated(proxyAuth, expectedUsername, expectedPassword string) bool 
 
 	return username == expectedUsername && password == expectedPassword
 }
-func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *url.URL, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) (net.Conn, error) {
+func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *url.URL, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, ipPriority options.IPPriority) (net.Conn, error) {
 	// 解析目标地址
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
@@ -555,7 +555,7 @@ func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *u
 		log.Printf("upstream-resolve-ips enabled, resolving WebSocket target address %s before connection", targetAddr)
 	}
 
-	resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, options.IPPv4Priority)
+	resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, ipPriority)
 
 	if err != nil {
 		log.Printf("Failed to resolve WebSocket target address %s: %v, using original", targetAddr, err)
