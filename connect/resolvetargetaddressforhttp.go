@@ -16,7 +16,7 @@ import (
 
 // resolveTargetAddressForHttp 解析目标地址的域名为IP地址（用于HTTP代理）
 // 返回所有解析的IP地址数组，供调用者实现轮询
-func resolveTargetAddressForHttp(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, transportConfigurations ...func(*http.Transport) *http.Transport) ([]string, error) {
+func resolveTargetAddressForHttp(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, ipPriority options.IPPriority, transportConfigurations ...func(*http.Transport) *http.Transport) ([]string, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return []string{addr}, err
@@ -42,14 +42,31 @@ func resolveTargetAddressForHttp(addr string, Proxy func(*http.Request) (*url.UR
 		return []string{addr}, fmt.Errorf("no IP addresses resolved for HTTP target %s", host)
 	}
 
-	// 返回所有解析出的IP地址
+	// 收集所有解析出的IP地址
 	var resolvedAddrs []string
 	for _, ip := range ips {
 		resolvedAddr := net.JoinHostPort(ip.String(), port)
 		resolvedAddrs = append(resolvedAddrs, resolvedAddr)
 	}
 
-	log.Printf("Resolved HTTP target address %s to %d IP addresses: %v", addr, len(resolvedAddrs), resolvedAddrs)
+	// 根据 IP 优先级策略排序
+	resolvedAddrs = options.SortAddressesByPriority(resolvedAddrs, ipPriority)
+
+	// 统计 IPv4 和 IPv6 地址数量
+	var ipv4Count, ipv6Count int
+	for _, addr := range resolvedAddrs {
+		host, _, _ := net.SplitHostPort(addr)
+		if ip := net.ParseIP(host); ip != nil {
+			if ip.To4() != nil {
+				ipv4Count++
+			} else {
+				ipv6Count++
+			}
+		}
+	}
+
+	log.Printf("Resolved HTTP target address %s to %d IP addresses (IPv4: %d, IPv6: %d, priority: %s): %v",
+		addr, len(resolvedAddrs), ipv4Count, ipv6Count, ipPriority, resolvedAddrs)
 
 	return resolvedAddrs, nil
 }

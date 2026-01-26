@@ -88,7 +88,7 @@ func parseForwardedHeader(header string) ([]ForwardedBy, error) {
 
 	return forwardedByList, nil
 }
-func proxyHandler(w http.ResponseWriter, r *http.Request, LocalAddr string, proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) error {
+func proxyHandler(w http.ResponseWriter, r *http.Request, LocalAddr string, proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, ipPriority options.IPPriority, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) error {
 	log.Println("method:", r.Method)
 	log.Println("url:", r.URL)
 	log.Println("host:", r.Host)
@@ -196,7 +196,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, LocalAddr string, prox
 			if upstreamResolveIPs {
 				log.Printf("upstream-resolve-ips enabled, resolving target address %s before connection", targetAddr)
 
-				resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
+				resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, ipPriority, tranportConfigurations...)
 				if err != nil {
 					log.Printf("Failed to resolve target address %s: %v, using original", targetAddr, err)
 					resolvedAddrs = []string{targetAddr}
@@ -226,7 +226,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, LocalAddr string, prox
 			if upstreamResolveIPs {
 				log.Printf("upstream-resolve-ips enabled, resolving TLS target address %s before connection", targetAddr)
 
-				resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
+				resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, options.IPPv4Priority, tranportConfigurations...)
 				if err != nil {
 					log.Printf("Failed to resolve TLS target address %s: %v, using original", targetAddr, err)
 					resolvedAddrs = []string{targetAddr}
@@ -388,7 +388,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request, LocalAddr string, prox
 	return nil
 }
 
-func Http(hostname string, port int, proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
+func Http(hostname string, port int, proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, username, password string, upstreamResolveIPs bool, ipPriority options.IPPriority, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
@@ -407,7 +407,7 @@ func Http(hostname string, port int, proxyoptions options.ProxyOptionsDNSSLICE, 
 	engine.Use(func(c *gin.Context) {
 		var w = c.Writer
 		var r = c.Request
-		err := proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, dnsCache, username, password, upstreamResolveIPs, Proxy, tranportConfigurations...)
+		err := proxyHandler(w, r /* jar, */, LocalAddr, proxyoptions, dnsCache, username, password, upstreamResolveIPs, ipPriority, Proxy, tranportConfigurations...)
 		c.Abort()
 
 		if err != nil {
@@ -555,7 +555,7 @@ func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *u
 		log.Printf("upstream-resolve-ips enabled, resolving WebSocket target address %s before connection", targetAddr)
 	}
 
-	resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs)
+	resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, options.IPPv4Priority)
 
 	if err != nil {
 		log.Printf("Failed to resolve WebSocket target address %s: %v, using original", targetAddr, err)
@@ -612,7 +612,7 @@ func websocketDialContext(ctx context.Context, network, addr string, proxyUrl *u
 }
 
 // resolveTargetAddressForAuth 解析目标地址的域名为IP地址（用于auth模块）
-func resolveTargetAddressForAuth(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, transportConfigurations ...func(*http.Transport) *http.Transport) ([]string, error) {
+func resolveTargetAddressForAuth(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, ipPriority options.IPPriority, transportConfigurations ...func(*http.Transport) *http.Transport) ([]string, error) {
 	if !upstreamResolveIPs || len(proxyoptions) == 0 || dnsCache == nil {
 		return []string{addr}, nil
 	}
@@ -627,42 +627,46 @@ func resolveTargetAddressForAuth(addr string, Proxy func(*http.Request) (*url.UR
 		return []string{addr}, nil
 	}
 
-	log.Printf("Resolving SOCKS5 target address %s using DoH infrastructure", host)
+	log.Printf("Resolving target address %s using DoH infrastructure", host)
 
 	// 使用DoH解析
 	resolver := dnscache.CreateHostsAndDohResolverCachedSimple(proxyoptions, dnsCache, Proxy, transportConfigurations...)
 	ips, err := resolver.LookupIP(context.Background(), "tcp", host)
 	if err != nil {
-		log.Printf("DoH resolution failed for SOCKS5 target %s: %v", host, err)
+		log.Printf("DoH resolution failed for target %s: %v", host, err)
 		return []string{addr}, err
 	}
 
 	if len(ips) == 0 {
-		log.Printf("No IP addresses resolved for SOCKS5 target %s", host)
-		return []string{addr}, fmt.Errorf("no IP addresses resolved for SOCKS5 target %s", host)
+		log.Printf("No IP addresses resolved for target %s", host)
+		return []string{addr}, fmt.Errorf("no IP addresses resolved for target %s", host)
 	}
 
-	// 返回所有解析出的IP地址，优先使用IPv4
+	// 收集所有解析出的IP地址
 	var resolvedAddrs []string
-	var ipv4Addrs []string
-	var ipv6Addrs []string
-
 	for _, ip := range ips {
 		resolvedAddr := net.JoinHostPort(ip.String(), port)
-		if ip.To4() != nil {
-			// IPv4地址优先添加
-			ipv4Addrs = append(ipv4Addrs, resolvedAddr)
-		} else {
-			// IPv6地址后添加
-			ipv6Addrs = append(ipv6Addrs, resolvedAddr)
+		resolvedAddrs = append(resolvedAddrs, resolvedAddr)
+	}
+
+	// 根据 IP 优先级策略排序
+	resolvedAddrs = options.SortAddressesByPriority(resolvedAddrs, ipPriority)
+
+	// 统计 IPv4 和 IPv6 地址数量
+	var ipv4Count, ipv6Count int
+	for _, addr := range resolvedAddrs {
+		host, _, _ := net.SplitHostPort(addr)
+		if ip := net.ParseIP(host); ip != nil {
+			if ip.To4() != nil {
+				ipv4Count++
+			} else {
+				ipv6Count++
+			}
 		}
 	}
 
-	// IPv4地址在前，IPv6地址在后
-	resolvedAddrs = append(ipv4Addrs, ipv6Addrs...)
-
-	log.Printf("Resolved SOCKS5 target address %s to %d IP addresses (IPv4: %d, IPv6: %d): %v",
-		addr, len(resolvedAddrs), len(ipv4Addrs), len(ipv6Addrs), resolvedAddrs)
+	log.Printf("Resolved target address %s to %d IP addresses (IPv4: %d, IPv6: %d, priority: %s): %v",
+		addr, len(resolvedAddrs), ipv4Count, ipv6Count, ipPriority, resolvedAddrs)
 
 	return resolvedAddrs, nil
 }

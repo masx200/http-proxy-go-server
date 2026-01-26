@@ -16,7 +16,7 @@ import (
 
 // resolveTargetAddress 解析目标地址的域名为IP地址（如果启用了upstreamResolveIPs）
 // 返回所有解析的IP地址数组，供调用者实现轮询
-func resolveTargetAddress(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) ([]string, error) {
+func resolveTargetAddress(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, ipPriority options.IPPriority) ([]string, error) {
 	if !upstreamResolveIPs || len(proxyoptions) == 0 || dnsCache == nil {
 		return []string{addr}, nil
 	}
@@ -46,27 +46,31 @@ func resolveTargetAddress(addr string, Proxy func(*http.Request) (*url.URL, erro
 		return []string{addr}, fmt.Errorf("no IP addresses resolved for target %s", host)
 	}
 
-	// 返回所有解析出的IP地址，优先使用IPv4
+	// 收集所有解析出的IP地址
 	var resolvedAddrs []string
-	var ipv4Addrs []string
-	var ipv6Addrs []string
-
 	for _, ip := range ips {
 		resolvedAddr := net.JoinHostPort(ip.String(), port)
-		if ip.To4() != nil {
-			// IPv4地址优先添加
-			ipv4Addrs = append(ipv4Addrs, resolvedAddr)
-		} else {
-			// IPv6地址后添加
-			ipv6Addrs = append(ipv6Addrs, resolvedAddr)
+		resolvedAddrs = append(resolvedAddrs, resolvedAddr)
+	}
+
+	// 根据 IP 优先级策略排序
+	resolvedAddrs = options.SortAddressesByPriority(resolvedAddrs, ipPriority)
+
+	// 统计 IPv4 和 IPv6 地址数量
+	var ipv4Count, ipv6Count int
+	for _, addr := range resolvedAddrs {
+		host, _, _ := net.SplitHostPort(addr)
+		if ip := net.ParseIP(host); ip != nil {
+			if ip.To4() != nil {
+				ipv4Count++
+			} else {
+				ipv6Count++
+			}
 		}
 	}
 
-	// IPv4地址在前，IPv6地址在后
-	resolvedAddrs = append(ipv4Addrs, ipv6Addrs...)
-
-	log.Printf("Resolved target address %s to %d IP addresses (IPv4: %d, IPv6: %d): %v",
-		addr, len(resolvedAddrs), len(ipv4Addrs), len(ipv6Addrs), resolvedAddrs)
+	log.Printf("Resolved target address %s to %d IP addresses (IPv4: %d, IPv6: %d, priority: %s): %v",
+		addr, len(resolvedAddrs), ipv4Count, ipv6Count, ipPriority, resolvedAddrs)
 
 	return resolvedAddrs, nil
 }
@@ -81,33 +85,8 @@ func resolveTargetAddressWithRoundRobin(addrs []string, target string) string {
 		return addrs[0]
 	}
 
-	// 分离IPv4和IPv6地址
-	var ipv4Addrs []string
-	var ipv6Addrs []string
-
-	for _, addr := range addrs {
-		host, _, err := net.SplitHostPort(addr)
-		if err != nil {
-			continue
-		}
-		if ip := net.ParseIP(host); ip != nil && ip.To4() != nil {
-			ipv4Addrs = append(ipv4Addrs, addr)
-		} else {
-			ipv6Addrs = append(ipv6Addrs, addr)
-		}
-	}
-
-	// 优先选择IPv4地址
-	var candidateAddrs []string
-	if len(ipv4Addrs) > 0 {
-		candidateAddrs = ipv4Addrs
-		log.Printf("Preferring IPv4 addresses for SOCKS5 compatibility: %v", ipv4Addrs)
-	} else {
-		candidateAddrs = ipv6Addrs
-		log.Printf("No IPv4 addresses available, using IPv6: %v", ipv6Addrs)
-	}
-
-	candidateAddrs = Shuffle(candidateAddrs)
+	// 使用所有地址（已经按照优先级策略排序）
+	candidateAddrs := Shuffle(addrs)
 
 	// 简单轮询：基于目标字符串哈希来选择一个相对稳定的IP
 	hash := 0

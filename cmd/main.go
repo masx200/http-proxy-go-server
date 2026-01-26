@@ -518,10 +518,13 @@ func main() {
 		cacheAOFInterval = flag.String("cache-aof-interval", "1s", "DNS cache AOF save interval (duration string, e.g., 1s, 5s)")
 		// 上游代理IP解析相关参数
 		upstreamResolveIPs = flag.Bool("upstream-resolve-ips", false, "resolve upstream proxy domains to IP addresses before connection to bypass DNS pollution")
+		// IPv6/IPv4 优先策略相关参数
+		ipPriority = flag.String("ip-priority", "random", "IP address priority strategy: ipv4 (IPv4优先), ipv6 (IPv6优先), random (IPv4和IPv6随机)")
 	)
 	flag.Parse()
 
 	log.Println("upstream-resolve-ips:", *upstreamResolveIPs)
+	log.Println("ip-priority:", *ipPriority)
 	log.Println("代理服务器启动中...")
 
 	// 如果指定了配置文件，则从配置文件读取参数

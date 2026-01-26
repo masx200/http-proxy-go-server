@@ -26,7 +26,7 @@ import (
 //   - net.Conn: 成功时返回与目标地址建立的网络连接。
 //   - error: 如果连接失败或代理响应异常，返回相应的错误信息。
 
-func ConnectViaHttpProxy(proxyURL *url.URL, targetAddr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool) (net.Conn, error) {
+func ConnectViaHttpProxy(proxyURL *url.URL, targetAddr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, ipPriority options.IPPriority) (net.Conn, error) {
 	log.Println("开始连接代理服务器", proxyURL, targetAddr)
 	var scheme = proxyURL.Scheme
 
@@ -72,7 +72,7 @@ func ConnectViaHttpProxy(proxyURL *url.URL, targetAddr string, Proxy func(*http.
 
 	// 如果启用了DNS解析，先解析目标地址
 	if upstreamResolveIPs && len(proxyoptions) > 0 && dnsCache != nil {
-		resolvedAddrs, err := resolveTargetAddressForHttp(targetAddr, Proxy, proxyoptions, dnsCache)
+		resolvedAddrs, err := resolveTargetAddressForHttp(targetAddr, Proxy, proxyoptions, dnsCache, ipPriority)
 		if err != nil {
 			log.Printf("Failed to resolve target address %s: %v, using original", targetAddr, err)
 		} else {

@@ -352,7 +352,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 			if upstreamResolveIPs {
 				log.Printf("upstream-resolve-ips enabled, resolving SOCKS5 target address %s before connection", targetAddr)
 			}
-			resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, tranportConfigurations...)
+			resolvedAddrs, err := resolveTargetAddressForAuth(targetAddr, Proxy, proxyoptions, dnsCache, upstreamResolveIPs, options.IPPv4Priority, tranportConfigurations...)
 			if err != nil {
 				log.Printf("Failed to resolve SOCKS5 target address %s: %v, using original", targetAddr, err)
 				resolvedAddrs = []string{targetAddr}
@@ -535,7 +535,7 @@ func isAuthenticated(proxyAuth, expectedUsername, expectedPassword string) bool 
 }
 
 // resolveTargetAddressForAuth 解析目标地址的域名为IP地址（用于auth模块）
-func resolveTargetAddressForAuth(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, transportConfigurations ...func(*http.Transport) *http.Transport) ([]string, error) {
+func resolveTargetAddressForAuth(addr string, Proxy func(*http.Request) (*url.URL, error), proxyoptions options.ProxyOptionsDNSSLICE, dnsCache *dnscache.DNSCache, upstreamResolveIPs bool, ipPriority options.IPPriority, transportConfigurations ...func(*http.Transport) *http.Transport) ([]string, error) {
 	if !upstreamResolveIPs || len(proxyoptions) == 0 || dnsCache == nil {
 		return []string{addr}, nil
 	}
@@ -550,29 +550,46 @@ func resolveTargetAddressForAuth(addr string, Proxy func(*http.Request) (*url.UR
 		return []string{addr}, nil
 	}
 
-	log.Printf("Resolving SOCKS5 target address %s using DoH infrastructure", host)
+	log.Printf("Resolving target address %s using DoH infrastructure", host)
 
 	// 使用DoH解析
 	resolver := dnscache.CreateHostsAndDohResolverCachedSimple(proxyoptions, dnsCache, Proxy, transportConfigurations...)
 	ips, err := resolver.LookupIP(context.Background(), "tcp", host)
 	if err != nil {
-		log.Printf("DoH resolution failed for SOCKS5 target %s: %v", host, err)
+		log.Printf("DoH resolution failed for target %s: %v", host, err)
 		return []string{addr}, err
 	}
 
 	if len(ips) == 0 {
-		log.Printf("No IP addresses resolved for SOCKS5 target %s", host)
-		return []string{addr}, fmt.Errorf("no IP addresses resolved for SOCKS5 target %s", host)
+		log.Printf("No IP addresses resolved for target %s", host)
+		return []string{addr}, fmt.Errorf("no IP addresses resolved for target %s", host)
 	}
 
-	// 返回所有解析出的IP地址
+	// 收集所有解析出的IP地址
 	var resolvedAddrs []string
 	for _, ip := range ips {
 		resolvedAddr := net.JoinHostPort(ip.String(), port)
 		resolvedAddrs = append(resolvedAddrs, resolvedAddr)
 	}
 
-	log.Printf("Resolved SOCKS5 target address %s to %d IP addresses: %v", addr, len(resolvedAddrs), resolvedAddrs)
+	// 根据 IP 优先级策略排序
+	resolvedAddrs = options.SortAddressesByPriority(resolvedAddrs, ipPriority)
+
+	// 统计 IPv4 和 IPv6 地址数量
+	var ipv4Count, ipv6Count int
+	for _, addr := range resolvedAddrs {
+		host, _, _ := net.SplitHostPort(addr)
+		if ip := net.ParseIP(host); ip != nil {
+			if ip.To4() != nil {
+				ipv4Count++
+			} else {
+				ipv6Count++
+			}
+		}
+	}
+
+	log.Printf("Resolved target address %s to %d IP addresses (IPv4: %d, IPv6: %d, priority: %s): %v",
+		addr, len(resolvedAddrs), ipv4Count, ipv6Count, ipPriority, resolvedAddrs)
 
 	return resolvedAddrs, nil
 }
