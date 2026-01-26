@@ -107,24 +107,25 @@ func resolveTargetAddressForHttpWithRoundRobin(addrs []string, target string, ip
 	var candidateAddrs []string
 
 	// 根据优先级策略选择候选地址列表
-	if ipPriority == "ipv6" {
+	switch ipPriority {
+	case "ipv6":
 		if len(ipv6Addrs) > 0 {
 			candidateAddrs = ipv6Addrs
 		} else {
 			candidateAddrs = ipv4Addrs
 		}
 		log.Printf("IPv6 priority: selecting from %d IPv6 addresses", len(ipv6Addrs))
-	} else if ipPriority == "ipv4" {
+	case "ipv4":
 		if len(ipv4Addrs) > 0 {
 			candidateAddrs = ipv4Addrs
 		} else {
 			candidateAddrs = ipv6Addrs
 		}
 		log.Printf("IPv4 priority: selecting from %d IPv4 addresses", len(ipv4Addrs))
-	} else if ipPriority == "random" {
+	case "random":
 		candidateAddrs = addrs
 		log.Printf("Random priority: selecting from all %d addresses", len(addrs))
-	} else {
+	default:
 		// 默认 IPv4 优先
 		if len(ipv4Addrs) > 0 {
 			candidateAddrs = ipv4Addrs
