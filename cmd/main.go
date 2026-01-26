@@ -1181,7 +1181,7 @@ func websocketDialContext(ctx context.Context, network, addr string, upstream co
 	}
 
 	// 使用轮询从解析的地址中选择一个
-	resolvedAddr := resolveTargetAddressWithRoundRobin(resolvedAddrs, addr)
+	resolvedAddr := resolveTargetAddressWithRoundRobin(resolvedAddrs, addr, ipPriority)
 	if upstreamResolveIPs && resolvedAddr != addr {
 		log.Printf("WebSocket: Using resolved address %s instead of original %s", resolvedAddr, addr)
 	}
@@ -1275,7 +1275,7 @@ func socks5DialContext(ctx context.Context, network, addr string, upstream confi
 	}
 
 	// 使用轮询从解析的地址中选择一个
-	resolvedAddr := resolveTargetAddressWithRoundRobin(resolvedAddrs, addr)
+	resolvedAddr := resolveTargetAddressWithRoundRobin(resolvedAddrs, addr, ipPriority)
 	if upstreamResolveIPs && resolvedAddr != addr {
 		log.Printf("SOCKS5: Using resolved address %s instead of original %s", resolvedAddr, addr)
 	}
