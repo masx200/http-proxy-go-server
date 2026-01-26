@@ -75,8 +75,8 @@ func resolveTargetAddress(addr string, Proxy func(*http.Request) (*url.URL, erro
 	return resolvedAddrs, nil
 }
 
-// resolveTargetAddressWithRoundRobin 从解析的IP数组中轮询选择一个地址
-func resolveTargetAddressWithRoundRobin(addrs []string, target string) string {
+// resolveTargetAddressWithRoundRobin 从解析的IP数组中根据优先级策略选择一个地址
+func resolveTargetAddressWithRoundRobin(addrs []string, target string, ipPriority options.IPPriority) string {
 	if len(addrs) == 0 {
 		return target
 	}
@@ -85,17 +85,69 @@ func resolveTargetAddressWithRoundRobin(addrs []string, target string) string {
 		return addrs[0]
 	}
 
-	// 使用所有地址（已经按照优先级策略排序）
-	candidateAddrs := Shuffle(addrs)
+	var ipv4Addrs []string
+	var ipv6Addrs []string
 
-	// 简单轮询：基于目标字符串哈希来选择一个相对稳定的IP
-	hash := 0
-	for _, c := range target {
-		hash = (hash*31 + int(c)) % len(candidateAddrs)
+	// 分离 IPv4 和 IPv6 地址
+	for _, addr := range addrs {
+		host, _, err := net.SplitHostPort(addr)
+		if err != nil {
+			// 如果无法解析，作为 IPv4 处理
+			ipv4Addrs = append(ipv4Addrs, addr)
+			continue
+		}
+		if ip := net.ParseIP(host); ip != nil {
+			if ip.To4() != nil {
+				ipv4Addrs = append(ipv4Addrs, addr)
+			} else {
+				ipv6Addrs = append(ipv6Addrs, addr)
+			}
+		} else {
+			// 如果不是 IP 地址，作为 IPv4 处理
+			ipv4Addrs = append(ipv4Addrs, addr)
+		}
 	}
 
-	selectedAddr := candidateAddrs[hash]
-	log.Printf("RoundRobin selected address %s from %v for target %s", selectedAddr, candidateAddrs, target)
+	var candidateAddrs []string
+
+	// 根据优先级策略选择候选地址列表
+	switch ipPriority {
+	case options.IPv6Priority:
+		if len(ipv6Addrs) > 0 {
+			candidateAddrs = ipv6Addrs
+		} else {
+			candidateAddrs = ipv4Addrs
+		}
+		log.Printf("IPv6 priority: selecting from %d IPv6 addresses", len(ipv6Addrs))
+	case options.IPv4Priority:
+		if len(ipv4Addrs) > 0 {
+			candidateAddrs = ipv4Addrs
+		} else {
+			candidateAddrs = ipv6Addrs
+		}
+		log.Printf("IPv4 priority: selecting from %d IPv4 addresses", len(ipv4Addrs))
+	case options.IPRandomPriority:
+		candidateAddrs = addrs
+		log.Printf("Random priority: selecting from all %d addresses", len(addrs))
+	default:
+		// 默认 IPv4 优先
+		if len(ipv4Addrs) > 0 {
+			candidateAddrs = ipv4Addrs
+		} else {
+			candidateAddrs = ipv6Addrs
+		}
+	}
+
+	// 如果候选地址为空，使用所有地址
+	if len(candidateAddrs) == 0 {
+		candidateAddrs = addrs
+	}
+
+	// 从候选地址中随机选择一个
+	candidateAddrs = Shuffle(candidateAddrs)
+	selectedAddr := candidateAddrs[rand.Intn(len(candidateAddrs))]
+
+	log.Printf("RoundRobin (priority=%s) selected address %s from %v for target %s", ipPriority, selectedAddr, addrs, target)
 
 	return selectedAddr
 }

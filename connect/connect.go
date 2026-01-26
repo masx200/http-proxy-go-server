@@ -77,7 +77,7 @@ func ConnectViaHttpProxy(proxyURL *url.URL, targetAddr string, Proxy func(*http.
 			log.Printf("Failed to resolve target address %s: %v, using original", targetAddr, err)
 		} else {
 			// 使用轮询从解析的地址中选择一个
-			targetAddr = resolveTargetAddressForHttpWithRoundRobin(resolvedAddrs, targetAddr)
+			targetAddr = resolveTargetAddressForHttpWithRoundRobin(resolvedAddrs, targetAddr, ipPriority)
 			log.Printf("Resolved HTTP proxy target address to: %s", targetAddr)
 		}
 	}
