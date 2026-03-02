@@ -10,7 +10,7 @@ replace github.com/quic-go/quic-go/logging => github.com/quic-go/quic-go/logging
 
 replace github.com/quic-go/quic-go => github.com/quic-go/quic-go v0.55.0
 
-require github.com/gin-gonic/gin v1.11.0
+require github.com/gin-gonic/gin v1.12.0
 
 require (
 	github.com/ameshkov/dnscrypt/v2 v2.4.0
@@ -30,13 +30,13 @@ require (
 	github.com/ameshkov/dnsstamps v1.0.3 // indirect
 	github.com/ebi-yade/altsvc-go v0.1.1 // indirect
 	github.com/fanjindong/go-cache v0.0.6 // indirect
-	github.com/goccy/go-yaml v1.18.0 // indirect
+	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
-	github.com/quic-go/quic-go v0.57.0 // indirect
+	github.com/quic-go/quic-go v0.59.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
-	go.uber.org/mock v0.6.0 // indirect
+	go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
 	golang.org/x/exp v0.0.0-20251113190631-e25ba8c21ef6 // indirect
 	golang.org/x/mod v0.32.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
@@ -45,14 +45,14 @@ require (
 
 require (
 	gitee.com/masx200/go-socks5 v0.0.0-20250912150125-12b401692290
-	github.com/bytedance/sonic v1.14.1 // indirect
-	github.com/bytedance/sonic/loader v0.3.0 // indirect
+	github.com/bytedance/sonic v1.15.0 // indirect
+	github.com/bytedance/sonic/loader v0.5.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.10 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.12 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.27.0 // indirect
+	github.com/go-playground/validator/v10 v10.30.1 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
@@ -63,8 +63,8 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
-	github.com/ugorji/go/codec v1.3.0 // indirect
-	golang.org/x/arch v0.21.0 // indirect
+	github.com/ugorji/go/codec v1.3.1 // indirect
+	golang.org/x/arch v0.22.0 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/net v0.51.0
 	golang.org/x/sys v0.41.0 // indirect
