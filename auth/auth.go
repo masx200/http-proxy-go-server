@@ -434,6 +434,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 				fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
 				return
 			}
+			defer server.Close() // 确保连接被关闭，避免资源泄漏
 			log.Println("连接成功：" + upstreamAddress)
 		}
 	} else {
@@ -511,8 +512,24 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 	}
 
 	//将客户端的请求转发至服务端，将服务端的响应转发给客户端。io.Copy 为阻塞函数，文件描述符不关闭就不停止
-	go io.Copy(server, client)
-	io.Copy(client, server)
+	// 使用双向goroutine并等待，避免goroutine泄漏
+	errCh := make(chan error, 2)
+	go func() {
+		_, err := io.Copy(server, client)
+		errCh <- err
+	}()
+	go func() {
+		_, err := io.Copy(client, server)
+		errCh <- err
+	}()
+	// 等待任意一个方向完成（通常是一方关闭连接）
+	<-errCh
+	// 关闭连接以触发另一个方向也快速返回
+	if server != nil {
+		server.Close()
+	}
+	// 等待另一个方向也完成
+	<-errCh
 }
 
 func isAuthenticated(proxyAuth, expectedUsername, expectedPassword string) bool {
