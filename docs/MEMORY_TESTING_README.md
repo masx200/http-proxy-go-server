@@ -94,14 +94,23 @@ go tool pprof mem.prof
 chmod +x scripts/start_with_pprof.sh
 ./scripts/start_with_pprof.sh
 
-# 或手动启动
-go run ./cmd/ -hostname 0.0.0.0 -port 8080 &
+# 或使用新的命令行参数（推荐）
+go run ./cmd/ -enable-pprof -hostname 0.0.0.0 -port 8080
+
+# 自定义pprof端口
+go run ./cmd/ -enable-pprof -pprof-port 8080
+
+# 允许外部访问
+go run ./cmd/ -enable-pprof -pprof-addr 0.0.0.0 -pprof-port 6060
 ```
 
 **Windows:**
 ```powershell
-# 直接运行
-go run ./cmd/ -hostname 0.0.0.0 -port 8080
+# 使用新的命令行参数（推荐）
+go run ./cmd/ -enable-pprof -hostname 0.0.0.0 -port 8080
+
+# 自定义pprof端口
+go run ./cmd/ -enable-pprof -pprof-port 8080
 ```
 
 #### 2. 运行监控工具
@@ -330,22 +339,22 @@ grep -r "net/http/pprof" ./cmd/
 ### 代码审查检查清单
 
 #### 资源管理
-- [ ] 所有HTTP响应都使用`defer resp.Body.Close()`
-- [ ] 文件操作后正确关闭文件
-- [ ] 定时器使用`defer ticker.Stop()`
-- [ ] Context正确使用和取消
+- [x] 所有HTTP响应都使用`defer resp.Body.Close()`
+- [x] 文件操作后正确关闭文件
+- [x] 定时器使用`defer ticker.Stop()`
+- [x] Context正确使用和取消
 
 #### Goroutine管理
-- [ ] 每个goroutine都有明确的退出条件
-- [ ] 使用context控制goroutine生命周期
-- [ ] 避免在goroutine中永久阻塞
-- [ ] 定期检查goroutine数量
+- [x] 每个goroutine都有明确的退出条件
+- [x] 使用context控制goroutine生命周期
+- [x] 避免在goroutine中永久阻塞
+- [x] 定期检查goroutine数量
 
 #### 缓存管理
-- [ ] 设置合理的TTL
-- [ ] 实现缓存大小限制
-- [ ] 定期清理过期数据
-- [ ] 监控缓存内存使用
+- [x] 设置合理的TTL
+- [x] 实现缓存大小限制
+- [x] 定期清理过期数据
+- [x] 监控缓存内存使用
 
 ### 测试策略
 

@@ -29,6 +29,7 @@ import (
 	"github.com/masx200/socks5-websocket-proxy-golang/pkg/interfaces"
 	"github.com/masx200/socks5-websocket-proxy-golang/pkg/socks5"
 	socks5_websocket_proxy_golang_websocket "github.com/masx200/socks5-websocket-proxy-golang/pkg/websocket"
+	_ "net/http/pprof"
 )
 
 // Type aliases for backward compatibility and easier migration
@@ -520,8 +521,31 @@ func main() {
 		upstreamResolveIPs = flag.Bool("upstream-resolve-ips", false, "resolve upstream proxy domains to IP addresses before connection to bypass DNS pollution")
 		// IPv6/IPv4 优先策略相关参数
 		ipPriorityStr = flag.String("ip-priority", "random", "IP address priority strategy: ipv4 (IPv4优先), ipv6 (IPv6优先), random (IPv4和IPv6随机)")
+		// pprof性能分析相关参数
+		enablePprof   = flag.Bool("enable-pprof", false, "enable pprof profiling server for performance analysis")
+		pprofPort     = flag.Int("pprof-port", 6060, "pprof server port (default: 6060)")
+		pprofBindAddr = flag.String("pprof-addr", "127.0.0.1", "pprof server bind address (default: 127.0.0.1, use 0.0.0.0 for external access)")
 	)
 	flag.Parse()
+
+	// 启动pprof性能分析服务器（如果启用）
+	if *enablePprof {
+		pprofAddr := fmt.Sprintf("%s:%d", *pprofBindAddr, *pprofPort)
+		go func() {
+			log.Printf("启动pprof性能分析服务器，监听地址: %s", pprofAddr)
+			log.Println("pprof访问地址:")
+			log.Printf("  - http://%s/debug/pprof/", pprofAddr)
+			log.Printf("  - http://%s/debug/pprof/heap", pprofAddr)
+			log.Printf("  - http://%s/debug/pprof/goroutine", pprofAddr)
+			log.Printf("  - http://%s/debug/pprof/threadcreate", pprofAddr)
+			log.Printf("  - http://%s/debug/pprof/block", pprofAddr)
+			log.Printf("  - http://%s/debug/pprof/mutex", pprofAddr)
+			if err := http.ListenAndServe(pprofAddr, nil); err != nil {
+				log.Printf("pprof服务器启动失败: %v", err)
+			}
+		}()
+		log.Println("pprof性能分析已启用，使用上述地址进行性能分析")
+	}
 
 	log.Println("upstream-resolve-ips:", *upstreamResolveIPs)
 	log.Println("ip-priority:", *ipPriorityStr)
