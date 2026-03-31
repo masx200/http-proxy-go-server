@@ -20,6 +20,7 @@ require (
 	github.com/masx200/socks5-websocket-proxy-golang v0.0.0-20251004132949-7c6ed24bfd07
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/xeipuuv/gojsonschema v1.2.0
+	go.uber.org/goleak v1.3.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 

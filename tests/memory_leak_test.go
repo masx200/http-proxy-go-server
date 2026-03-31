@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/masx200/http-proxy-go-server/dnscache"
-	"go.uber.org/tools/leaktest"
+	"go.uber.org/goleak"
 )
 
 // TestDNSCacheMemoryLeaks 测试DNS缓存的内存泄漏
 func TestDNSCacheMemoryLeaks(t *testing.T) {
-	defer leaktest.Check(t)()
+	defer goleak.VerifyNone(t)
 
 	// 配置测试缓存
 	config := &dnscache.Config{
@@ -79,7 +79,7 @@ func TestDNSCacheMemoryLeaks(t *testing.T) {
 
 // TestProxyServerNoGoroutineLeak 测试代理服务器没有goroutine泄漏
 func TestProxyServerNoGoroutineLeak(t *testing.T) {
-	defer leaktest.CheckTimeout(t, 2*time.Minute)()
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
 	// 记录初始goroutine数量
 	initialGoroutines := runtime.NumGoroutine()
@@ -136,7 +136,7 @@ func TestProxyServerNoGoroutineLeak(t *testing.T) {
 
 // TestHTTPConnectionMemoryLeaks 测试HTTP连接的内存泄漏
 func TestHTTPConnectionMemoryLeaks(t *testing.T) {
-	defer leaktest.Check(t)()
+	defer goleak.VerifyNone(t)
 
 	// 创建测试服务器
 	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -192,7 +192,7 @@ func TestHTTPConnectionMemoryLeaks(t *testing.T) {
 
 // TestDNSCacheAOFMemory 测试DNS缓存AOF的内存使用
 func TestDNSCacheAOFMemory(t *testing.T) {
-	defer leaktest.Check(t)()
+	defer goleak.VerifyNone(t)
 
 	config := &dnscache.Config{
 		AOFPath:      "/tmp/test_aof.aof",
@@ -285,7 +285,7 @@ func TestMemoryStressTest(t *testing.T) {
 		t.Skip("Skipping stress test in short mode")
 	}
 
-	defer leaktest.CheckTimeout(t, 5*time.Minute)()
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
 	// 创建测试服务器
 	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
