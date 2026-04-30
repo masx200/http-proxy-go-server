@@ -244,6 +244,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, Proxy func(*http.Reques
 		go func() {
 			defer clientConn.Close()
 			defer serverConn.Close()
+			defer websocketClient.Close() // 关闭WebSocket连接
 			// 使用ForwardData方法处理WebSocket连接
 			err := websocketClient.ForwardData(serverConn)
 			if err != nil {
@@ -382,6 +383,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, Proxy func(*http.Reques
 			go func() {
 				defer clientConn.Close()
 				defer serverConn.Close()
+				defer socks5Client.Close() // 关闭SOCKS5连接
 				// 使用ForwardData方法处理SOCKS5连接
 				err := socks5Client.ForwardData(serverConn)
 				if err != nil {
