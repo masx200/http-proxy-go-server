@@ -30,3 +30,4 @@ dns_cache.json
 *.backup
 *.temp
 .claude/settings.local.json
+/.workbuddy/

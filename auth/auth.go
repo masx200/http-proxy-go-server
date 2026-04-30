@@ -288,6 +288,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 		}()
 
 		server = clientConn
+		defer server.Close() // 确保WebSocket连接也被关闭，避免资源泄漏
 		log.Println("WebSocket代理连接成功：" + upstreamAddress)
 	} else if proxyURL != nil && (method == "CONNECT" || (method != "CONNECT" && httpUpstreamAddress == "")) {
 		// 检查是否是SOCKS5代理 (适用于CONNECT请求和SOCKS5直接模式的HTTP请求)
@@ -425,6 +426,7 @@ func Handle(client net.Conn, username, password string, httpUpstreamAddress stri
 			}()
 
 			server = clientConn
+			defer server.Close() // 确保SOCKS5连接也被关闭，避免资源泄漏
 			log.Printf("SOCKS5代理连接成功 (%s请求): %s", requestType, upstreamAddress)
 		} else {
 			// 使用HTTP代理处理CONNECT请求

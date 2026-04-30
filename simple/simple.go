@@ -252,6 +252,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, Proxy func(*http.Reques
 		}()
 
 		server = clientConn
+		defer server.Close() // 确保WebSocket连接也被关闭，避免资源泄漏
 		log.Println("WebSocket代理连接成功：" + upstreamAddress)
 	} else if proxyURL != nil && (method == "CONNECT" || (method != "CONNECT" && httpUpstreamAddress == "")) {
 		// 检查是否是SOCKS5代理 (适用于CONNECT请求和SOCKS5直接模式的HTTP请求)
@@ -389,6 +390,7 @@ func Handle(client net.Conn, httpUpstreamAddress string, Proxy func(*http.Reques
 			}()
 
 			server = clientConn
+			defer server.Close() // 确保SOCKS5连接也被关闭，避免资源泄漏
 			log.Printf("SOCKS5代理连接成功 (%s请求): %s", requestType, upstreamAddress)
 		} else {
 			// 使用HTTP代理处理CONNECT请求
@@ -404,19 +406,12 @@ func Handle(client net.Conn, httpUpstreamAddress string, Proxy func(*http.Reques
 	} else {
 		// log.Println("upstreamAddress:" + httpUpstreamAddress)
 		server, err = dnscache.Proxy_net_DialCached("tcp", upstreamAddress, proxyoptions, upstreamResolveIPs, dnsCache, Proxy, tranportConfigurations...) //net.Dial("tcp", upstreamAddress)
-
-		//	for _, err := range errors {
-		//		if err != nil {
-		//			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
-		//			log.Println(err)
-		//			return
-		//		}
-		//	}
 		if err != nil {
 			log.Println(err)
 			fmt.Fprint(client, "HTTP/1.1 502 Bad Gateway\r\n\r\n")
 			return
 		}
+		defer server.Close() // 确保直接连接也被关闭，避免资源泄漏
 		log.Println("连接成功：" + upstreamAddress)
 	}
 	//如果使用 https 协议，需先向客户端表示连接建立完毕
