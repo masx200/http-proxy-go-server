@@ -462,6 +462,10 @@ func Handle(client net.Conn, httpUpstreamAddress string, Proxy func(*http.Reques
 	}
 	// 等待另一个方向也完成
 	<-errCh
+	// 确保客户端连接也被关闭，避免资源泄漏
+	if client != nil {
+		client.Close()
+	}
 }
 
 // WriteRequestLineAndHeadersWithRequestURI 将请求行和头部信息写入服务器连接
