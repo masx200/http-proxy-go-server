@@ -25,3 +25,9 @@ for (; ; ) {
 
     Start-Sleep 5
 }
+
+
+
+
+
+curl  http://127.0.0.1:6060/debug/pprof/heap?debug=1
