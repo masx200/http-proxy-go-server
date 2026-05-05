@@ -10,14 +10,14 @@ go run ./cmd/ -enable-pprof  '-dohurl' 'https://61919494499.security.cloudflare-
 
 
 # 定义生成随机英文字符串的函数，默认长度6位
-function Get-RandomAlpha($length=16){
+function Get-RandomAlpha($length = 16) {
     $chars = 65..90 + 97..122 | ForEach-Object { [char]$_ }
     -join ($chars | Get-Random -Count $length)
 }
 
-for () {
+for (; ; ) {
     # 生成随机前缀
-    $prefix = Get-RandomAlpha
+    $prefix = Get-RandomAlpha 20
     # 拼接目标URL
     $targetUrl = "https://${prefix}.encryptedsni.com/cdn-cgi/trace"
     
