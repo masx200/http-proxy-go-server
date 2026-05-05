@@ -22,12 +22,34 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
+	"time"
 
 	doq "github.com/masx200/doq-go/doq"
 	"github.com/masx200/http-proxy-go-server/utils"
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	"github.com/miekg/dns"
 )
+
+// dohClientCache 缓存已创建的 http.Client，按 (serverURL+dohip) 为 key 复用连接池
+// 避免每次 DNS 查询都创建新的 Transport，导致 goroutine 泄漏
+var dohClientCache sync.Map
+
+// dohClientCacheEntry 缓存条目，带有最后访问时间用于 LRU 淘汰
+type dohClientCacheEntry struct {
+	client   *http.Client
+	lastUsed time.Time
+	mu       sync.Mutex
+}
+
+// getDohClientCacheKey 生成缓存 key
+func getDohClientCacheKey(dohServerURL, dohip string, hasProxy bool) string {
+	proxyPart := "noproxy"
+	if hasProxy {
+		proxyPart = "proxy"
+	}
+	return dohServerURL + "|" + dohip + "|" + proxyPart
+}
 
 // DNSQueryHTTPS 执行DNS查询以获取HTTPS服务记录。
 //
@@ -121,129 +143,10 @@ func DohClient(msg *dns.Msg, dohServerURL string, dohip string, Proxy func(*http
 	req.Header.Set("Content-Type", "application/dns-message")
 	//http request doh
 
-	// 创建自定义的 http.Client
-	var client *http.Client
-	if len(dohip) > 0 {
-		serverIP := dohip
-		transport := &http.Transport{
-			ForceAttemptHTTP2: true,
-			// 自定义 DialContext 函数
+	// 获取或创建缓存的 http.Client，避免每次调用都创建新的 Transport/连接池
+	// 相同的 (serverURL + dohip + hasProxy) 组合复用同一个 client
+	client := getOrCreateDohClient(dohServerURL, dohip, Proxy, tranportConfigurations...)
 
-		}
-		var DialTLSContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
-
-			log.Println("DialTLSContext", "dialing", network, "to", addr)
-			// 解析出原地址中的端口
-			address, port, err := net.SplitHostPort(addr)
-			if err != nil {
-				return nil, err
-			}
-			// 从dohServerURL中解析出原始端口
-			parsedURL, err := url.Parse(dohServerURL)
-			if err != nil {
-				return nil, err
-			}
-			originalPort := parsedURL.Port()
-			if originalPort == "" {
-				if parsedURL.Scheme == "https" {
-					originalPort = "443"
-				} else {
-					originalPort = "80"
-				}
-			}
-			// 用指定的 IP 地址和原端口创建新地址
-			newAddr := net.JoinHostPort(serverIP, port)
-			// 判断是否经过了代理：比较当前端口和原始端口是否不同
-			if transport.Proxy != nil && port != originalPort {
-				// 如果经过了proxy，则端口会和原来的不一样，使用原始地址
-				newAddr = addr
-				log.Println("DialTLSContext detected proxy, using original addr:", addr)
-			}
-			// 创建 net.Dialer 实例
-			dialer := &net.Dialer{}
-
-			log.Println("DialTLSContext", "dialing", network, "to", newAddr)
-			// 发起连接
-			conn, err := dialer.DialContext(ctx, network, newAddr)
-			if err != nil {
-				return nil, err
-			}
-			tlsConfig := &tls.Config{
-				ServerName: address,
-			}
-			// 创建 TLS 连接
-			tlsConn := tls.Client(conn, tlsConfig)
-			// 进行 TLS 握手
-			err = tlsConn.HandshakeContext(ctx)
-			if err != nil {
-				conn.Close()
-				return nil, err
-			}
-			return tlsConn, nil
-		}
-		transport.DialTLSContext = DialTLSContext
-		var DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
-			var host, _, err = net.SplitHostPort(addr)
-			if err != nil {
-				return nil, err
-			}
-			if utils.IsLoopbackIP(host) {
-				var dialer = &net.Dialer{}
-				return dialer.DialContext(ctx, network, addr)
-			}
-			log.Println("DialContext", "dialing", network, "to", addr)
-			// 解析出原地址中的端口
-			_, port, err := net.SplitHostPort(addr)
-			if err != nil {
-				return nil, err
-			}
-			// 从dohServerURL中解析出原始端口
-			parsedURL, err := url.Parse(dohServerURL)
-			if err != nil {
-				return nil, err
-			}
-			originalPort := parsedURL.Port()
-			if originalPort == "" {
-				if parsedURL.Scheme == "https" {
-					originalPort = "443"
-				} else {
-					originalPort = "80"
-				}
-			}
-			// 用指定的 IP 地址和原端口创建新地址
-			newAddr := net.JoinHostPort(serverIP, port)
-			// 创建 net.Dialer 实例
-			dialer := &net.Dialer{}
-			// 判断是否经过了代理：比较当前端口和原始端口是否不同
-			if transport.Proxy != nil && port != originalPort {
-				// 如果经过了proxy，则端口会和原来的不一样，使用原始地址
-				log.Println("DialContext detected proxy, using original addr:", addr)
-				return dialer.DialContext(ctx, network, addr)
-			}
-
-			log.Println("dialContext", "dialing", network, "to", newAddr)
-			// 发起连接
-			return dialer.DialContext(ctx, network, newAddr)
-		}
-
-		transport.DialContext = DialContext
-		for _, f := range tranportConfigurations {
-			transport = f(transport)
-		}
-		client = &http.Client{
-			Transport: transport,
-		}
-	} else {
-		client = http.DefaultClient
-		var transport = http.DefaultTransport
-
-		for _, f := range tranportConfigurations {
-			if t, ok := transport.(*http.Transport); ok {
-				transport = f(t)
-			}
-		}
-		client.Transport = transport
-	}
 	log.Println("开始发起doh请求", dohServerURL)
 	res, err := client.Do(req) //Post(dohServerURL, "application/dns-message", strings.NewReader(string(body)))
 	if err != nil {
@@ -375,4 +278,147 @@ func DoTClient(msg *dns.Msg, doTServerURL string) (qA *dns.Msg, err error) {
 		return nil, err                // 如果有错误，返回nil和错误信息
 	}
 	return respA, err // 返回查询应答和可能存在的错误信息
+}
+
+// getOrCreateDohClient 获取或创建一个可复用的 http.Client。
+// 对相同的 (serverURL, dohip, proxy) 组合复用同一个 client，
+// 让底层 Transport 的连接池充分工作，避免 goroutine 泄漏。
+func getOrCreateDohClient(dohServerURL, dohip string, Proxy func(*http.Request) (*url.URL, error), tranportConfigurations ...func(*http.Transport) *http.Transport) *http.Client {
+	cacheKey := getDohClientCacheKey(dohServerURL, dohip, Proxy != nil)
+
+	if v, ok := dohClientCache.Load(cacheKey); ok {
+		entry := v.(*dohClientCacheEntry)
+		entry.mu.Lock()
+		entry.lastUsed = time.Now()
+		entry.mu.Unlock()
+		return entry.client
+	}
+
+	// 创建新的 client（仅在首次使用时执行）
+	var client *http.Client
+	if len(dohip) > 0 {
+		serverIP := dohip
+		transport := &http.Transport{
+			ForceAttemptHTTP2:   true,
+			MaxIdleConns:        10,
+			MaxIdleConnsPerHost: 5,
+			IdleConnTimeout:     90 * time.Second,
+		}
+		var DialTLSContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+			log.Println("DialTLSContext", "dialing", network, "to", addr)
+			address, port, err := net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
+			parsedURL, err := url.Parse(dohServerURL)
+			if err != nil {
+				return nil, err
+			}
+			originalPort := parsedURL.Port()
+			if originalPort == "" {
+				if parsedURL.Scheme == "https" {
+					originalPort = "443"
+				} else {
+					originalPort = "80"
+				}
+			}
+			newAddr := net.JoinHostPort(serverIP, port)
+			if transport.Proxy != nil && port != originalPort {
+				newAddr = addr
+				log.Println("DialTLSContext detected proxy, using original addr:", addr)
+			}
+			dialer := &net.Dialer{}
+			log.Println("DialTLSContext", "dialing", network, "to", newAddr)
+			conn, err := dialer.DialContext(ctx, network, newAddr)
+			if err != nil {
+				return nil, err
+			}
+			tlsConfig := &tls.Config{
+				ServerName: address,
+			}
+			tlsConn := tls.Client(conn, tlsConfig)
+			err = tlsConn.HandshakeContext(ctx)
+			if err != nil {
+				conn.Close()
+				return nil, err
+			}
+			return tlsConn, nil
+		}
+		transport.DialTLSContext = DialTLSContext
+		var DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+			var host, _, err = net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
+			if utils.IsLoopbackIP(host) {
+				var dialer = &net.Dialer{}
+				return dialer.DialContext(ctx, network, addr)
+			}
+			log.Println("DialContext", "dialing", network, "to", addr)
+			_, port, err := net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
+			parsedURL, err := url.Parse(dohServerURL)
+			if err != nil {
+				return nil, err
+			}
+			originalPort := parsedURL.Port()
+			if originalPort == "" {
+				if parsedURL.Scheme == "https" {
+					originalPort = "443"
+				} else {
+					originalPort = "80"
+				}
+			}
+			newAddr := net.JoinHostPort(serverIP, port)
+			dialer := &net.Dialer{}
+			if transport.Proxy != nil && port != originalPort {
+				log.Println("DialContext detected proxy, using original addr:", addr)
+				return dialer.DialContext(ctx, network, addr)
+			}
+			log.Println("dialContext", "dialing", network, "to", newAddr)
+			return dialer.DialContext(ctx, network, newAddr)
+		}
+		transport.DialContext = DialContext
+		if Proxy != nil {
+			transport.Proxy = Proxy
+		}
+		for _, f := range tranportConfigurations {
+			transport = f(transport)
+		}
+		client = &http.Client{
+			Transport: transport,
+			Timeout:   30 * time.Second,
+		}
+	} else {
+		// 无指定 dohip：创建独立的默认 transport，不修改全局 http.DefaultClient
+		transport := &http.Transport{
+			ForceAttemptHTTP2:   true,
+			MaxIdleConns:        10,
+			MaxIdleConnsPerHost: 5,
+			IdleConnTimeout:     90 * time.Second,
+		}
+		if Proxy != nil {
+			transport.Proxy = Proxy
+		}
+		for _, f := range tranportConfigurations {
+			transport = f(transport)
+		}
+		client = &http.Client{
+			Transport: transport,
+			Timeout:   30 * time.Second,
+		}
+	}
+
+	entry := &dohClientCacheEntry{
+		client:   client,
+		lastUsed: time.Now(),
+	}
+
+	// 使用 LoadOrStore 保证并发安全：若已有其他 goroutine 先存入，使用已有的
+	if actual, loaded := dohClientCache.LoadOrStore(cacheKey, entry); loaded {
+		return actual.(*dohClientCacheEntry).client
+	}
+	return client
 }
