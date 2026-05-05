@@ -60,7 +60,7 @@ Write-Host ""
 
 # 显示表头
 Write-Host ("{0,-20} | {1,-12} | {2,-12} | {3,-12} | {4,-8}" -f `
-    "Time", "WS(MB)", "PM(MB)", "VM(MB)", "CPU%")
+        "Time", "WS(MB)", "PM(MB)", "VM(MB)", "CPU%")
 Write-Host ("-" * 85)
 
 # 监控循环
@@ -90,7 +90,7 @@ try {
 
         # 显示到终端
         Write-Host ("{0,-20} | {1,-12} | {2,-12} | {3,-12} | {4,-8}" -f `
-            $timestamp, $workingSetMB, $privateMemoryMB, $virtualMemoryMB, "$cpuPercent%")
+                $timestamp, $workingSetMB, $privateMemoryMB, $virtualMemoryMB, "$cpuPercent%")
 
         # 检查内存是否超过阈值（相对于初始内存增长超过500MB）
         $wsIncrease = $workingSetMB - $initialWS
@@ -106,7 +106,8 @@ try {
                 if ($response.StatusCode -eq 200) {
                     Write-Host "  [pprof可用: http://localhost:6060/debug/pprof/]" -ForegroundColor Gray
                 }
-            } catch {
+            }
+            catch {
                 # pprof不可用，忽略错误
             }
         }

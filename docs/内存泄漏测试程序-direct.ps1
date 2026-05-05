@@ -14,14 +14,14 @@ for (; ; ) {
 
     curl  --proxy-user admin:iy3w0rqwftfb1z7jr2nd4c894rc8t3pxhtw1qj94bxnjvioq58 -v -I https://dash.cloudflare.com/ -L -x http://127.0.0.1:28340 --doh-url https://doh.opendns.com/dns-query --connect-timeout 10 --max-time 10
     
-    sleep 2
+    Start-Sleep 2
     curl --proxy-user admin:iy3w0rqwftfb1z7jr2nd4c894rc8t3pxhtw1qj94bxnjvioq58 -v  https://ipv4.ipleak.net/?mode=json -L -x http://127.0.0.1:28340 --doh-url https://doh.opendns.com/dns-query  --connect-timeout 10 --max-time 10
-    sleep 5
+    Start-Sleep 5
     curl --proxy-user admin:iy3w0rqwftfb1z7jr2nd4c894rc8t3pxhtw1qj94bxnjvioq58 -v  https://ifconfig.co/json -L -x http://127.0.0.1:28340 --doh-url https://doh.opendns.com/dns-query  --connect-timeout 10 --max-time 10
-    sleep 5
+    Start-Sleep 5
     curl --proxy-user admin:iy3w0rqwftfb1z7jr2nd4c894rc8t3pxhtw1qj94bxnjvioq58 -v -I https://note.wps.cn/ -L -x http://127.0.0.1:28340 --doh-url https://doh.opendns.com/dns-query  --connect-timeout 10 --max-time 10;
 
 
 
-    sleep 5;
+    Start-Sleep 5;
 }
