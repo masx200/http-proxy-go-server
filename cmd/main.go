@@ -20,7 +20,7 @@ import (
 	"github.com/masx200/http-proxy-go-server/auth"
 	"github.com/masx200/http-proxy-go-server/config"
 	"github.com/masx200/http-proxy-go-server/dnscache"
-	_ "github.com/masx200/http-proxy-go-server/doh"
+	"github.com/masx200/http-proxy-go-server/doh"
 	"github.com/masx200/http-proxy-go-server/options"
 	"github.com/masx200/http-proxy-go-server/simple"
 	"github.com/masx200/http-proxy-go-server/tls"
@@ -716,6 +716,10 @@ func main() {
 		} else {
 			log.Printf("DNS缓存已启用，文件: %s, AOF: %v, TTL: %v", *cacheFile, *cacheAOFEnabled, cacheTTLDuration)
 		}
+
+		// 启动 H3 客户端缓存清理器，防止 goroutine 泄漏
+		// 每 5 分钟检查一次，清理超过 30 分钟未使用的客户端
+		doh.StartH3CacheCleaner(5*time.Minute, 30*time.Minute)
 	} else {
 		// 即使禁用缓存也要初始化
 		dnsCacheConfig := &CacheConfig{
@@ -731,9 +735,12 @@ func main() {
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		<-c
 		log.Println("收到退出信号，正在关闭服务器...")
-		// 关闭DNS缓存
+		// 关闭 DNS 缓存
 		CloseDNSCache()
 		log.Println("DNS缓存已关闭")
+		// 关闭 H3 客户端缓存，防止 goroutine 泄漏
+		doh.CloseH3ClientCache()
+		log.Println("H3客户端缓存已关闭")
 		os.Exit(0)
 	}()
 
