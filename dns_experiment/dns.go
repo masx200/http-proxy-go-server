@@ -381,29 +381,23 @@ func getOrCreateDohClient(dohServerURL, dohip string, Proxy func(*http.Request) 
 			return dialer.DialContext(ctx, network, newAddr)
 		}
 		transport.DialContext = DialContext
-		if Proxy != nil {
-			transport.Proxy = Proxy
-		}
-		for _, f := range tranportConfigurations {
-			transport = f(transport)
-		}
+		// When dohip is specified, the custom DialContext/DialTLSContext
+		// connect directly to the DoH server IP. Do NOT set Proxy or apply
+		// tranportConfigurations — they would override the direct dial and
+		// route DoH through the upstream proxy, creating a circular dependency
+		// (DoH needs proxy -> proxy needs DNS -> DNS needs DoH).
 		client = &http.Client{
 			Transport: transport,
 			Timeout:   30 * time.Second,
 		}
 	} else {
 		// 无指定 dohip：创建独立的默认 transport，不修改全局 http.DefaultClient
+		// DoH should connect directly to servers, not through the upstream proxy.
 		transport := &http.Transport{
 			ForceAttemptHTTP2:   true,
 			MaxIdleConns:        10,
 			MaxIdleConnsPerHost: 5,
 			IdleConnTimeout:     90 * time.Second,
-		}
-		if Proxy != nil {
-			transport.Proxy = Proxy
-		}
-		for _, f := range tranportConfigurations {
-			transport = f(transport)
 		}
 		client = &http.Client{
 			Transport: transport,
